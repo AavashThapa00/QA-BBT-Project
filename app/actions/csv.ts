@@ -70,14 +70,8 @@ export async function uploadCSV(csvData: string): Promise<UploadResult> {
                     )
                 );
 
-                if (!dateReported) {
-                    errors.push({
-                        row: i + 1,
-                        reason: "Invalid or missing date reported",
-                    });
-                    skipped++;
-                    continue;
-                }
+                // Use current date if date reported is missing
+                const finalDateReported = dateReported || new Date();
 
                 const module = extractColumnValue(
                     validatedRow,
@@ -90,14 +84,8 @@ export async function uploadCSV(csvData: string): Promise<UploadResult> {
                     ]
                 );
 
-                if (!module) {
-                    errors.push({
-                        row: i + 1,
-                        reason: "Missing module/component",
-                    });
-                    skipped++;
-                    continue;
-                }
+                // Use "Unknown" if module is missing
+                const finalModule = module || "Unknown";
 
                 const expectedResult = extractColumnValue(
                     validatedRow,
@@ -125,7 +113,7 @@ export async function uploadCSV(csvData: string): Promise<UploadResult> {
                 );
 
                 // Map custom severity values to standard enums
-                let severity: Severity | null = null;
+                let severity: Severity;
                 if (severityStr) {
                     const lowerSeverity = severityStr.toLowerCase().trim();
                     if (lowerSeverity === "major" || lowerSeverity === "critical") {
@@ -137,32 +125,16 @@ export async function uploadCSV(csvData: string): Promise<UploadResult> {
                     } else if (lowerSeverity === "low") {
                         severity = SeverityEnum.LOW;
                     } else {
-                        severity = normalizeEnumValue(severityStr, Object.values(SeverityEnum)) as Severity | null;
+                        severity = (normalizeEnumValue(severityStr, Object.values(SeverityEnum)) as Severity) || SeverityEnum.MEDIUM;
                     }
-                }
-
-                if (!severity) {
-                    errors.push({
-                        row: i + 1,
-                        reason: `Invalid severity: ${severityStr}`,
-                    });
-                    skipped++;
-                    continue;
+                } else {
+                    severity = SeverityEnum.MEDIUM; // Default to MEDIUM
                 }
 
                 const priority = extractColumnValue(
                     validatedRow,
                     ["Priority", "priority"]
-                );
-
-                if (!priority) {
-                    errors.push({
-                        row: i + 1,
-                        reason: "Missing priority",
-                    });
-                    skipped++;
-                    continue;
-                }
+                ) || "Medium";
 
                 const statusStr = extractColumnValue(
                     validatedRow,
@@ -170,30 +142,21 @@ export async function uploadCSV(csvData: string): Promise<UploadResult> {
                 );
 
                 // Map custom status values to standard enums
-                let status: Status | null = null;
+                let status: Status;
                 if (statusStr) {
                     const lowerStatus = statusStr.toLowerCase().trim();
                     if (lowerStatus.includes("fix") || lowerStatus.includes("closed")) {
                         status = StatusEnum.CLOSED;
                     } else if (lowerStatus.includes("progress") || lowerStatus.includes("in progress")) {
                         status = StatusEnum.IN_PROGRESS;
-                    } else if (lowerStatus.includes("hold") || lowerStatus === "as it is") {
+                    } else if (lowerStatus.includes("hold") || lowerStatus === "as it is" || lowerStatus === "pending") {
                         status = StatusEnum.ON_HOLD;
                     } else {
                         const normalized = normalizeEnumValue(statusStr, Object.values(StatusEnum));
-                        status = normalized as Status | null;
+                        status = (normalized as Status) || StatusEnum.OPEN;
                     }
                 } else {
                     status = StatusEnum.OPEN; // Default to OPEN if no status provided
-                }
-
-                if (!status) {
-                    errors.push({
-                        row: i + 1,
-                        reason: `Invalid status: ${statusStr}`,
-                    });
-                    skipped++;
-                    continue;
                 }
 
                 const dateFixedStr = extractColumnValue(
@@ -219,7 +182,7 @@ export async function uploadCSV(csvData: string): Promise<UploadResult> {
                 );
 
                 // Map TRUE/FALSE to QC status
-                let qcStatusBbt: QCStatusBBT | null = null;
+                let qcStatusBbt: QCStatusBBT;
                 if (qcStatusStr) {
                     const lowerQC = qcStatusStr.toLowerCase().trim();
                     if (lowerQC === "true") {
@@ -227,33 +190,38 @@ export async function uploadCSV(csvData: string): Promise<UploadResult> {
                     } else if (lowerQC === "false") {
                         qcStatusBbt = QCStatusBBTEnum.FAILED;
                     } else {
-                        qcStatusBbt = normalizeEnumValue(qcStatusStr, Object.values(QCStatusBBTEnum)) as QCStatusBBT | null;
+                        qcStatusBbt = (normalizeEnumValue(qcStatusStr, Object.values(QCStatusBBTEnum)) as QCStatusBBT) || QCStatusBBTEnum.PENDING;
                     }
-                }
-
-                if (!qcStatusBbt) {
-                    errors.push({
-                        row: i + 1,
-                        reason: `Invalid QC status: ${qcStatusStr}`,
-                    });
-                    skipped++;
-                    continue;
+                } else {
+                    qcStatusBbt = QCStatusBBTEnum.PENDING; // Default to PENDING
                 }
 
                 // Final validation with Zod schema
                 const defectData = {
-                    dateReported,
-                    module,
-                    expectedResult,
-                    actualResult,
-                    severity: severity as Severity,
+                    dateReported: finalDateReported,
+                    module: finalModule,
+                    expectedResult: expectedResult || "N/A",
+                    actualResult: actualResult || "N/A",
+                    severity,
                     priority,
-                    status: status as Status,
+                    status,
                     dateFixed,
-                    qcStatusBbt: qcStatusBbt as QCStatusBBT,
+                    qcStatusBbt,
                 };
 
                 CreateDefectSchema.parse(defectData);
+
+                // Check for duplicate based on date and module
+                const duplicateCheck = await db.query(
+                    `SELECT id FROM defect WHERE "dateReported" = $1 AND module = $2 LIMIT 1`,
+                    [finalDateReported, finalModule]
+                );
+
+                if (duplicateCheck.rows.length > 0) {
+                    // Skip duplicate
+                    skipped++;
+                    continue;
+                }
 
                 // Insert into database using raw SQL
                 const id = randomUUID();
@@ -264,10 +232,10 @@ export async function uploadCSV(csvData: string): Promise<UploadResult> {
                      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
                     [
                         id,
-                        dateReported,
-                        module,
-                        expectedResult || "",
-                        actualResult || "",
+                        finalDateReported,
+                        finalModule,
+                        expectedResult || "N/A",
+                        actualResult || "N/A",
                         severity,
                         priority,
                         status,
