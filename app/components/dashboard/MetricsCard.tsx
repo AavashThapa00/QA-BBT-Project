@@ -24,8 +24,8 @@ export default function MetricsCard({
           <div className="mt-4 h-1 w-12 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full"></div>
         </div>
         {icon && (
-          <div className="ml-4 text-3xl p-3 bg-slate-50 rounded-lg">
-            {icon}
+          <div className="ml-4 p-3 bg-slate-100 text-slate-800 rounded-lg">
+            {React.isValidElement(icon) ? React.cloneElement(icon as any, { className: 'w-6 h-6' }) : icon}
           </div>
         )}
       </div>

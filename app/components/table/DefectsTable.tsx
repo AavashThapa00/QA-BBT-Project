@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { HiInbox } from "react-icons/hi";
 import { Defect, Severity } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
 
@@ -26,7 +27,16 @@ const STATUS_COLORS: Record<string, string> = {
   OPEN: "bg-blue-100 text-blue-800",
   IN_PROGRESS: "bg-purple-100 text-purple-800",
   CLOSED: "bg-green-100 text-green-800",
-  ON_HOLD: "bg-gray-100 text-gray-800",
+  ON_HOLD: "bg-red-100 text-red-800",
+  AS_IT_IS: "bg-slate-100 text-slate-800",
+};
+
+const STATUS_LABELS: Record<string, string> = {
+  OPEN: "Open",
+  IN_PROGRESS: "In Progress",
+  CLOSED: "Fixed",
+  ON_HOLD: "Pending",
+  AS_IT_IS: "As it is",
 };
 
 function SortButton({
@@ -110,9 +120,6 @@ export default function DefectsTable({
                 />
               </th>
               <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                QC Status
-              </th>
-              <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
                 Date Fixed
               </th>
             </tr>
@@ -120,7 +127,7 @@ export default function DefectsTable({
           <tbody className="bg-white divide-y divide-slate-200">
             {isLoading ? (
               <tr>
-                <td colSpan={7} className="px-6 py-8 text-center">
+                <td colSpan={6} className="px-6 py-8 text-center">
                   <div className="flex items-center justify-center gap-3">
                     <div className="animate-spin rounded-full h-6 w-6 border-2 border-slate-300 border-t-blue-500"></div>
                     <span className="text-slate-600 font-medium">Loading data...</span>
@@ -130,11 +137,11 @@ export default function DefectsTable({
             ) : defects.length === 0 ? (
               <tr>
                 <td
-                  colSpan={7}
+                  colSpan={6}
                   className="px-6 py-12 text-center text-slate-500"
                 >
                   <div className="flex flex-col items-center gap-2">
-                    <span className="text-2xl">📭</span>
+                    <HiInbox className="text-2xl" />
                     <p className="font-medium">No defects found</p>
                     <p className="text-xs text-slate-400">Try adjusting your filters</p>
                   </div>
@@ -167,11 +174,8 @@ export default function DefectsTable({
                         STATUS_COLORS[defect.status]
                       }`}
                     >
-                      {defect.status}
+                      {STATUS_LABELS[defect.status] ?? defect.status}
                     </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
-                    {defect.qcStatusBbt}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
                     {defect.dateFixed ? formatDate(defect.dateFixed) : <span className="text-slate-400">—</span>}

@@ -1,7 +1,6 @@
 // Type definitions for Defect
 export type Severity = "CRITICAL" | "HIGH" | "MEDIUM" | "LOW";
-export type Status = "OPEN" | "IN_PROGRESS" | "CLOSED" | "ON_HOLD";
-export type QCStatusBBT = "PASSED" | "FAILED" | "PENDING" | "REJECTED";
+export type Status = "OPEN" | "IN_PROGRESS" | "CLOSED" | "ON_HOLD" | "AS_IT_IS";
 
 export interface Defect {
     id: string;
@@ -13,7 +12,7 @@ export interface Defect {
     priority: string;
     status: Status;
     dateFixed: Date | null;
-    qcStatusBbt: QCStatusBBT;
+    // qcStatusBbt removed
     createdAt: Date;
 }
 
@@ -30,13 +29,11 @@ export const StatusEnum = {
     IN_PROGRESS: "IN_PROGRESS" as Status,
     CLOSED: "CLOSED" as Status,
     ON_HOLD: "ON_HOLD" as Status,
+    AS_IT_IS: "AS_IT_IS" as Status,
 } as const;
 
 export const QCStatusBBTEnum = {
-    PASSED: "PASSED" as QCStatusBBT,
-    FAILED: "FAILED" as QCStatusBBT,
-    PENDING: "PENDING" as QCStatusBBT,
-    REJECTED: "REJECTED" as QCStatusBBT,
+    // QCStatusBBT removed
 } as const;
 
 export interface DefectFilters {

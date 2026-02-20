@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { Severity, Status, QCStatusBBT } from "./types";
+import { Severity, Status } from "./types";
 
 export const SeverityEnum = z.enum([
     "CRITICAL",
@@ -13,13 +13,7 @@ export const StatusEnum = z.enum([
     "IN_PROGRESS",
     "CLOSED",
     "ON_HOLD",
-] as const);
-
-export const QCStatusBBTEnum = z.enum([
-    "PASSED",
-    "FAILED",
-    "PENDING",
-    "REJECTED",
+    "AS_IT_IS",
 ] as const);
 
 export const CreateDefectSchema = z.object({
@@ -31,7 +25,7 @@ export const CreateDefectSchema = z.object({
     priority: z.string().min(1, "Priority is required"),
     status: StatusEnum,
     dateFixed: z.coerce.date().optional().nullable(),
-    qcStatusBbt: QCStatusBBTEnum,
+    // qcStatusBbt removed per UI requirement
 });
 
 export const CSVRowSchema = z.object({
@@ -53,8 +47,7 @@ export const CSVRowSchema = z.object({
     "Date Fixed": z.string().optional(),
     "Date Fixed ": z.string().optional(),
     "date fixed": z.string().optional(),
-    "QC Status by BBT": z.string().optional(),
-    "qc status by bbt": z.string().optional(),
+    // QC Status column removed from parsing
 }).passthrough(); // Allow other columns to pass through
 
 export type CreateDefectInput = z.infer<typeof CreateDefectSchema>;

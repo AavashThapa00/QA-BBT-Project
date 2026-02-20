@@ -23,7 +23,8 @@ export const Status = {
   OPEN: 'OPEN',
   IN_PROGRESS: 'IN_PROGRESS',
   CLOSED: 'CLOSED',
-  ON_HOLD: 'ON_HOLD'
+  ON_HOLD: 'ON_HOLD',
+  AS_IT_IS: 'AS_IT_IS'
 } as const
 
 export type Status = (typeof Status)[keyof typeof Status]

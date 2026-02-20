@@ -2,6 +2,7 @@
 
 import React, { useState, useCallback, useEffect } from "react";
 import CSVUpload from "@/app/components/uploads/CSVUpload";
+import { HiDownload, HiFolder, HiClipboardList, HiChartBar, HiExclamationCircle } from "react-icons/hi";
 import MetricsCard from "@/app/components/dashboard/MetricsCard";
 import DefectsByModuleChart from "@/app/components/dashboard/DefectsByModuleChart";
 import DefectsBySeverityChart from "@/app/components/dashboard/DefectsBySeverityChart";
@@ -52,6 +53,7 @@ export default function Home() {
     sortBy: "date",
     sortOrder: "desc",
   });
+  const [tableLoading, setTableLoading] = useState(false);
 
   const loadDashboardData = useCallback(
     async (pageNum = 1) => {
@@ -109,6 +111,33 @@ export default function Home() {
     loadDashboardData();
   }, [loadDashboardData]);
 
+  // Fetch only the table data (used for pagination and sort changes)
+  const fetchTableData = useCallback(
+    async (pageNum = 1) => {
+      setTableLoading(true);
+      try {
+        const defectsResponse = await getDefects(filters, {
+          page: pageNum,
+          pageSize: 10,
+          sortBy: state.sortBy,
+          sortOrder: state.sortOrder,
+        });
+
+        setState((prev) => ({
+          ...prev,
+          defects: defectsResponse.defects,
+          currentPage: defectsResponse.page,
+          totalPages: defectsResponse.totalPages,
+        }));
+      } catch (error) {
+        console.error("Failed to load table data:", error);
+      } finally {
+        setTableLoading(false);
+      }
+    },
+    [filters, state.sortBy, state.sortOrder]
+  );
+
   const handleUploadSuccess = (result: UploadResult) => {
     if (result.success && result.inserted > 0) {
       setState((prev) => ({ ...prev, currentPage: 1 }));
@@ -117,7 +146,8 @@ export default function Home() {
   };
 
   const handlePageChange = (newPage: number) => {
-    loadDashboardData(newPage);
+    // Load only the table page to avoid reloading charts and metrics
+    fetchTableData(newPage);
   };
 
   const handleSortChange = (
@@ -125,6 +155,8 @@ export default function Home() {
     sortOrder: "asc" | "desc"
   ) => {
     setState((prev) => ({ ...prev, sortBy, sortOrder, currentPage: 1 }));
+    // Refresh only the table when sort changes
+    fetchTableData(1);
   };
 
   const handleExportCSV = () => {
@@ -147,9 +179,10 @@ export default function Home() {
             <button
               onClick={handleExportCSV}
               disabled={state.defects.length === 0 || state.isLoading}
-              className="px-6 py-2.5 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-medium rounded-lg hover:from-green-600 hover:to-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg transition-all"
+              className="px-4 py-2.5 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-medium rounded-lg hover:from-green-600 hover:to-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg transition-all flex items-center gap-2"
             >
-              ↓ Export CSV
+              <HiDownload className="w-4 h-4" />
+              <span>Export CSV</span>
             </button>
           </div>
         </div>
@@ -161,7 +194,7 @@ export default function Home() {
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition-shadow">
           <div className="p-6 sm:p-8">
             <h2 className="text-xl font-semibold text-slate-900 mb-6 flex items-center gap-2">
-              <span className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center text-sm">📁</span>
+              <span className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center text-sm"><HiFolder className="w-5 h-5" /></span>
               Upload Defects Data
             </h2>
             <CSVUpload onUploadSuccess={handleUploadSuccess} />
@@ -184,10 +217,10 @@ export default function Home() {
           </div>
         ) : state.metrics ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <MetricsCard title="Total Defects" value={state.metrics.totalDefects} icon="📊" />
-            <MetricsCard title="Open Defects" value={state.metrics.openDefects} icon="🔴" />
-            <MetricsCard title="Closed Defects" value={state.metrics.closedDefects} icon="✓" />
-            <MetricsCard title="Critical Severity" value={state.metrics.highSeverityCount} icon="⚠️" />
+            <MetricsCard title="Total Defects" value={state.metrics.totalDefects} icon={<HiChartBar />} />
+            <MetricsCard title="Open Defects" value={state.metrics.openDefects} icon={<HiExclamationCircle />} />
+            <MetricsCard title="Closed Defects" value={state.metrics.closedDefects} icon={<HiClipboardList />} />
+            <MetricsCard title="Critical Severity" value={state.metrics.highSeverityCount} icon={<HiExclamationCircle />} />
           </div>
         ) : null}
 
@@ -233,7 +266,7 @@ export default function Home() {
         {/* Data Table */}
         <div>
           <h2 className="text-xl font-semibold text-slate-900 mb-4 flex items-center gap-2">
-            <span className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center text-sm">📋</span>
+            <span className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center text-sm"><HiClipboardList className="w-5 h-5" /></span>
             Defects List
           </h2>
           {state.isLoading ? (
@@ -241,7 +274,7 @@ export default function Home() {
           ) : (
             <DefectsTable
               defects={state.defects}
-              isLoading={state.isLoading}
+              isLoading={tableLoading}
               currentPage={state.currentPage}
               totalPages={state.totalPages}
               onPageChange={handlePageChange}

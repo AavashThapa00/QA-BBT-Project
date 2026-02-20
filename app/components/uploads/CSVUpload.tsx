@@ -1,11 +1,13 @@
 "use client";
 
 import React, { useState, useRef } from "react";
+import { HiCheckCircle, HiXCircle, HiClipboardList } from "react-icons/hi";
 import { uploadCSV, UploadResult } from "@/app/actions/csv";
 
 interface CSVUploadProps {
   onUploadSuccess?: (result: UploadResult) => void;
   onUploadError?: (error: string) => void;
+  onModulesSelected?: (modules: string[]) => void;
 }
 
 export default function CSVUpload({
@@ -14,6 +16,8 @@ export default function CSVUpload({
 }: CSVUploadProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<UploadResult | null>(null);
+  const [modulesInFile, setModulesInFile] = useState<string[]>([]);
+  const [selectedModules, setSelectedModules] = useState<Record<string, boolean>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = async (
@@ -35,6 +39,17 @@ export default function CSVUpload({
       const text = await file.text();
       const uploadResult = await uploadCSV(text);
       setResult(uploadResult);
+
+        // populate modules list if present
+        if (uploadResult.modules && uploadResult.modules.length > 0) {
+          setModulesInFile(uploadResult.modules);
+          const sel: Record<string, boolean> = {};
+          uploadResult.modules.forEach((m) => (sel[m] = false));
+          setSelectedModules(sel);
+        } else {
+          setModulesInFile([]);
+          setSelectedModules({});
+        }
 
       if (uploadResult.success) {
         onUploadSuccess?.(uploadResult);
@@ -104,20 +119,22 @@ export default function CSVUpload({
         <div className={`p-4 rounded-xl border-2 ${result.success ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"}`}>
           <div className="flex items-start gap-3">
             <div className={`text-xl mt-0.5 ${result.success ? "text-green-600" : "text-red-600"}`}>
-              {result.success ? "✓" : "✕"}
+              {result.success ? <HiCheckCircle /> : <HiXCircle />}
             </div>
             <div className="flex-1">
               <div className={`font-semibold text-sm ${result.success ? "text-green-900" : "text-red-900"}`}>
                 {result.message}
               </div>
               {result.inserted > 0 && (
-                <div className="text-green-700 text-sm mt-2 font-medium">
-                  ✓ Successfully inserted {result.inserted} defect(s)
+                <div className="text-green-700 text-sm mt-2 font-medium flex items-center gap-2">
+                  <HiCheckCircle className="w-4 h-4" />
+                  <span>Successfully inserted {result.inserted} defect(s)</span>
                 </div>
               )}
               {result.skipped > 0 && (
-                <div className="text-amber-700 text-sm mt-1 font-medium">
-                  ⚠ Skipped {result.skipped} row(s)
+                <div className="text-amber-700 text-sm mt-1 font-medium flex items-center gap-2">
+                  <HiXCircle className="w-4 h-4" />
+                  <span>Skipped {result.skipped} row(s)</span>
                 </div>
               )}
               {result.errors.length > 0 && (
@@ -137,9 +154,52 @@ export default function CSVUpload({
                       ))}
                     </ul>
                   </div>
-                  <p className="text-xs text-red-600 mt-2 italic">
-                    📋 Review the errors above to fix your CSV and try uploading again
+                  <p className="text-xs text-red-600 mt-2 italic flex items-center gap-2">
+                    <HiClipboardList className="w-4 h-4" />
+                    <span>Review the errors above to fix your CSV and try uploading again</span>
                   </p>
+                </div>
+              )}
+              {modulesInFile.length > 0 && (
+                <div className="mt-4">
+                  <p className="text-sm font-semibold text-slate-800 mb-2">Modules found in CSV ({modulesInFile.length}):</p>
+                  <div className="flex flex-wrap gap-2">
+                    {modulesInFile.map((m) => (
+                      <label key={m} className={`px-2 py-1 rounded-lg border ${selectedModules[m] ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-700 border-slate-200'} cursor-pointer text-sm` }>
+                        <input
+                          type="checkbox"
+                          className="hidden"
+                          checked={!!selectedModules[m]}
+                          onChange={() => {
+                            setSelectedModules((prev) => ({ ...prev, [m]: !prev[m] }));
+                          }}
+                        />
+                        <span>{m}</span>
+                      </label>
+                    ))}
+                  </div>
+                  <div className="mt-3 flex items-center gap-3">
+                    <button
+                      className="px-3 py-1 text-sm bg-blue-600 text-white rounded-lg"
+                      onClick={() => {
+                        const selected = Object.keys(selectedModules).filter((k) => selectedModules[k]);
+                        // notify parent
+                        onModulesSelected?.(selected);
+                      }}
+                    >
+                      Apply Modules
+                    </button>
+                    <button
+                      className="px-3 py-1 text-sm bg-slate-50 border rounded-lg"
+                      onClick={() => {
+                        const all: Record<string, boolean> = {};
+                        modulesInFile.forEach((m) => (all[m] = true));
+                        setSelectedModules(all);
+                      }}
+                    >
+                      Select All
+                    </button>
+                  </div>
                 </div>
               )}
             </div>

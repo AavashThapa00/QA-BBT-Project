@@ -19,6 +19,7 @@ enum Status {
   IN_PROGRESS
   CLOSED
   ON_HOLD
+  AS_IT_IS
 }
 
 enum QCStatusBBT {

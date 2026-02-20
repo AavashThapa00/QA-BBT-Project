@@ -29,8 +29,13 @@ export async function getDefectMetrics(filters?: DefectFilters): Promise<{
 
         const [totalResult, openResult, closedResult, highSeverityResult] = await Promise.all([
             db.query<{ count: string }>(buildCountQuery(), baseParams),
-            db.query<{ count: string }>(buildCountQuery(`status = $${paramOffset + 1}`), [...baseParams, StatusEnum.OPEN]),
-            db.query<{ count: string }>(buildCountQuery(`status = $${paramOffset + 1}`), [...baseParams, StatusEnum.CLOSED]),
+            // openDefects should count only Pending (ON_HOLD)
+            db.query<{ count: string }>(buildCountQuery(`status = $${paramOffset + 1}`), [...baseParams, StatusEnum.ON_HOLD]),
+            // closedDefects should include Fixed (CLOSED) and As it is (AS_IT_IS)
+            db.query<{ count: string }>(
+                buildCountQuery(`status IN ($${paramOffset + 1}, $${paramOffset + 2})`),
+                [...baseParams, StatusEnum.CLOSED, StatusEnum.AS_IT_IS]
+            ),
             db.query<{ count: string }>(buildCountQuery(`severity = $${paramOffset + 1}`), [...baseParams, SeverityEnum.CRITICAL]),
         ]);
 

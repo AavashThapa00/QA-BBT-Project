@@ -3,7 +3,7 @@
 import { db } from "@/lib/prisma";
 import { CreateDefectSchema, CSVRowSchema } from "@/lib/validators";
 import { parseCSVDate, normalizeEnumValue, extractColumnValue } from "@/lib/utils";
-import { Severity, Status, QCStatusBBT, SeverityEnum, StatusEnum, QCStatusBBTEnum } from "@/lib/types";
+import { Severity, Status, SeverityEnum, StatusEnum } from "@/lib/types";
 import { ZodError } from "zod";
 import { randomUUID } from "crypto";
 
@@ -16,6 +16,7 @@ export interface UploadResult {
         row: number;
         reason: string;
     }>;
+    modules?: string[];
 }
 
 export async function uploadCSV(csvData: string): Promise<UploadResult> {
@@ -26,6 +27,7 @@ export async function uploadCSV(csvData: string): Promise<UploadResult> {
     try {
         // Parse CSV properly handling quoted multiline cells
         const rows = parseCSVContent(csvData);
+        const modulesSet = new Set<string>();
 
         if (rows.length < 2) {
             return {
@@ -42,8 +44,9 @@ export async function uploadCSV(csvData: string): Promise<UploadResult> {
         for (let i = 1; i < rows.length; i++) {
             const values = rows[i];
 
-            // Skip rows where all values are empty
-            if (values.every(v => !v || v.trim() === "")) {
+            // Skip rows where all values are empty or whitespace-only
+            const hasAnyData = values.some(v => v && v.trim().length > 0);
+            if (!hasAnyData) {
                 continue;
             }
 
@@ -70,8 +73,12 @@ export async function uploadCSV(csvData: string): Promise<UploadResult> {
                     )
                 );
 
-                // Use "N/A" if date reported is missing
-                const finalDateReported = dateReported || "N/A";
+                // If Date Reported is missing, silently ignore this row (per user request)
+                if (!dateReported) {
+                    continue;
+                }
+
+                const finalDateReported = dateReported;
 
                 const module = extractColumnValue(
                     validatedRow,
@@ -83,6 +90,10 @@ export async function uploadCSV(csvData: string): Promise<UploadResult> {
                         "Component",
                     ]
                 );
+
+                if (module && module.trim().length > 0) {
+                    modulesSet.add(module.trim());
+                }
 
                 // Use "Unknown" if module is missing
                 const finalModule = module || "Unknown";
@@ -149,7 +160,9 @@ export async function uploadCSV(csvData: string): Promise<UploadResult> {
                         status = StatusEnum.CLOSED;
                     } else if (lowerStatus.includes("progress") || lowerStatus.includes("in progress")) {
                         status = StatusEnum.IN_PROGRESS;
-                    } else if (lowerStatus.includes("hold") || lowerStatus === "as it is" || lowerStatus === "pending") {
+                    } else if (lowerStatus === "as it is") {
+                        status = StatusEnum.AS_IT_IS;
+                    } else if (lowerStatus.includes("hold") || lowerStatus === "pending") {
                         status = StatusEnum.ON_HOLD;
                     } else {
                         const normalized = normalizeEnumValue(statusStr, Object.values(StatusEnum));
@@ -171,30 +184,8 @@ export async function uploadCSV(csvData: string): Promise<UploadResult> {
                 );
                 const dateFixed = dateFixedStr ? parseCSVDate(dateFixedStr) : null;
 
-                const qcStatusStr = extractColumnValue(
-                    validatedRow,
-                    [
-                        "QC Status by BBT",
-                        "qc status by bbt",
-                        "qcStatusBBT",
-                        "qc_status_bbt",
-                    ]
-                );
-
-                // Map TRUE/FALSE to QC status
-                let qcStatusBbt: QCStatusBBT;
-                if (qcStatusStr) {
-                    const lowerQC = qcStatusStr.toLowerCase().trim();
-                    if (lowerQC === "true") {
-                        qcStatusBbt = QCStatusBBTEnum.PASSED;
-                    } else if (lowerQC === "false") {
-                        qcStatusBbt = QCStatusBBTEnum.FAILED;
-                    } else {
-                        qcStatusBbt = (normalizeEnumValue(qcStatusStr, Object.values(QCStatusBBTEnum)) as QCStatusBBT) || QCStatusBBTEnum.PENDING;
-                    }
-                } else {
-                    qcStatusBbt = QCStatusBBTEnum.PENDING; // Default to PENDING
-                }
+                // QC Status by BBT removed from parsing; use DB default value
+                const qcStatusBbt = 'PENDING';
 
                 // Final validation with Zod schema
                 const defectData = {
@@ -206,7 +197,6 @@ export async function uploadCSV(csvData: string): Promise<UploadResult> {
                     priority,
                     status,
                     dateFixed,
-                    qcStatusBbt,
                 };
 
                 CreateDefectSchema.parse(defectData);
@@ -272,6 +262,7 @@ export async function uploadCSV(csvData: string): Promise<UploadResult> {
             inserted,
             skipped,
             errors: errors, // Return ALL errors, not just first 10
+            modules: Array.from(modulesSet).sort(),
         };
     } catch (error) {
         return {
