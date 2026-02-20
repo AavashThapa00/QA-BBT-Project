@@ -1,0 +1,48 @@
+generator client {
+  provider = "prisma-client"
+  output   = "./generated"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Severity {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum Status {
+  OPEN
+  IN_PROGRESS
+  CLOSED
+  ON_HOLD
+}
+
+enum QCStatusBBT {
+  PASSED
+  FAILED
+  PENDING
+  REJECTED
+}
+
+model Defect {
+  id              String        @id @default(uuid())
+  dateReported    DateTime      @db.Date
+  module          String        @db.VarChar(255)
+  expectedResult  String        @db.Text
+  actualResult    String        @db.Text
+  severity        Severity
+  priority        String        @db.VarChar(100)
+  status          Status
+  dateFixed       DateTime?     @db.Date
+  qcStatusBbt     QCStatusBBT
+  createdAt       DateTime      @default(now())
+
+  @@index([dateReported])
+  @@index([module])
+  @@index([severity])
+  @@index([status])
+}
