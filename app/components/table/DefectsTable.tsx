@@ -48,11 +48,11 @@ function SortButton({
   return (
     <button
       onClick={() => onClick(column, nextOrder)}
-      className="flex items-center gap-1 hover:text-blue-600 font-semibold"
+      className="flex items-center gap-2 hover:text-blue-600 font-semibold hover:bg-slate-100 px-2 py-1 rounded transition-colors"
     >
       {label}
       {isActive && (
-        <span className="text-sm">
+        <span className="text-xs font-bold">
           {nextOrder === "asc" ? "↑" : "↓"}
         </span>
       )}
@@ -71,12 +71,12 @@ export default function DefectsTable({
   onSortChange,
 }: DefectsTableProps) {
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden">
+    <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-md transition-shadow">
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+        <table className="min-w-full divide-y divide-slate-200">
+          <thead className="bg-gradient-to-r from-slate-50 to-slate-100">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+              <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
                 <SortButton
                   column="date"
                   label="Date Reported"
@@ -85,10 +85,10 @@ export default function DefectsTable({
                   onClick={onSortChange || (() => {})}
                 />
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+              <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
                 Module
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+              <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
                 <SortButton
                   column="severity"
                   label="Severity"
@@ -97,10 +97,10 @@ export default function DefectsTable({
                   onClick={onSortChange || (() => {})}
                 />
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+              <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
                 Priority
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+              <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
                 <SortButton
                   column="status"
                   label="Status"
@@ -109,20 +109,21 @@ export default function DefectsTable({
                   onClick={onSortChange || (() => {})}
                 />
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+              <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
                 QC Status
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+              <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
                 Date Fixed
               </th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="bg-white divide-y divide-slate-200">
             {isLoading ? (
               <tr>
-                <td colSpan={7} className="px-6 py-4 text-center">
-                  <div className="flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+                <td colSpan={7} className="px-6 py-8 text-center">
+                  <div className="flex items-center justify-center gap-3">
+                    <div className="animate-spin rounded-full h-6 w-6 border-2 border-slate-300 border-t-blue-500"></div>
+                    <span className="text-slate-600 font-medium">Loading data...</span>
                   </div>
                 </td>
               </tr>
@@ -130,46 +131,50 @@ export default function DefectsTable({
               <tr>
                 <td
                   colSpan={7}
-                  className="px-6 py-4 text-center text-gray-500"
+                  className="px-6 py-12 text-center text-slate-500"
                 >
-                  No defects found
+                  <div className="flex flex-col items-center gap-2">
+                    <span className="text-2xl">📭</span>
+                    <p className="font-medium">No defects found</p>
+                    <p className="text-xs text-slate-400">Try adjusting your filters</p>
+                  </div>
                 </td>
               </tr>
             ) : (
               defects.map((defect) => (
-                <tr key={defect.id} className="hover:bg-gray-50 transition">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {formatDate(defect.dateReported)}
+                <tr key={defect.id} className="hover:bg-blue-50 transition-colors">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 font-medium">
+                    {defect.dateReported ? formatDate(defect.dateReported) : "N/A"}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {defect.module}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
+                    <span className="px-3 py-1.5 bg-slate-100 rounded-lg text-xs font-medium">{defect.module}</span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      className={`inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold ${
                         SEVERITY_COLORS[defect.severity]
                       }`}
                     >
                       {defect.severity}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 font-medium">
                     {defect.priority}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      className={`inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold ${
                         STATUS_COLORS[defect.status]
                       }`}
                     >
                       {defect.status}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
                     {defect.qcStatusBbt}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {defect.dateFixed ? formatDate(defect.dateFixed) : "-"}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
+                    {defect.dateFixed ? formatDate(defect.dateFixed) : <span className="text-slate-400">—</span>}
                   </td>
                 </tr>
               ))
@@ -179,24 +184,24 @@ export default function DefectsTable({
       </div>
 
       {/* Pagination */}
-      <div className="bg-white px-6 py-4 border-t border-gray-200 flex items-center justify-between">
-        <div className="text-sm text-gray-600">
-          Page {currentPage} of {totalPages}
+      <div className="bg-gradient-to-r from-slate-50 to-slate-100 px-6 py-4 border-t border-slate-200 flex items-center justify-between">
+        <div className="text-sm text-slate-600 font-medium">
+          Page <span className="font-bold text-slate-900">{currentPage}</span> of <span className="font-bold text-slate-900">{totalPages}</span>
         </div>
         <div className="flex gap-2">
           <button
             onClick={() => onPageChange(currentPage - 1)}
             disabled={currentPage === 1 || isLoading}
-            className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+            className="px-4 py-2.5 border border-slate-300 rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-100 hover:border-slate-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            Previous
+            ← Previous
           </button>
           <button
             onClick={() => onPageChange(currentPage + 1)}
             disabled={currentPage === totalPages || isLoading}
-            className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+            className="px-4 py-2.5 border border-slate-300 rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-100 hover:border-slate-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            Next
+            Next →
           </button>
         </div>
       </div>

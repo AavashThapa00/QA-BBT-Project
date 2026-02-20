@@ -1,16 +1,17 @@
 import { Defect, Severity, DefectWithResolutionTime } from "./types";
 
 export function calculateResolutionDays(defect: Defect): number | undefined {
-    if (!defect.dateFixed) return undefined;
+    if (!defect.dateFixed || !defect.dateReported) return undefined;
     const diffTime = Math.abs(
-        defect.dateFixed.getTime() - defect.dateReported.getTime()
+        defect.dateFixed.getTime() - (defect.dateReported as Date).getTime()
     );
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 }
 
 export function calculateDaysOpen(defect: Defect): number {
+    if (!defect.dateReported) return 0;
     const diffTime = Math.abs(
-        new Date().getTime() - defect.dateReported.getTime()
+        new Date().getTime() - (defect.dateReported as Date).getTime()
     );
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 }
@@ -25,7 +26,10 @@ export function enrichDefectsWithCalculations(
     }));
 }
 
-export function formatDate(date: Date): string {
+export function formatDate(date: Date | string | null): string {
+    if (!date || date === "N/A") {
+        return "N/A";
+    }
     return new Date(date).toLocaleDateString("en-US", {
         year: "numeric",
         month: "short",

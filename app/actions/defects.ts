@@ -114,7 +114,12 @@ export async function getDefectsTrend(
     }>
 > {
     const whereClause = buildWhereClause(filters);
-    const sqlWhere = whereClause.clause ? `WHERE ${whereClause.clause}` : "";
+    const conditions: string[] = [];
+    if (whereClause.clause) {
+        conditions.push(whereClause.clause);
+    }
+    conditions.push('"dateReported" IS NOT NULL');
+    const sqlWhere = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
 
     const dateFormat = groupBy === "month" ? "YYYY-MM" : "YYYY-MM-DD";
     const query = `

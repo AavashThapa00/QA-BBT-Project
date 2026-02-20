@@ -23,7 +23,7 @@ export const QCStatusBBTEnum = z.enum([
 ] as const);
 
 export const CreateDefectSchema = z.object({
-    dateReported: z.coerce.date(),
+    dateReported: z.union([z.coerce.date(), z.literal("N/A")]),
     module: z.string().min(1, "Module is required"),
     expectedResult: z.string().min(1, "Expected result is required"),
     actualResult: z.string().min(1, "Actual result is required"),

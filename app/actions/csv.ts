@@ -70,8 +70,8 @@ export async function uploadCSV(csvData: string): Promise<UploadResult> {
                     )
                 );
 
-                // Use current date if date reported is missing
-                const finalDateReported = dateReported || new Date();
+                // Use "N/A" if date reported is missing
+                const finalDateReported = dateReported || "N/A";
 
                 const module = extractColumnValue(
                     validatedRow,
@@ -211,14 +211,19 @@ export async function uploadCSV(csvData: string): Promise<UploadResult> {
 
                 CreateDefectSchema.parse(defectData);
 
-                // Check for duplicate based on date and module
+                // Check for true duplicate based on date, module, expected result, and actual result
                 const duplicateCheck = await db.query(
-                    `SELECT id FROM defect WHERE "dateReported" = $1 AND module = $2 LIMIT 1`,
-                    [finalDateReported, finalModule]
+                    `SELECT id FROM defect WHERE 
+                     "dateReported" = $1 AND 
+                     module = $2 AND 
+                     "expectedResult" = $3 AND 
+                     "actualResult" = $4 
+                     LIMIT 1`,
+                    [finalDateReported === "N/A" ? null : finalDateReported, finalModule, expectedResult || "N/A", actualResult || "N/A"]
                 );
 
                 if (duplicateCheck.rows.length > 0) {
-                    // Skip duplicate
+                    // Skip true duplicate
                     skipped++;
                     continue;
                 }
@@ -232,7 +237,7 @@ export async function uploadCSV(csvData: string): Promise<UploadResult> {
                      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
                     [
                         id,
-                        finalDateReported,
+                        finalDateReported === "N/A" ? null : finalDateReported,
                         finalModule,
                         expectedResult || "N/A",
                         actualResult || "N/A",
@@ -266,7 +271,7 @@ export async function uploadCSV(csvData: string): Promise<UploadResult> {
             message: `CSV upload completed. Inserted: ${inserted}, Skipped: ${skipped}`,
             inserted,
             skipped,
-            errors: errors.slice(0, 10), // Return only first 10 errors
+            errors: errors, // Return ALL errors, not just first 10
         };
     } catch (error) {
         return {

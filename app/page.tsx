@@ -8,6 +8,7 @@ import DefectsBySeverityChart from "@/app/components/dashboard/DefectsBySeverity
 import DefectsTrendChart from "@/app/components/dashboard/DefectsTrendChart";
 import DefectsTable from "@/app/components/table/DefectsTable";
 import FilterPanel from "@/app/components/filters/FilterPanel";
+import { SkeletonCard, SkeletonChart, SkeletonTable } from "@/app/components/common/SkeletonLoader";
 import { UploadResult } from "@/app/actions/csv";
 import {
   getDefectMetrics,
@@ -132,30 +133,36 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-4xl font-bold text-gray-900">
-              QA/BBT Defect Analytics
-            </h1>
-            <p className="text-gray-600 mt-1">Dashboard</p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+      {/* Header Section */}
+      <div className="bg-white border-b border-slate-200 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
+                QA/BBT Defect Analytics
+              </h1>
+              <p className="text-slate-500 mt-2 text-sm">Production-ready defect management platform</p>
+            </div>
+            <button
+              onClick={handleExportCSV}
+              disabled={state.defects.length === 0 || state.isLoading}
+              className="px-6 py-2.5 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-medium rounded-lg hover:from-green-600 hover:to-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg transition-all"
+            >
+              ↓ Export CSV
+            </button>
           </div>
-          <button
-            onClick={handleExportCSV}
-            disabled={state.defects.length === 0 || state.isLoading}
-            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
-          >
-            Export CSV
-          </button>
         </div>
+      </div>
 
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         {/* CSV Upload */}
-        <div className="bg-white rounded-lg shadow-md">
-          <div className="p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">
-              Upload Defects
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition-shadow">
+          <div className="p-6 sm:p-8">
+            <h2 className="text-xl font-semibold text-slate-900 mb-6 flex items-center gap-2">
+              <span className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center text-sm">📁</span>
+              Upload Defects Data
             </h2>
             <CSVUpload onUploadSuccess={handleUploadSuccess} />
           </div>
@@ -168,52 +175,81 @@ export default function Home() {
           isLoading={state.isLoading}
         />
 
-        {/* Metrics */}
-        {state.metrics && (
+        {/* Metrics Grid */}
+        {state.isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[...Array(4)].map((_, i) => (
+              <SkeletonCard key={i} />
+            ))}
+          </div>
+        ) : state.metrics ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <MetricsCard title="Total Defects" value={state.metrics.totalDefects} icon="📊" />
             <MetricsCard title="Open Defects" value={state.metrics.openDefects} icon="🔴" />
             <MetricsCard title="Closed Defects" value={state.metrics.closedDefects} icon="✓" />
             <MetricsCard title="Critical Severity" value={state.metrics.highSeverityCount} icon="⚠️" />
           </div>
-        )}
+        ) : null}
 
-        {/* Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <DefectsByModuleChart data={state.defectsByModule} />
-          <DefectsBySeverityChart data={state.defectsBySeverity} />
+        {/* Charts Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {state.isLoading ? (
+            <>
+              <SkeletonChart />
+              <SkeletonChart />
+            </>
+          ) : (
+            <>
+              <DefectsByModuleChart data={state.defectsByModule} />
+              <DefectsBySeverityChart data={state.defectsBySeverity} />
+            </>
+          )}
         </div>
 
         {/* Trend Chart */}
         <div>
-          <DefectsTrendChart data={state.defectsTrend} />
+          {state.isLoading ? (
+            <SkeletonChart />
+          ) : (
+            <DefectsTrendChart data={state.defectsTrend} />
+          )}
         </div>
 
         {/* Additional Metrics */}
-        {state.averageResolutionTime > 0 && (
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+        {state.isLoading ? (
+          <SkeletonCard />
+        ) : state.averageResolutionTime > 0 ? (
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8 hover:shadow-md transition-shadow">
+            <h3 className="text-sm font-semibold text-slate-600 uppercase tracking-wide mb-3">
               Average Resolution Time
             </h3>
-            <p className="text-3xl font-bold text-blue-600">
-              {state.averageResolutionTime} days
+            <p className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
+              {state.averageResolutionTime}
             </p>
+            <p className="text-slate-500 text-sm mt-2">days to resolve defects</p>
           </div>
-        )}
+        ) : null}
 
         {/* Data Table */}
         <div>
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Defects List</h2>
-          <DefectsTable
-            defects={state.defects}
-            isLoading={state.isLoading}
-            currentPage={state.currentPage}
-            totalPages={state.totalPages}
-            onPageChange={handlePageChange}
-            sortBy={state.sortBy}
-            sortOrder={state.sortOrder}
-            onSortChange={handleSortChange}
-          />
+          <h2 className="text-xl font-semibold text-slate-900 mb-4 flex items-center gap-2">
+            <span className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center text-sm">📋</span>
+            Defects List
+          </h2>
+          {state.isLoading ? (
+            <SkeletonTable />
+          ) : (
+            <DefectsTable
+              defects={state.defects}
+              isLoading={state.isLoading}
+              currentPage={state.currentPage}
+              totalPages={state.totalPages}
+              onPageChange={handlePageChange}
+              sortBy={state.sortBy}
+              sortOrder={state.sortOrder}
+              onSortChange={handleSortChange}
+            />
+          )}
         </div>
       </div>
     </div>

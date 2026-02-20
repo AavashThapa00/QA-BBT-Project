@@ -5,7 +5,7 @@ export type QCStatusBBT = "PASSED" | "FAILED" | "PENDING" | "REJECTED";
 
 export interface Defect {
     id: string;
-    dateReported: Date;
+    dateReported: Date | null;
     module: string;
     expectedResult: string;
     actualResult: string;

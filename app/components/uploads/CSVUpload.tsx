@@ -59,11 +59,11 @@ export default function CSVUpload({
       <div className="flex items-center justify-center w-full">
         <label
           htmlFor="csv-upload"
-          className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition"
+          className="flex flex-col items-center justify-center w-full h-40 border-2 border-slate-300 border-dashed rounded-xl cursor-pointer bg-gradient-to-br from-slate-50 to-slate-100 hover:from-blue-50 hover:to-cyan-50 hover:border-blue-400 transition-all group"
         >
           <div className="flex flex-col items-center justify-center pt-5 pb-6">
             <svg
-              className="w-8 h-8 mb-4 text-gray-500"
+              className="w-10 h-10 mb-4 text-slate-400 group-hover:text-blue-500 transition-colors"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -75,11 +75,11 @@ export default function CSVUpload({
                 d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
               />
             </svg>
-            <p className="mb-2 text-sm text-gray-500">
-              <span className="font-semibold">Click to upload</span> or drag and
-              drop
+            <p className="mb-2 text-sm">
+              <span className="font-semibold text-slate-900 group-hover:text-blue-600 transition-colors">Click to upload</span>
+              <span className="text-slate-500"> or drag and drop</span>
             </p>
-            <p className="text-xs text-gray-500">CSV file from Google Sheets</p>
+            <p className="text-xs text-slate-500">CSV file from Google Sheets (max 50MB)</p>
           </div>
           <input
             ref={fileInputRef}
@@ -94,43 +94,56 @@ export default function CSVUpload({
       </div>
 
       {isLoading && (
-        <div className="flex items-center justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-          <span className="ml-2 text-gray-600">Uploading...</span>
+        <div className="flex items-center justify-center p-4 bg-blue-50 rounded-lg border border-blue-200">
+          <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-200 border-t-blue-500"></div>
+          <span className="ml-3 text-blue-700 font-medium">Processing files...</span>
         </div>
       )}
 
       {result && (
-        <div className={`p-4 rounded-lg ${result.success ? "bg-green-50 border border-green-200" : "bg-red-50 border border-red-200"}`}>
-          <div
-            className={`font-semibold ${result.success ? "text-green-800" : "text-red-800"}`}
-          >
-            {result.message}
+        <div className={`p-4 rounded-xl border-2 ${result.success ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"}`}>
+          <div className="flex items-start gap-3">
+            <div className={`text-xl mt-0.5 ${result.success ? "text-green-600" : "text-red-600"}`}>
+              {result.success ? "✓" : "✕"}
+            </div>
+            <div className="flex-1">
+              <div className={`font-semibold text-sm ${result.success ? "text-green-900" : "text-red-900"}`}>
+                {result.message}
+              </div>
+              {result.inserted > 0 && (
+                <div className="text-green-700 text-sm mt-2 font-medium">
+                  ✓ Successfully inserted {result.inserted} defect(s)
+                </div>
+              )}
+              {result.skipped > 0 && (
+                <div className="text-amber-700 text-sm mt-1 font-medium">
+                  ⚠ Skipped {result.skipped} row(s)
+                </div>
+              )}
+              {result.errors.length > 0 && (
+                <div className="mt-4">
+                  <p className="text-sm font-semibold text-red-800 mb-2">
+                    ❌ Validation Errors ({result.errors.length} total):
+                  </p>
+                  <div className="bg-white rounded-lg border border-red-200 max-h-64 overflow-y-auto">
+                    <ul className="divide-y divide-red-100">
+                      {result.errors.map((error, index) => (
+                        <li key={index} className="px-3 py-2 hover:bg-red-50 transition-colors">
+                          <div className="flex items-start gap-2">
+                            <span className="font-bold text-red-700 text-xs mt-0.5 min-w-fit">Row {error.row}</span>
+                            <span className="text-xs text-red-700 flex-1">{error.reason}</span>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <p className="text-xs text-red-600 mt-2 italic">
+                    📋 Review the errors above to fix your CSV and try uploading again
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
-          {result.inserted > 0 && (
-            <div className="text-green-700 text-sm mt-1">
-              ✓ Successfully inserted {result.inserted} defect(s)
-            </div>
-          )}
-          {result.skipped > 0 && (
-            <div className="text-yellow-700 text-sm mt-1">
-              ⚠ Skipped {result.skipped} row(s)
-            </div>
-          )}
-          {result.errors.length > 0 && (
-            <div className="mt-3">
-              <p className="text-sm font-semibold text-red-700">
-                Errors (showing first 10):
-              </p>
-              <ul className="mt-2 space-y-1 text-sm text-red-700 max-h-40 overflow-y-auto">
-                {result.errors.map((error, index) => (
-                  <li key={index} className="text-xs">
-                    Row {error.row}: {error.reason}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
         </div>
       )}
     </div>
