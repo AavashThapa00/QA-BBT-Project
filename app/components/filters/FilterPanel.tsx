@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { HiFilter, HiX } from "react-icons/hi";
+import { HiFilter, HiX, HiSearch } from "react-icons/hi";
 import type { Severity, Status } from "@/lib/types";
 import { SeverityEnum, StatusEnum, type DefectFilters } from "@/lib/types";
 import { formatDateForInput } from "@/lib/utils";
@@ -17,15 +17,28 @@ export default function FilterPanel({
   availableModules = [],
   isLoading = false,
 }: FilterPanelProps) {
+  const [searchInput, setSearchInput] = useState<string>("");
+  const [debouncedSearch, setDebouncedSearch] = useState<string>("");
   const [dateFrom, setDateFrom] = useState<string>("");
   const [dateTo, setDateTo] = useState<string>("");
   const [severities, setSeverities] = useState<string[]>([]);
   const [modules, setModules] = useState<string[]>([]);
   const [statuses, setStatuses] = useState<string[]>([]);
 
+  // Debounce search input with 500ms delay
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchInput);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
   useEffect(() => {
     const filters: DefectFilters = {};
 
+    // Only search if debouncedSearch has 3 or more characters
+    if (debouncedSearch && debouncedSearch.length >= 3) filters.searchTerm = debouncedSearch;
     if (dateFrom) filters.dateFrom = new Date(dateFrom);
     if (dateTo) filters.dateTo = new Date(dateTo);
     if (severities.length > 0) filters.severity = severities as Severity[];
@@ -33,7 +46,7 @@ export default function FilterPanel({
     if (statuses.length > 0) filters.status = statuses as Status[];
 
     onFiltersChange(filters);
-  }, [dateFrom, dateTo, severities, modules, statuses, onFiltersChange]);
+  }, [debouncedSearch, dateFrom, dateTo, severities, modules, statuses, onFiltersChange]);
 
   const handleSeverityToggle = (severity: string) => {
     setSeverities((prev) =>
@@ -60,6 +73,8 @@ export default function FilterPanel({
   };
 
   const clearFilters = () => {
+    setSearchInput("");
+    setDebouncedSearch("");
     setDateFrom("");
     setDateTo("");
     setSeverities([]);
@@ -74,7 +89,7 @@ export default function FilterPanel({
           <span className="w-8 h-8 rounded-lg bg-cyan-100 text-cyan-600 flex items-center justify-center text-sm"><HiFilter className="w-5 h-5"/></span>
           Filter Results
         </h3>
-        {(dateFrom || dateTo || severities.length > 0 || modules.length > 0 || statuses.length > 0) && (
+        {((debouncedSearch && debouncedSearch.length >= 3) || dateFrom || dateTo || severities.length > 0 || modules.length > 0 || statuses.length > 0) && (
           <button
             onClick={clearFilters}
             className="text-xs font-semibold text-red-600 hover:text-red-700 hover:bg-red-50 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-2"
@@ -83,6 +98,21 @@ export default function FilterPanel({
             <span>Clear All</span>
           </button>
         )}
+      </div>
+
+      {/* Search Bar */}
+      <div className="mb-6">
+        <div className="relative">
+          <HiSearch className="absolute left-3 top-3.5 w-5 h-5 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Search (min 3 characters)... issue name, module, expected or actual result"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            disabled={isLoading}
+            className="w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded-lg text-sm text-slate-900 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed hover:border-slate-400 transition-colors"
+          />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -96,7 +126,7 @@ export default function FilterPanel({
             value={dateFrom}
             onChange={(e) => setDateFrom(e.target.value)}
             disabled={isLoading}
-            className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed hover:border-slate-400 transition-colors"
+            className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed hover:border-slate-400 transition-colors"
           />
         </div>
 
@@ -109,7 +139,7 @@ export default function FilterPanel({
             value={dateTo}
             onChange={(e) => setDateTo(e.target.value)}
             disabled={isLoading}
-            className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed hover:border-slate-400 transition-colors"
+            className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed hover:border-slate-400 transition-colors"
           />
         </div>
 

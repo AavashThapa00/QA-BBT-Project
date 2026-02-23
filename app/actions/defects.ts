@@ -223,6 +223,25 @@ export async function getAverageResolutionTime(filters?: DefectFilters): Promise
     }
 }
 
+export async function exportAllDefects(filters?: DefectFilters): Promise<Defect[]> {
+    const whereClause = buildWhereClause(filters);
+    const sqlWhere = whereClause.clause ? `WHERE ${whereClause.clause}` : "";
+
+    const query = `
+        SELECT * FROM defect
+        ${sqlWhere}
+        ORDER BY "dateReported" DESC
+    `;
+
+    try {
+        const result = await db.query<Defect>(query, whereClause.values);
+        return result.rows;
+    } catch (error) {
+        console.error("Error exporting all defects:", error);
+        throw error;
+    }
+}
+
 interface WhereClause {
     clause: string;
     values: any[];
@@ -253,8 +272,10 @@ function buildWhereClause(filters?: DefectFilters): WhereClause {
     }
 
     if (filters?.module && filters.module.length > 0) {
-        const placeholders = filters.module.map(() => `$${paramCount++}`).join(", ");
-        conditions.push(`module IN (${placeholders})`);
+        // Use LIKE to match modules that start with the filter value
+        // e.g., "HSA" matches "HSA- Mock Exam", "HSA-Mock Exams", etc.
+        const conditions_module = filters.module.map(() => `module ILIKE $${paramCount++} || '%'`).join(" OR ");
+        conditions.push(`(${conditions_module})`);
         values.push(...filters.module);
     }
 

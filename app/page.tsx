@@ -2,6 +2,7 @@
 
 import React, { useState, useCallback, useEffect } from "react";
 import CSVUpload from "@/app/components/uploads/CSVUpload";
+import ExportDefectsPanel from "@/app/components/exports/ExportDefectsPanel";
 import { HiDownload, HiFolder, HiClipboardList, HiChartBar, HiExclamationCircle } from "react-icons/hi";
 import MetricsCard from "@/app/components/dashboard/MetricsCard";
 import DefectsByModuleChart from "@/app/components/dashboard/DefectsByModuleChart";
@@ -21,6 +22,20 @@ import {
 } from "@/app/actions/defects";
 import { DefectFilters, DashboardMetrics, DefectByModule, DefectBySeverity, DefectTrend, Defect } from "@/lib/types";
 import { enrichDefectsWithCalculations, exportToCSV } from "@/lib/utils";
+
+// Helper function to extract main module name
+function extractMainModule(moduleName: string): string | null {
+  if (!moduleName) return null;
+  
+  // Extract the part before "-" or before a space followed by parenthesis
+  // e.g., "HSA- Mock Exam" → "HSA", "KFQ Stage-Host Live" → "KFQ"
+  const match = moduleName.match(/^([A-Z]+)/);
+  const mainModule = match ? match[1] : moduleName;
+  
+  // Only allow specific modules
+  const allowedModules = ["HSA", "GMST", "KFQ", "NMST"];
+  return allowedModules.includes(mainModule) ? mainModule : null;
+}
 
 interface DashboardState {
   metrics: DashboardMetrics | null;
@@ -54,6 +69,7 @@ export default function Home() {
     sortOrder: "desc",
   });
   const [tableLoading, setTableLoading] = useState(false);
+  const [isExportPanelOpen, setIsExportPanelOpen] = useState(false);
 
   const loadDashboardData = useCallback(
     async (pageNum = 1) => {
@@ -81,10 +97,14 @@ export default function Home() {
           getAverageResolutionTime(filters),
         ]);
 
-        // Extract unique modules for filter
+        // Extract unique main modules for filter (HSA, GMST, KFQ, NMST only)
         const modules = Array.from(
-          new Set(defectsResponse.defects.map((d) => d.module))
-        );
+          new Set(
+            defectsResponse.defects
+              .map((d) => extractMainModule(d.module))
+              .filter((module): module is string => module !== null)
+          )
+        ).sort();
 
         setState((prev) => ({
           ...prev,
@@ -160,14 +180,22 @@ export default function Home() {
   };
 
   const handleExportCSV = () => {
-    const enrichedDefects = enrichDefectsWithCalculations(state.defects);
-    exportToCSV(enrichedDefects, "defects-export.csv");
+    setIsExportPanelOpen(true);
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+      {/* Export Panel Modal */}
+      <ExportDefectsPanel
+        isOpen={isExportPanelOpen}
+        onClose={() => setIsExportPanelOpen(false)}
+        currentFilters={filters}
+      />
+
       {/* Header Section */}
-      <div className="bg-white border-b border-slate-200 shadow-sm">
+      <div className={`bg-white border-b border-slate-200 shadow-sm transition-all duration-200 ${
+        isExportPanelOpen ? "blur-sm opacity-50 pointer-events-none" : ""
+      }`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex items-center justify-between">
             <div>
@@ -178,18 +206,20 @@ export default function Home() {
             </div>
             <button
               onClick={handleExportCSV}
-              disabled={state.defects.length === 0 || state.isLoading}
+              disabled={state.isLoading}
               className="px-4 py-2.5 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-medium rounded-lg hover:from-green-600 hover:to-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg transition-all flex items-center gap-2"
             >
               <HiDownload className="w-4 h-4" />
-              <span>Export CSV</span>
+              <span>Export All</span>
             </button>
           </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      <div className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 transition-all duration-200 ${
+        isExportPanelOpen ? "blur-sm opacity-50 pointer-events-none" : ""
+      }`}>
         {/* CSV Upload */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition-shadow">
           <div className="p-6 sm:p-8">

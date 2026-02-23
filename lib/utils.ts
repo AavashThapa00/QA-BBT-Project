@@ -10,8 +10,14 @@ export function calculateResolutionDays(defect: Defect): number | undefined {
 
 export function calculateDaysOpen(defect: Defect): number {
     if (!defect.dateReported) return 0;
+    
+    // If dateFixed exists, calculate from dateReported to dateFixed
+    // Otherwise, calculate from dateReported to current date
+    const endDate = defect.dateFixed ? new Date(defect.dateFixed) : new Date();
+    const startDate = new Date(defect.dateReported);
+    
     const diffTime = Math.abs(
-        new Date().getTime() - (defect.dateReported as Date).getTime()
+        endDate.getTime() - startDate.getTime()
     );
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 }
@@ -101,6 +107,23 @@ export function normalizeEnumValue(
     return match || null;
 }
 
+// Helper function to properly escape CSV values according to RFC 4180
+function escapeCSVValue(value: any): string {
+    if (value === null || value === undefined) {
+        return "";
+    }
+    
+    const stringValue = String(value);
+    
+    // If the value contains comma, newline, or double quotes, wrap it in quotes
+    if (stringValue.includes(",") || stringValue.includes("\n") || stringValue.includes('"')) {
+        // Escape double quotes by doubling them
+        return `"${stringValue.replace(/"/g, '""')}"`;
+    }
+    
+    return stringValue;
+}
+
 export function exportToCSV(
     defects: DefectWithResolutionTime[],
     filename: string = "defects.csv"
@@ -108,39 +131,38 @@ export function exportToCSV(
     const headers = [
         "Date Reported",
         "Module",
-        "Expected Result",
-        "Actual Result",
         "Severity",
         "Priority",
         "Status",
+        "Expected Result",
+        "Actual Result",
         "Date Fixed",
-        "QC Status by BBT",
         "Resolution Days",
         "Days Open",
     ];
 
     const rows = defects.map((defect: DefectWithResolutionTime) => [
         formatDate(defect.dateReported),
-        defect.module,
-        defect.expectedResult,
-        defect.actualResult,
-        defect.severity,
-        defect.priority,
-        defect.status,
-        defect.dateFixed ? formatDate(defect.dateFixed) : "",
-        defect.qcStatusBbt,
-        defect.resolutionDays || "",
-        defect.daysOpen,
+        defect.module || "N/A",
+        defect.severity || "N/A",
+        defect.priority || "N/A",
+        defect.status || "N/A",
+        defect.expectedResult || "N/A",
+        defect.actualResult || "N/A",
+        defect.dateFixed ? formatDate(defect.dateFixed) : "N/A",
+        defect.resolutionDays !== undefined ? String(defect.resolutionDays) : "N/A",
+        defect.daysOpen !== undefined ? String(defect.daysOpen) : "N/A",
     ]);
 
-    const csv = [
-        headers.join(","),
+    // Build CSV with proper escaping
+    const csvLines = [
+        headers.map(escapeCSVValue).join(","),
         ...rows.map((row) =>
-            row
-                .map((cell) => (typeof cell === "string" && cell.includes(",") ? `"${cell}"` : cell))
-                .join(",")
+            row.map(escapeCSVValue).join(",")
         ),
-    ].join("\n");
+    ];
+
+    const csv = csvLines.join("\n");
 
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");

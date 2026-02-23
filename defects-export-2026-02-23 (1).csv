@@ -1,0 +1,70 @@
+Date Reported,Module,Expected Result,Actual Result,Severity,Priority,Status,Date Fixed,QC Status by BBT,Resolution Days,Days Open
+"Feb 20, 2026",HSA-Mock Exam,"When navigating to the next question, the page should automatically scroll to the top of the new question.","After clicking Next, the system loads the next question but maintains the previous scroll position, keeping the user at the bottom of the page instead of the top.",LOW,Low,ON_HOLD,,PENDING,,4
+"Feb 19, 2026",HSA-Help Center footer,Clicking the footer logo should redirect the user to the top of the Help Center page.,The footer logo does not redirect anywhere and no action occurs.,LOW,Low,CLOSED,,PENDING,,5
+"Feb 19, 2026",KFQ,"The “Drag Words Into Box” challenge should function properly even after being minimized and reopened, with full drag-and-drop capability maintained.","When the “Drag Words Into Box” challenge is minimized and then accessed again, the drag-and-drop functionality does not work as expected.",LOW,Low,ON_HOLD,,PENDING,,5
+"Feb 19, 2026",HSA-CIE Past Papers,The Past Papers page should load smoothly without delays or performance issues.,The page loads but is noticeably laggy and slow to respond.,HIGH,Medium,CLOSED,,PENDING,,5
+"Feb 18, 2026",HSA- Get One answer a Day,Any first question that is attempted to unlock answer should be unlocked for free,Is asking 5 TC for the first question attempted on a new day,HIGH,High,ON_HOLD,,PENDING,,6
+"Feb 18, 2026",GMST and Alston,"When a specific subject is selected, the relevant eBook information should load and display correctly in the Teaching Resources section. Additionally, when the filter is switched back to “All Subjects,” all available eBook content should reload and be displayed properly.","When a specific subject is selected from the Teaching Resources section, the eBook information does not load and the content area appears blank. Furthermore, after switching the filter back to “All Subjects,” the eBook listings still do not display, and the section remains empty instead of showing the available content.",LOW,Low,ON_HOLD,,PENDING,,6
+"Feb 18, 2026",KFQ Stage-Host Live,Should display a proper message like " The Live has ended or something similar.,Displayed "You have completed the quiz ....",MEDIUM,Medium,ON_HOLD,,PENDING,,6
+"Feb 17, 2026",GMST,Clicking on an award should redirect the user to the respective award details page.,Clicking on an award does not redirect anywhere. No action occurs when the award is clicked.,LOW,Low,CLOSED,"Feb 18, 2026",PENDING,1,7
+"Feb 11, 2026",HSA-Mock Exms,The mock exam page should load within an acceptable performance threshold without noticeable delay.,The mock exam page experienced a delay before loading the exam content.,MEDIUM,Low,CLOSED,,PENDING,,13
+"Feb 10, 2026",HSA-Footer
+(Guide and FAQs section),The page should redirect to the respective Guide/FAQ content or load the information correctly without layout breaks.,The footer displays a blank area at the bottom of the page after clicking.,LOW,Low,CLOSED,"Feb 11, 2026",PENDING,1,14
+"Feb 10, 2026",HSA-Mock Exms,The test completion time should accurately reflect the actual duration spent on the exam.,The test completed time is not accurate upon submission.,LOW,Low,CLOSED,"Feb 11, 2026",PENDING,1,14
+"Feb 9, 2026",HSA-CIE Past Papers,"Exam Guides and Useful Resources content should load only once without duplication, even when navigating repeatedly.","When switching between Exam Guides and Useful Resources multiple times, the blog content gets duplicated. On refreshing the page, the content returns to normal.",MEDIUM,Medium,CLOSED,"Feb 10, 2026",PENDING,1,15
+"Feb 9, 2026",KFQ-Privacy Policy-Redirection,"Users should return to the previous page they were on, regardless of login status","Logged-out users are redirected to the Sign-up page, and logged-in users are redirected to the Home page",MEDIUM,Medium,CLOSED,"Feb 10, 2026",PENDING,1,15
+"Feb 3, 2026",KFQ-Landng Page,The video should load and play properly,Video is not available. Loading text is shown,HIGH,High,CLOSED,"Feb 3, 2026",PENDING,,21
+"Feb 3, 2026",KFQ-Landng Page,The website should work normally,Error: Application error: a client-side exception has occurred,HIGH,High,CLOSED,"Feb 3, 2026",PENDING,,21
+"Feb 1, 2026",KFQ-Dojos,The Back button should navigate to the previous page with a single click.,"The Back button must be clicked multiple times to navigate back, corresponding to the number of repeated navigations.",MEDIUM,Medium,ON_HOLD,,PENDING,,23
+"Jan 23, 2026",HSA-IE,You need to see option for IE since you got 80% correct,Said to retake the quiz cause it didn't meet 80%,HIGH,High,CLOSED,"Jan 23, 2026",PENDING,,32
+"Jan 22, 2026",KFQ-Discover
+
+Around the Kung Fu Arena,"The selected challenge type should load smoothly, and only the relevant challenge cards should be displayed without any visual disturbance.",The screen flickers for a few seconds when clicking on Video Challenges or Quiz Challenges before the filtered content is displayed.,MEDIUM,Low,ON_HOLD,,PENDING,,33
+"Jan 20, 2026",MST-Mobile App (Android),"Should directly redirect to the ELQ page, just like in the iPhone","Redirects to the video, the video loads for a while (3-5secs) and only takes you to the ELQ page",HIGH,High,CLOSED,,PENDING,,35
+"Jan 20, 2026",HSA-Revision Notes,Google Signup option should be visible and accessible in the Revision Notes section.,Google Signup is missing from the Revision Notes PDF contents.,MEDIUM,Medium,CLOSED,"Jan 20, 2026",PENDING,,35
+"Jan 20, 2026",KFQ-Discover,The challenge should be created successfully because the thumbnail is an optional field.,The system blocks creation and displays a technical error message:
+
+x thumbnail.fallbackUrl should not be empty,MEDIUM,Medium,CLOSED,"Jan 26, 2026",PENDING,6,35
+"Jan 19, 2026",HSA-Learning Hub,Should redirect to the respective page according to the subject and package choosen before hand.,"Redirected to the same plan/package page of the app, which makes the user redo and choose the option he/she had already done via web",MEDIUM,Medium,ON_HOLD,,PENDING,,36
+"Jan 19, 2026",HSA-Revision Notes,The switch should work smoothly without any error message,404
+This page could not be found. is displayed,MEDIUM,High,CLOSED,"Jan 19, 2026",PENDING,,36
+"Jan 19, 2026",HSA-Revision Notes,Google Signup option should be visible and accessible in the Revision Notes section.,Google Signup is missing from the Revision Notes section.,MEDIUM,Medium,CLOSED,"Jan 19, 2026",PENDING,,36
+"Jan 19, 2026",HSA-App,"When navigating to the Competency Evaluator, clicking the browser back button returns the user to the previous page in a single click, without requiring multiple back actions. The navigation flow is smooth and intuitive, ensuring a consistent user experience and preventing unnecessary user effort or confusion.","When we go to competency evaluator and try to go back to the previous page using back button (Browser back button), then it take three clicks to go back instead of just one.",HIGH,Medium,ON_HOLD,,PENDING,,36
+"Jan 18, 2026",MST-Mobile App (Android),"The message should display:
+“Score at least 80% to get Instant Explanation.
+
+The video, which does not contain IE, the message should appear as 
+"No instant explantion available for this video'","There is a visual issue in the Android app where the message incorrectly states “at least 50% to get Instant Explanation” instead of the correct requirement of “80% to get Instant Explanation.”
+ Please note that this is only a display issue—functionally, the system correctly requires users to score at least 80% when attempting an ELQ.
+Additionally, there is a content-related issue: this message is being displayed on ELQs where Instant Explanation (IE) is not available at all.
+ In such cases, the message should instead read:",HIGH,High,CLOSED,"Jan 20, 2026",PENDING,2,37
+"Jan 16, 2026",KFQ-Dojos,The Dojos page should either remain stable without reloading or refresh once and load successfully without entering a continuous loading state.,The Dojos page enters a continuous loading state and does not complete loading when the Dojos sidebar icon is clicked again.,MEDIUM,Medium,CLOSED,"Jan 26, 2026",PENDING,10,39
+"Jan 16, 2026",KFQ-Discover,The Freemium Sifu Guide video should display updated content reflecting the latest platform enhancements and current UI/feature set.,"The Freemium Sifu Guide video displays outdated platform enhancements, showing the old version of the platform.",LOW,Low,CLOSED,"Jan 26, 2026",PENDING,10,39
+"Jan 12, 2026",KFQ-Blogs,"Text that is intended to be displayed in bold should appear correctly in bold formatting, clearly highlighting important content and improving readability.","Text content that is intended to appear in bold formatting is not displayed in bold. As a result, important information is not visually distinguished as expected, which affects readability and content clarity.
+
+Note: The content appears in Bold after a refresh",MEDIUM,Medium,CLOSED,,PENDING,,43
+"Jan 12, 2026",KFQ-Discover,Only videos relevant to the searched keyword (“water”) should be displayed throughout the entire search results list.,"Initially, relevant “water” videos are displayed, but when scrolling down, unrelated videos appear in the search results.",MEDIUM,Medium,CLOSED,"Jan 26, 2026",PENDING,14,43
+"Jan 12, 2026",KFQ-Discover,User should be redirected to the Home page when clicking the application logo.,User is not redirected to the Home page after clicking the application logo.,MEDIUM,Medium,CLOSED,,PENDING,,43
+"Jan 11, 2026",MST-Mobile App and Website,"The text in the Password field should be clearly visible, properly aligned, and readable, with no overlapping on the mobile browser.","Issue on the mobile browser, when navigating to the Profile section and opening the Password field, the text appears overlapped, making it difficult to read.",MEDIUM,Low,CLOSED,,PENDING,,44
+"Jan 11, 2026",MST-Mobile App and Website,A Parent account should be created when signing up via Google Sign-Up after selecting Sign Up as Parent.,"When trying to sign up as a parent using google sign up using a mobile app and website, it created a B2C student account instead of a parent account 
+Failed on both iOS as well as android.",CRITICAL,Major,CLOSED,,PENDING,,44
+"Jan 9, 2026",KFQ-Discover,The system should display the Freemium Sifu Guide content only.
+Premium Sifu videos should not be accessible to a freemium user.,The system displays Premium Sifu Guide videos despite the user being logged in as a freemium user.,CRITICAL,High,CLOSED,,PENDING,,46
+"Jan 8, 2026",KFQ - Mobile Homepage,"Page scrolling should remain smooth and responsive, regardless of how fast or slow the user scrolls.","During fast (fierce) scrolling on the mobile view, the page becomes laggy and unresponsive, resulting in a poor user experience.",CRITICAL,Major,AS_IT_IS,,PENDING,,47
+"Dec 31, 2025",Registration,1. A message like verify your email should pop up just like in the app
+2. A proper message after verifying your email is a must,"1. You don't receive a verification email message on the web. 
+2. After clicking on Verify Email from Gmail, You get redirected to the app with no proper your email has been verified (Just a toast message)",HIGH,High,ON_HOLD,,PENDING,,55
+"Dec 31, 2025",Registration,Names with numbers should be allowed,You are able to register with a name tat contains number and few special charcaters,MEDIUM,Medium,CLOSED,"Dec 31, 2025",PENDING,,55
+"Dec 30, 2025",PlanBook,The error message "StartDate must be greater than current date" should be displayed,"When a past date is selected, the “Create Plan” button is still visible and clickable. Upon clicking, the system displays the error message.",HIGH,High,ON_HOLD,,PENDING,,56
+"Dec 29, 2025",Log In,"even if the user is logged in, the correct email should be displayed in the profile section",Correct email: aavash.thapa@innovatetech.io
+
+Attempted login using aAvash.thapA@innovatetech.io
+>>>Logged in
+>>>Email displays the same Aavash.thapA@innovatetech.io in profile,MEDIUM,Medium,CLOSED,"Dec 31, 2025",PENDING,2,57
+"Dec 29, 2025",Learning Hub,The video should open or redirect to the respective video page.,Displays error message: “Unauthorized to perform this action.”,CRITICAL,Major,CLOSED,"Dec 31, 2025",PENDING,2,57
+"Dec 29, 2025",App → Revision Notes,The Revision Notes content should remain visible after zooming in or out.,"Content becomes blank after zooming out, and does not return even after restoring normal zoom. Reloading is required.",CRITICAL,Major,CLOSED,"Dec 31, 2025",PENDING,2,57
+"Dec 29, 2025",Revision Notes,It should redirect to the Revision Notes content page of IGCSE Biology 1.01 - Characteristics of Living Organisms of app.homeschool.asia and should be able to watch videos,Redirected to the page of app.homeschool.asia
+Saying "unauthorised to perform this action",CRITICAL,Major,CLOSED,"Dec 31, 2025",PENDING,2,57
+"Dec 29, 2025",Get one Answer a Day,The content should display properly,"Latex issue in the questions, for example: AS/A Levels Chemistry Chapter Chemical Energetics",HIGH,High,ON_HOLD,,PENDING,,57
+"Dec 29, 2025",App.Dashboard,There should be Next and Previous button after clicking Learn More,"After Clicking Learn More the next, previous button is not visible",MEDIUM,Medium,AS_IT_IS,,PENDING,,57
+"Dec 29, 2025",Forgot Password,Should Display correct messages like "This email address is not registered. Please check and try again.","It displays “Check your email” even when the email address is not registered. Additionally, no email is received.",MEDIUM,Medium,AS_IT_IS,"Dec 31, 2025",PENDING,2,57
