@@ -28,12 +28,12 @@ export default function DefectsTrendChart({
   title = "Defects Trend Over Time",
 }: DefectsTrendChartProps) {
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8 hover:shadow-md transition-shadow">
-      <h3 className="text-lg font-semibold text-slate-900 mb-2 flex items-center gap-2">
-        <span className="w-8 h-8 rounded-lg bg-cyan-100 text-cyan-600 flex items-center justify-center text-sm"><HiTrendingUp className="w-5 h-5"/></span>
+    <div className="bg-gradient-to-br from-green-950 via-emerald-900 to-green-950 rounded-xl shadow-lg border border-green-800 p-8 hover:shadow-2xl transition-shadow backdrop-blur-sm">
+      <h3 className="text-lg font-semibold text-white mb-2 flex items-center gap-2">
+        <span className="w-8 h-8 rounded-lg bg-green-900 text-green-300 flex items-center justify-center text-sm"><HiTrendingUp className="w-5 h-5"/></span>
         {title}
       </h3>
-      <p className="text-xs text-slate-500 mb-6">Historical trends of defect reports</p>
+      <p className="text-xs text-slate-400 mb-6">Historical trends of defect reports</p>
       {data.length === 0 ? (
         <div className="flex items-center justify-center h-64 text-slate-400">
           <div className="text-center">

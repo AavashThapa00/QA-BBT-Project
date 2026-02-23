@@ -106,69 +106,69 @@ export default function ExportDefectsPanel({
         
         {/* Modal Dialog */}
         <div className="absolute inset-0 flex items-center justify-center p-4">
-          <div className={`bg-white rounded-xl shadow-2xl max-w-md w-full transform transition-all duration-400 ${
+          <div className={`bg-gradient-to-br from-rose-950 via-pink-900 to-rose-950 rounded-xl shadow-2xl max-w-md w-full transform transition-all duration-400 border border-rose-800 ${
             isOpen ? "scale-100 opacity-100" : "scale-95 opacity-0"
           }`}>
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-slate-200">
+            <div className="flex items-center justify-between p-6 border-b border-rose-800">
               <div className="flex items-center gap-2">
-                <HiDownload className="w-5 h-5 text-blue-600" />
-                <h2 className="text-lg font-semibold text-slate-900">
+                <HiDownload className="w-5 h-5 text-rose-400" />
+                <h2 className="text-lg font-semibold text-white">
                   Export All Defects
                 </h2>
               </div>
               <button
                 onClick={onClose}
-                className="p-1 hover:bg-slate-100 rounded-lg transition-colors"
+                className="p-1 hover:bg-rose-900 rounded-lg transition-colors"
                 aria-label="Close"
               >
-                <HiX className="w-5 h-5 text-slate-500" />
+                <HiX className="w-5 h-5 text-slate-400" />
               </button>
             </div>
 
             {/* Content */}
             <div className="p-6 space-y-4">
-              <p className="text-sm text-slate-600">
+              <p className="text-sm text-slate-300">
                 Filter by date range to export all defects matching your criteria.
               </p>
 
               <div className="space-y-4">
                 {/* From Date */}
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
                     From Date (Optional)
                   </label>
                   <input
                     type="date"
                     value={dateFrom}
                     onChange={(e) => setDateFrom(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-slate-400"
+                    className="w-full px-3 py-2 border border-slate-700 rounded-lg text-white bg-slate-800 focus:ring-2 focus:ring-rose-500 focus:border-transparent placeholder-slate-500"
                   />
                 </div>
 
                 {/* To Date */}
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
                     To Date (Optional)
                   </label>
                   <input
                     type="date"
                     value={dateTo}
                     onChange={(e) => setDateTo(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-slate-400"
+                    className="w-full px-3 py-2 border border-slate-700 rounded-lg text-white bg-slate-800 focus:ring-2 focus:ring-rose-500 focus:border-transparent placeholder-slate-500"
                   />
                 </div>
 
                 {/* Error Message */}
                 {error && (
-                  <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                    <p className="text-sm text-red-700">{error}</p>
+                  <div className="p-3 bg-red-900/30 border border-red-800 rounded-lg">
+                    <p className="text-sm text-red-300">{error}</p>
                   </div>
                 )}
 
                 {/* Info */}
-                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                  <p className="text-sm text-blue-700">
+                <div className="p-3 bg-blue-900/30 border border-blue-800 rounded-lg">
+                  <p className="text-sm text-blue-300">
                     💡 All active filters will be included in the export.
                   </p>
                 </div>
@@ -176,18 +176,18 @@ export default function ExportDefectsPanel({
             </div>
 
             {/* Footer */}
-            <div className="flex gap-3 p-6 border-t border-slate-200">
+            <div className="flex gap-3 p-6 border-t border-rose-800">
               <button
                 onClick={onClose}
                 disabled={isLoading}
-                className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 font-medium rounded-lg hover:bg-slate-50 disabled:opacity-50 transition-colors"
+                className="flex-1 px-4 py-2 border border-slate-700 text-slate-300 font-medium rounded-lg hover:bg-slate-700 disabled:opacity-50 transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleExport}
                 disabled={isLoading}
-                className="flex-1 px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-medium rounded-lg hover:from-blue-700 hover:to-cyan-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+                className="flex-1 px-4 py-2 bg-gradient-to-r from-rose-600 to-pink-600 text-white font-medium rounded-lg hover:from-rose-700 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
               >
                 {isLoading ? (
                   <>

@@ -4,7 +4,7 @@ import React from "react";
 
 export function SkeletonCard() {
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 animate-pulse">
+    <div className="bg-gradient-to-br from-slate-50 via-indigo-50 to-slate-50 rounded-xl shadow-sm border border-slate-200 p-6 animate-pulse">
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <div className="h-4 bg-slate-200 rounded w-24 mb-3"></div>
@@ -22,7 +22,7 @@ export function SkeletonChart() {
   const heights = ["65%", "45%", "70%", "55%"];
   
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8 animate-pulse">
+    <div className="bg-gradient-to-br from-teal-50 via-blue-50 to-teal-50 rounded-xl shadow-sm border border-slate-200 p-8 animate-pulse">
       <div className="mb-6">
         <div className="h-4 bg-slate-200 rounded w-32 mb-2"></div>
         <div className="h-3 bg-slate-100 rounded w-48"></div>
@@ -42,7 +42,7 @@ export function SkeletonChart() {
 
 export function SkeletonTable() {
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden animate-pulse">
+    <div className="bg-gradient-to-br from-slate-50 via-cyan-50 to-slate-50 rounded-xl shadow-sm border border-slate-200 overflow-hidden animate-pulse">
       <div className="p-6">
         <div className="space-y-4">
           {[...Array(5)].map((_, i) => (

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { HiExclamationCircle, HiInbox } from "react-icons/hi";
+import { HiChartBar, HiInbox } from "react-icons/hi";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, LabelList } from "recharts";
 import type { Severity } from "@/lib/types";
 import { SeverityEnum } from "@/lib/types";
@@ -32,7 +32,7 @@ const SEVERITY_ORDER: Record<Severity, number> = {
 
 export default function DefectsBySeverityChart({
   data,
-  title = "Defects by Severity",
+  title = "Defects by Priority",
 }: DefectsBySeverityChartProps) {
   // Sort data by severity order (CRITICAL -> HIGH -> MEDIUM -> LOW)
   const sortedData = [...data].sort(
@@ -46,12 +46,12 @@ export default function DefectsBySeverityChart({
   }));
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8 hover:shadow-md transition-shadow">
-      <h3 className="text-lg font-semibold text-slate-900 mb-2 flex items-center gap-2">
-        <span className="w-8 h-8 rounded-lg bg-red-100 text-red-600 flex items-center justify-center text-sm"><HiExclamationCircle className="w-5 h-5" /></span>
+    <div className="bg-gradient-to-br from-purple-950 via-purple-900 to-purple-950 rounded-xl shadow-lg border border-purple-800 p-8 hover:shadow-2xl transition-shadow backdrop-blur-sm">
+      <h3 className="text-lg font-semibold text-white mb-2 flex items-center gap-2">
+        <span className="w-8 h-8 rounded-lg bg-purple-900 text-purple-300 flex items-center justify-center text-sm"><HiChartBar className="w-5 h-5"/></span>
         {title}
       </h3>
-      <p className="text-xs text-slate-500 mb-6">Number of defects by severity level</p>
+      <p className="text-xs text-slate-400 mb-6">Number of defects by priority level</p>
       {data.length === 0 ? (
         <div className="flex items-center justify-center h-64 text-slate-400">
           <div className="text-center">

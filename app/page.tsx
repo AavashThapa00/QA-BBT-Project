@@ -184,7 +184,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
       {/* Export Panel Modal */}
       <ExportDefectsPanel
         isOpen={isExportPanelOpen}
@@ -193,16 +193,16 @@ export default function Home() {
       />
 
       {/* Header Section */}
-      <div className={`bg-white border-b border-slate-200 shadow-sm transition-all duration-200 ${
+      <div className={`bg-gradient-to-r from-slate-900 to-slate-800 border-b border-slate-700 shadow-lg transition-all duration-200 ${
         isExportPanelOpen ? "blur-sm opacity-50 pointer-events-none" : ""
       }`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
+              <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
                 QA/BBT Defect Analytics
               </h1>
-              <p className="text-slate-500 mt-2 text-sm">Production-ready defect management platform</p>
+              <p className="text-slate-400 mt-2 text-sm">Production-ready defect management platform</p>
             </div>
             <button
               onClick={handleExportCSV}
@@ -221,10 +221,10 @@ export default function Home() {
         isExportPanelOpen ? "blur-sm opacity-50 pointer-events-none" : ""
       }`}>
         {/* CSV Upload */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition-shadow">
+        <div className="bg-gradient-to-br from-blue-950 via-sky-900 to-blue-950 rounded-xl shadow-lg border border-blue-800 hover:shadow-2xl transition-shadow backdrop-blur-sm">
           <div className="p-6 sm:p-8">
-            <h2 className="text-xl font-semibold text-slate-900 mb-6 flex items-center gap-2">
-              <span className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center text-sm"><HiFolder className="w-5 h-5" /></span>
+            <h2 className="text-xl font-semibold text-white mb-6 flex items-center gap-2">
+              <span className="w-8 h-8 rounded-lg bg-blue-900 text-blue-300 flex items-center justify-center text-sm"><HiFolder className="w-5 h-5" /></span>
               Upload Defects Data
             </h2>
             <CSVUpload onUploadSuccess={handleUploadSuccess} />
@@ -250,7 +250,7 @@ export default function Home() {
             <MetricsCard title="Total Defects" value={state.metrics.totalDefects} icon={<HiChartBar />} />
             <MetricsCard title="Open Defects" value={state.metrics.openDefects} icon={<HiExclamationCircle />} />
             <MetricsCard title="Closed Defects" value={state.metrics.closedDefects} icon={<HiClipboardList />} />
-            <MetricsCard title="Critical Severity" value={state.metrics.highSeverityCount} icon={<HiExclamationCircle />} />
+            <MetricsCard title="Critical Priority Issues" value={state.metrics.highSeverityCount} icon={<HiExclamationCircle />} />
           </div>
         ) : null}
 
@@ -282,21 +282,21 @@ export default function Home() {
         {state.isLoading ? (
           <SkeletonCard />
         ) : state.averageResolutionTime > 0 ? (
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8 hover:shadow-md transition-shadow">
-            <h3 className="text-sm font-semibold text-slate-600 uppercase tracking-wide mb-3">
+          <div className="bg-gradient-to-br from-orange-950 via-amber-900 to-orange-950 rounded-xl shadow-lg border border-orange-800 p-8 hover:shadow-2xl transition-shadow backdrop-blur-sm">
+            <h3 className="text-sm font-semibold text-orange-300 uppercase tracking-wide mb-3">
               Average Resolution Time
             </h3>
-            <p className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
+            <p className="text-5xl font-bold bg-gradient-to-r from-orange-400 to-amber-400 bg-clip-text text-transparent">
               {state.averageResolutionTime}
             </p>
-            <p className="text-slate-500 text-sm mt-2">days to resolve defects</p>
+            <p className="text-slate-400 text-sm mt-2">days to resolve defects</p>
           </div>
         ) : null}
 
         {/* Data Table */}
         <div>
-          <h2 className="text-xl font-semibold text-slate-900 mb-4 flex items-center gap-2">
-            <span className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center text-sm"><HiClipboardList className="w-5 h-5" /></span>
+          <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+            <span className="w-8 h-8 rounded-lg bg-blue-500 text-white flex items-center justify-center text-sm"><HiClipboardList className="w-5 h-5" /></span>
             Defects List
           </h2>
           {state.isLoading ? (
