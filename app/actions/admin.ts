@@ -105,3 +105,28 @@ export async function resetUserPasswordAction(formData: FormData) {
   await db.query(`UPDATE "user" SET password_hash = $1, "updatedAt" = NOW() WHERE id = $2`, [newHash, userId]);
   return { success: true, message: "Password reset" };
 }
+
+export async function deleteUserAction(formData: FormData) {
+  const user = await getCurrentUser();
+  if (!user || !isSuperAdmin(user.role)) {
+    return { success: false, message: "Not authorized" };
+  }
+
+  const userId = String(formData.get("userId") || "");
+
+  if (!userId) {
+    return { success: false, message: "User ID is required" };
+  }
+
+  // Prevent deleting yourself
+  if (userId === user.id) {
+    return { success: false, message: "Cannot delete your own account" };
+  }
+
+  try {
+    await db.query(`DELETE FROM "user" WHERE id = $1`, [userId]);
+    return { success: true, message: "User account deleted successfully" };
+  } catch (error) {
+    return { success: false, message: "Failed to delete user" };
+  }
+}

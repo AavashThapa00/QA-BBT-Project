@@ -171,18 +171,6 @@ export default function ProfilePage() {
                 Save Changes
               </button>
             </form>
-
-            {/* Add Admin Link */}
-            {user.role === "super_admin" && (
-              <div className="mt-8 pt-8 border-t border-slate-800">
-                <Link
-                  href="/super-admin"
-                  className="inline-flex bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors border border-slate-700 hover:border-slate-600"
-                >
-                  + Add Admin
-                </Link>
-              </div>
-            )}
           </div>
 
           {/* Security Card */}
@@ -222,6 +210,26 @@ export default function ProfilePage() {
             </form>
           </div>
         </div>
+
+        {/* Admin Management Section (Super Admin Only) */}
+        {user.role === "super_admin" && (
+          <div className="bg-gradient-to-br from-blue-900/20 to-blue-800/10 border-2 border-blue-500/30 rounded-lg p-8 mb-10">
+            <div className="flex items-start justify-between gap-6">
+              <div className="flex-1">
+                <h2 className="text-2xl font-bold text-white mb-2">Admin Management</h2>
+                <p className="text-slate-300 text-sm">
+                  Create new admin accounts, manage user roles, and view all system users.
+                </p>
+              </div>
+              <Link
+                href="/super-admin"
+                className="flex-shrink-0 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg text-sm font-semibold transition-all shadow-lg hover:shadow-xl hover:scale-105"
+              >
+                + Add New Admin
+              </Link>
+            </div>
+          </div>
+        )}
 
         {/* Uploaded Files Section */}
         {uploadedFiles.length > 0 && (
