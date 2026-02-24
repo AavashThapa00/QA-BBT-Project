@@ -34,6 +34,7 @@ model Defect {
   testCaseId      String?       @db.VarChar(100)
   dateReported    DateTime      @db.Date
   module          String        @db.VarChar(255)
+  summary         String?       @db.Text
   expectedResult  String        @db.Text
   actualResult    String        @db.Text
   severity        Severity

@@ -7,13 +7,13 @@ Frontend team said that it's IOS behaviour unlike Android",As it is,1/18/2026,TR
 B2,ST-02,1/9/2026,KFQ-Discover,Access Sifu Guide as a Freemium User,"1. Go to Discover page.
 2. Click on the blue ""View Sifu Guide"" card.","The system should display the Freemium Sifu Guide content only.
 Premium Sifu videos should not be accessible to a freemium user.",The system displays Premium Sifu Guide videos despite the user being logged in as a freemium user.,Major,High,Devs,,FIxed,1/18/2026,TRUE
-B3,ST-03,1/11/2026,MST-Mobile App and Website,Google Sign up,"1. Go to Register to begin an amazing journey!
+B3,ST-03,1/11/2026,GMST-Mobile App and Website,Google Sign up,"1. Go to Register to begin an amazing journey!
 2. Select I am a Parent
 3. Click on “Sign up with Google”",A Parent account should be created when signing up via Google Sign-Up after selecting Sign Up as Parent.,"When trying to sign up as a parent using google sign up using a mobile app and website, it created a B2C student account instead of a parent account 
 Failed on both iOS as well as android.",Major,Major,Devs,"ID:1269
 
 we are working on this issue. We will release this changes by the end of upcoming week.",FIxed,2/3/2026,TRUE
-B4,ST-04,1/11/2026,MST-Mobile App and Website,UX,"1. Open the application on a mobile browser (Chrome / Safari).
+B4,ST-04,1/11/2026,GMST-Mobile App and Website,UX,"1. Open the application on a mobile browser (Chrome / Safari).
 2. Log in with a valid user account.
 3. Navigate to the Profile section.
 4. Open or tap on the Password field.
@@ -39,7 +39,7 @@ B8,ST-08,1/16/2026,KFQ-Discover,Verify Freemium Sifu Guide video reflects the la
 B9,ST-09,1/16/2026,KFQ-Dojos,Dojos page keeps loading when re-clicking the Dojos sidebar icon,"1. Click on the “Dojos” icon in the left sidebar to load the Dojos page.
 2. Wait until the Dojos page is fully loaded.
 3. Click on the “Dojos” icon again to refresh or re-open the same page.",The Dojos page should either remain stable without reloading or refresh once and load successfully without entering a continuous loading state.,The Dojos page enters a continuous loading state and does not complete loading when the Dojos sidebar icon is clicked again.,Medium,Medium,Devs,,FIxed,1/26/2026,TRUE
-B10,ST-10,1/18/2026,MST-Mobile App (Android),ELQ (IE),"1. Navigate to any course.
+B10,ST-10,1/18/2026,GMST-Mobile App (Android),ELQ (IE),"1. Navigate to any course.
 2. Open a lesson that contains an End of Lesson Quiz (ELQ).
 3. Start and attempt the ELQ that doesn't have IE on the video. eg: 1.01
 4. Submit the quiz with a score below 80% (for example, 60–70%).
@@ -64,7 +64,7 @@ B13,ST-13,1/19/2026,HSA-Learning Hub,Plans,"1. Click on Learning Hub.
 B14,ST-14,1/19/2026,HSA-App,Competency Evaluator,"1. Click on Competency Evaluator.
 2. View on the Resource Path of the link.","When navigating to the Competency Evaluator, clicking the browser back button returns the user to the previous page in a single click, without requiring multiple back actions. The navigation flow is smooth and intuitive, ensuring a consistent user experience and preventing unnecessary user effort or confusion.
 "," When we go to competency evaluator and try to go back to the previous page using back button (Browser back button), then it take three clicks to go back instead of just one.",High,Medium,Pending,,Pending,,FALSE
-B15,ST-15,1/20/2026,MST-Mobile App (Android),ELQ ,"1. Navigate any subject
+B15,ST-15,1/20/2026,GMST-Mobile App (Android),ELQ ,"1. Navigate any subject
 2. Click on any Video
 3. Click on Take End of Lesson Quiz","Should directly redirect to the ELQ page, just like in the iPhone","Redirects to the video, the video loads for a while (3-5secs) and only takes you to the ELQ page",High,High,Devs," Android App (ELQ).mp4
  Iphone app (ELQ)_Correct Reference",FIxed,2/3/2026,TRUE
@@ -113,14 +113,14 @@ B27,ST-27,2/10/2026,HSA-Mock Exms,Verify Mock Exam timer accuracy,"1. Click on M
 B28,ST-28,2/11/2026,HSA-Mock Exms,Mock Exam test page is taking time to load,"1. Click on Mock Exams from the Nav bar
 2. Select a subejct and chapter
 3. Observe how long it takes to load the mock exam.",The mock exam page should load within an acceptable performance threshold without noticeable delay.,The mock exam page experienced a delay before loading the exam content.,Medium,Low,Frontend,,FIxed,2/17/2026,TRUE
-B29,ST-29,2/17/2026,GMST,About – Awards section links not redirecting,"1. Clcik on ""About"" from the Navbar
+B29,ST-29,2/17/2026,GGMST,About – Awards section links not redirecting,"1. Clcik on ""About"" from the Navbar
 2. Scroll down to ""Our Awards"" section
 3. Click on any award",Clicking on an award should redirect the user to the respective award details page.,Clicking on an award does not redirect anywhere. No action occurs when the award is clicked.,Low,Low,Frontend,,FIxed,2/18/2026,TRUE
 B30,ST-30,2/18/2026,HSA- Get One answer a Day,Any first question should be free every day,"1. Click on any Subjects within Get One answer a day
 2. Unlock Any question
 3. Precondition- Should be the first question of the day before unlocking ",Any first question that is attempted to unlock answer should be unlocked for free,Is asking 5 TC for the first question attempted on a new day,High,High,Devs,Freemium User's side logic is to ask for 5TC without providing the free answer.,As it is,2/23/2026,TRUE
 B31,ST-31,2/18/2026,KFQ Stage-Host Live,Expired Link,1. Try to join the live after the live has ended,"Should display a proper message like "" The Live has ended or something similar.","Displayed ""You have completed the quiz ....""",Medium,Medium,Devs,Since it's on Stage the priority is based on accordance,Pending,,FALSE
-B32,ST-32,2/18/2026,GMST and Alston,eBook Info Not Displaying,"1. Navigate to Teaching Resources section.
+B32,ST-32,2/18/2026,GGMST and Alston,eBook Info Not Displaying,"1. Navigate to Teaching Resources section.
 2. Select a specific subject using the subject filter toggle.
 3. Observe the eBook listing area.
 4. Switch the filter back to “All Subjects”.
@@ -139,12 +139,17 @@ B37,ST-37,2/23/2026,HSA-Get One Answer a day,Answer Disappearance after unlockin
 B38,ST-38,2/23/2026,HSA Stage-Premium Pacakge,Mail not received after purchasing the package,"1. Go to Premium Package
 2. Purchase any package
 3. Go to Gmail and observe if the mail appears","After purchasing the premium package, the user should receive a confirmation email with subscription details, and the system should notify the user successfully about the purchase.","After purchasing the premium package (stage), no confirmation email is received. The system displays a message like “You have subscribed to the Package of Interactive Videos package,” but email notification is missing.",High,High,Devs,,FIxed,2/23/2026,TRUE
-B39,ST-39,,,,,,,,,,,,,FALSE
-B40,ST-40,,,,,,,,,,,,,FALSE
-B41,ST-41,,,,,,,,,,,,,FALSE
-B42,ST-42,,,,,,,,,,,,,FALSE
-B43,ST-43,,,,,,,,,,,,,FALSE
-B44,ST-44,,,,,,,,,,,,,FALSE
-B45,ST-45,,,,,,,,,,,,,FALSE
-B46,ST-46,,,,,,,,,,,,,FALSE
-B47,ST-47,,,,,,,,,,,,,FALSE
+B39,ST-39,2/24/2026,Innovatetech.io,"Change the number from ""Contact Us""","1. Go to ""ING Ecosystem""
+2. Scroll down to ""Contact Us""
+3. Check the contact number displayed",The correct and updated contact number should be displayed in the “Contact Us” section.,An incorrect contact number is currently displayed.,Low,Low,Frontend,,Pending,,FALSE
+B40,ST-40,2/24/2026,Innovatetech.io,Informatics College-Pokhara link shows error,"1. Go to ""ING Ecosystem""
+2. Scroll down to ""Colleges and Schools""
+3. Click on informatics college-pokhara",The link should redirect to the official Informatics College–Pokhara webpage without any errors.,"When the link is clicked, it displays an error page.",Low,Low,Frontend,,Pending,,FALSE
+B41,ST-41,2/24/2026,Innovatetech.io,Sentinel Lab link shows an error,"1. Scroll down from the Homepage
+2. Click on ""Sentinel Lab""",The link should redirect to the Sentinel Lab webpage successfully without any errors.,"When the link is clicked, it displays an error page stating ""Site is temporarily unavailable.""",Low,Low,Frontend,,Pending,,FALSE
+,,,,,,,,,,,,,,FALSE
+,,,,,,,,,,,,,,FALSE
+,,,,,,,,,,,,,,FALSE
+,,,,,,,,,,,,,,FALSE
+,,,,,,,,,,,,,,FALSE
+,,,,,,,,,,,,,,FALSE

@@ -128,6 +128,42 @@ export default function CSVUpload({
         />
       )}
 
+      {result && result.success && result.errors.length > 0 && (
+        <div className={`p-4 rounded-xl border-2 bg-amber-900/30 border-amber-700`}>
+          <div className="flex items-start gap-3">
+            <div className={`text-xl mt-0.5 text-amber-400`}>
+              ⚠️
+            </div>
+            <div className="flex-1">
+              <div className={`font-semibold text-sm text-amber-200`}>
+                Upload completed with {result.skipped} skipped row{result.skipped !== 1 ? 's' : ''}
+              </div>
+              <div className="mt-4">
+                <p className="text-sm font-semibold text-amber-300 mb-2">
+                  ⚠️ Skipped Defects ({result.errors.length} total):
+                </p>
+                <div className="bg-slate-800 rounded-lg border border-amber-800 max-h-64 overflow-y-auto">
+                  <ul className="divide-y divide-amber-900">
+                    {result.errors.map((error, index) => (
+                      <li key={index} className="px-3 py-2 hover:bg-slate-700 transition-colors">
+                        <div className="flex items-start gap-2">
+                          <span className="font-bold text-amber-400 text-xs mt-0.5 min-w-fit">Row {error.row}</span>
+                          <span className="text-xs text-amber-300 flex-1">{error.reason}</span>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <p className="text-xs text-amber-400 mt-2 italic flex items-center gap-2">
+                  <HiClipboardList className="w-4 h-4" />
+                  <span>These defects were not imported (duplicates or validation issues)</span>
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {result && !result.success && (
         <div className={`p-4 rounded-xl border-2 bg-red-900/30 border-red-800`}>
           <div className="flex items-start gap-3">

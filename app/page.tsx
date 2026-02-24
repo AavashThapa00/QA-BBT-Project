@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useState, useCallback, useEffect } from "react";
+import Link from "next/link";
 import CSVUpload from "@/app/components/uploads/CSVUpload";
 import ExportDefectsPanel from "@/app/components/exports/ExportDefectsPanel";
-import { HiDownload, HiFolder, HiClipboardList, HiChartBar, HiExclamationCircle } from "react-icons/hi";
+import { HiDownload, HiFolder, HiClipboardList, HiChartBar, HiExclamationCircle, HiViewList } from "react-icons/hi";
 import MetricsCard from "@/app/components/dashboard/MetricsCard";
 import DefectsByModuleChart from "@/app/components/dashboard/DefectsByModuleChart";
 import DefectsBySeverityChart from "@/app/components/dashboard/DefectsBySeverityChart";
@@ -200,25 +201,30 @@ export default function Home() {
       />
 
       {/* Header Section */}
-      <div className={`bg-gradient-to-r from-slate-900 to-slate-800 border-b border-slate-700 shadow-lg transition-all duration-200 ${
+      <div className={`bg-slate-900 border-b border-slate-800 shadow-sm transition-all duration-200 ${
         isExportPanelOpen ? "blur-sm opacity-50 pointer-events-none" : ""
       }`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
-                QA/BBT Defect Analytics
-              </h1>
-              <p className="text-slate-400 mt-2 text-sm">Production-ready defect management platform</p>
+            <h1 className="text-2xl font-semibold text-white">
+              QA Defect Management Dashboard
+            </h1>
+            <div className="flex items-center gap-3">
+              <Link
+                href="/analytics"
+                className="px-4 py-2 bg-purple-600 text-white font-medium text-sm rounded-lg hover:bg-purple-700 transition-all flex items-center gap-2 shadow-sm hover:shadow-md"
+              >
+                <HiChartBar className="w-4 h-4" />
+                <span>Analytics</span>
+              </Link>
+              <Link
+                href="/all-defects"
+                className="px-4 py-2 bg-blue-600 text-white font-medium text-sm rounded-lg hover:bg-blue-700 transition-all flex items-center gap-2 shadow-sm hover:shadow-md"
+              >
+                <HiViewList className="w-4 h-4" />
+                <span>View All Defects</span>
+              </Link>
             </div>
-            <button
-              onClick={handleExportCSV}
-              disabled={state.isLoading}
-              className="px-4 py-2.5 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-medium rounded-lg hover:from-green-600 hover:to-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg transition-all flex items-center gap-2"
-            >
-              <HiDownload className="w-4 h-4" />
-              <span>Export All</span>
-            </button>
           </div>
         </div>
       </div>
@@ -302,10 +308,20 @@ export default function Home() {
 
         {/* Data Table */}
         <div>
-          <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-            <HiClipboardList className="w-5 h-5 text-blue-400" />
-            Defects List
-          </h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+              <HiClipboardList className="w-5 h-5 text-blue-400" />
+              Defects List
+            </h2>
+            <button
+              onClick={handleExportCSV}
+              disabled={state.isLoading}
+              className="px-4 py-2 bg-green-600 text-white font-medium text-sm rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md transition-all flex items-center gap-2"
+            >
+              <HiDownload className="w-4 h-4" />
+              <span>Export All</span>
+            </button>
+          </div>
           {state.isLoading ? (
             <SkeletonTable />
           ) : (

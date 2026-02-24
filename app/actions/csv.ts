@@ -128,6 +128,17 @@ export async function uploadCSV(csvData: string): Promise<UploadResult> {
                 // Use "Unknown" if module is missing
                 const finalModule = module || "Unknown";
 
+                const summary = extractColumnValue(
+                    validatedRow,
+                    [
+                        "Summary / Title",
+                        "Summary",
+                        "Title",
+                        "summary",
+                        "title",
+                    ]
+                );
+
                 const expectedResult = extractColumnValue(
                     validatedRow,
                     [
@@ -233,7 +244,7 @@ export async function uploadCSV(csvData: string): Promise<UploadResult> {
 
                 // Check for true duplicate based on date, module, expected result, and actual result
                 const duplicateCheck = await db.query(
-                    `SELECT id FROM defect WHERE 
+                    `SELECT id, "testCaseId" FROM defect WHERE 
                      "dateReported" = $1 AND 
                      module = $2 AND 
                      "expectedResult" = $3 AND 
@@ -243,7 +254,12 @@ export async function uploadCSV(csvData: string): Promise<UploadResult> {
                 );
 
                 if (duplicateCheck.rows.length > 0) {
-                    // Skip true duplicate
+                    // Skip true duplicate and log it
+                    const existingTestCaseId = duplicateCheck.rows[0].testCaseId;
+                    errors.push({
+                        row: i + 1,
+                        reason: `Duplicate defect (Test Case ID: ${testCaseId || 'N/A'} matches existing defect: ${existingTestCaseId || 'Unknown'})`,
+                    });
                     skipped++;
                     continue;
                 }
@@ -253,13 +269,14 @@ export async function uploadCSV(csvData: string): Promise<UploadResult> {
                 const now = new Date();
 
                 await db.query(
-                    `INSERT INTO defect (id, "testCaseId", "dateReported", module, "expectedResult", "actualResult", severity, priority, status, "dateFixed", "qcStatusBbt", "createdAt")
-                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+                    `INSERT INTO defect (id, "testCaseId", "dateReported", module, summary, "expectedResult", "actualResult", severity, priority, status, "dateFixed", "qcStatusBbt", "createdAt")
+                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
                     [
                         id,
                         testCaseId || null,
                         finalDateReported === "N/A" ? null : finalDateReported,
                         finalModule,
+                        summary || null,
                         expectedResult || "N/A",
                         actualResult || "N/A",
                         severity,

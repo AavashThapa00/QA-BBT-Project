@@ -8,6 +8,7 @@ export interface Defect {
     testCaseId?: string;
     dateReported: Date | null;
     module: string;
+    summary?: string;
     expectedResult: string;
     actualResult: string;
     severity: Severity;

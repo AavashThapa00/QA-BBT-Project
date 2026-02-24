@@ -2,7 +2,7 @@ import { z } from "zod";
 import { Severity, Status } from "./types";
 
 export const SeverityEnum = z.enum([
-    "CRITICAL",
+    "MAJOR",
     "HIGH",
     "MEDIUM",
     "LOW",
