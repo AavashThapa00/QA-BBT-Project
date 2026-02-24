@@ -40,7 +40,7 @@ export default function CSVUpload({
 
     try {
       const text = await file.text();
-      const uploadResult = await uploadCSV(text);
+      const uploadResult = await uploadCSV(text, file.name);
       setResult(uploadResult);
 
         // populate modules list if present

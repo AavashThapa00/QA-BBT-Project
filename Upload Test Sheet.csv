@@ -1,0 +1,28 @@
+Bug ID,Test Case ID,Date Reported,Fork and Module,Summary / Title,Description / Steps to Reproduce,Expected Result,Actual Result,Severity,Priority,Assigned To,Remarks / Notes,Status,Date Fixed ,QC Status by BBT
+,,,,,,,,,,,,,,
+T1,UT-01,2/24/2026,HSA - Dashboard,Dashboard Loading Issue,"1. Login to the application
+2. Navigate to the dashboard
+3. Wait for the dashboard to load","Dashboard should load within 3 seconds with all metrics displayed correctly","Dashboard takes over 10 seconds to load and some charts fail to render properly",Major,High,Backend Team,Performance optimization required,Open,,FALSE
+T2,UT-02,2/24/2026,KFQ - Reports,Export Functionality,"1. Go to Reports section
+2. Select date range for the report
+3. Click on Export button","Report should download as CSV with all selected data","Export button does not respond when clicked, no download occurs",High,High,Frontend Team,Console shows CORS error,Open,,FALSE
+T3,UT-03,2/24/2026,GMST - User Profile,Profile Image Upload,"1. Navigate to User Profile
+2. Click on profile picture
+3. Select an image file (JPG/PNG)
+4. Click Upload","Image should upload successfully and display as profile picture","After uploading, the image appears distorted and pixelated",Medium,Medium,Frontend Team,Image compression issue,In Progress,2/24/2026,FALSE
+T4,UT-04,2/24/2026,NMST - Authentication,Password Reset Email,"1. Click on Forgot Password
+2. Enter registered email address
+3. Submit the form","Password reset email should be received within 2 minutes","Email is received but the reset link has already expired by the time user clicks it",High,High,Backend Team,Token expiry time needs adjustment,Open,,FALSE
+T5,UT-05,2/24/2026,HSA - Settings,Notification Preferences,"1. Go to Settings
+2. Navigate to Notifications tab
+3. Toggle email notifications OFF
+4. Save settings","Email notifications should be disabled for the user","Despite toggling OFF, user continues to receive email notifications",Medium,Low,Backend Team,Database update not persisting,Open,,FALSE
+T6,UT-06,2/24/2026,KFQ - Search,Search Filter Not Working,"1. Go to main search page
+2. Enter search query
+3. Apply filters (category, date range)
+4. Click Search","Results should be filtered according to selected filters","Filters are ignored and all results matching the search query are displayed",Low,Medium,Frontend Team,Filter parameters not being sent to API,In Progress,,FALSE
+T7,UT-07,2/24/2026,GMST - Mobile View,Responsive Layout Issue,"1. Open application on mobile device
+2. Navigate to the Transactions page
+3. Scroll horizontally if needed","Page should be fully responsive and content should fit within screen width without horizontal scroll","Content overflows horizontally, requiring user to scroll left-right to view full information",Medium,Medium,Frontend Team,CSS media queries need adjustment,Open,,FALSE
+T8,UT-08,2/24/2026,HSA - API Integration,Third Party API Timeout,"1. Trigger action that calls external API
+2. Wait for response","API should respond within 5 seconds or show appropriate timeout message","Application freezes for over 30 seconds before showing generic error message",Major,High,Backend Team,Need to implement timeout handling and retry logic,Open,,FALSE

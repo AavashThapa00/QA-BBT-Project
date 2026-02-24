@@ -7,6 +7,7 @@ interface MetricsCardProps {
   value: number;
   icon?: React.ReactNode;
   className?: string;
+  onClick?: () => void;
 }
 
 export default function MetricsCard({
@@ -14,9 +15,13 @@ export default function MetricsCard({
   value,
   icon,
   className = "",
+  onClick,
 }: MetricsCardProps) {
   return (
-    <div className={`bg-slate-900 rounded-lg border border-slate-800 shadow-sm p-6 hover:border-slate-700 transition-colors ${className}`}>
+    <div 
+      className={`bg-slate-900 rounded-lg border border-slate-800 shadow-sm p-6 hover:border-slate-700 transition-colors ${onClick ? 'cursor-pointer hover:shadow-lg hover:border-blue-600' : ''} ${className}`}
+      onClick={onClick}
+    >
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <p className="text-slate-300 text-xs font-semibold uppercase tracking-wide">{title}</p>

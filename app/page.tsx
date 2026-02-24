@@ -2,6 +2,7 @@
 
 import React, { useState, useCallback, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import CSVUpload from "@/app/components/uploads/CSVUpload";
 import ExportDefectsPanel from "@/app/components/exports/ExportDefectsPanel";
 import { HiDownload, HiFolder, HiClipboardList, HiChartBar, HiExclamationCircle, HiViewList } from "react-icons/hi";
@@ -61,6 +62,7 @@ interface DashboardState {
 }
 
 export default function Home() {
+  const router = useRouter();
   const [filters, setFilters] = useState<DefectFilters>({});
   const [state, setState] = useState<DashboardState>({
     metrics: null,
@@ -78,6 +80,7 @@ export default function Home() {
   });
   const [tableLoading, setTableLoading] = useState(false);
   const [isExportPanelOpen, setIsExportPanelOpen] = useState(false);
+  const defectsTableRef = React.useRef<HTMLDivElement>(null);
 
   const loadDashboardData = useCallback(
     async (pageNum = 1) => {
@@ -105,14 +108,8 @@ export default function Home() {
           getAverageResolutionTime(filters),
         ]);
 
-        // Extract unique main modules for filter (HSA, GMST, KFQ, NMST only)
-        const modules = Array.from(
-          new Set(
-            defectsResponse.defects
-              .map((d) => extractMainModule(d.module))
-              .filter((module): module is string => module !== null)
-          )
-        ).sort();
+        // Extract unique main modules for filter using moduleData (which has all modules)
+        const modules = moduleData.map((m) => m.module).sort();
 
         setState((prev) => ({
           ...prev,
@@ -191,6 +188,40 @@ export default function Home() {
     setIsExportPanelOpen(true);
   };
 
+  const scrollToDefectsTable = () => {
+    setTimeout(() => {
+      defectsTableRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+  };
+
+  const handleMetricClick = (filterType: 'all' | 'open' | 'closed' | 'critical') => {
+    if (filterType === 'all') {
+      // Navigate to all-defects page
+      router.push('/all-defects');
+      return;
+    }
+    
+    let newFilters: DefectFilters = {};
+    
+    switch (filterType) {
+      case 'open':
+        // Show all open defects: Open, In Progress, On Hold (Pending)
+        newFilters = { status: ['OPEN', 'IN_PROGRESS', 'ON_HOLD'] };
+        break;
+      case 'closed':
+        // Show closed defects: Fixed (Closed) and As it is
+        newFilters = { status: ['CLOSED', 'AS_IT_IS'] };
+        break;
+      case 'critical':
+        // Show only major severity defects (regardless of status)
+        newFilters = { severity: ['MAJOR'] };
+        break;
+    }
+    
+    setFilters(newFilters);
+    scrollToDefectsTable();
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
       {/* Export Panel Modal */}
@@ -231,10 +262,30 @@ export default function Home() {
           </div>
         ) : state.metrics ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <MetricsCard title="Total Defects" value={state.metrics.totalDefects} icon={<HiChartBar />} />
-            <MetricsCard title="Open Defects" value={state.metrics.openDefects} icon={<HiExclamationCircle />} />
-            <MetricsCard title="Closed Defects" value={state.metrics.closedDefects} icon={<HiClipboardList />} />
-            <MetricsCard title="Critical Priority Issues" value={state.metrics.highSeverityCount} icon={<HiExclamationCircle />} />
+            <MetricsCard 
+              title="Total Defects" 
+              value={state.metrics.totalDefects} 
+              icon={<HiChartBar />} 
+              onClick={() => handleMetricClick('all')}
+            />
+            <MetricsCard 
+              title="Open Defects" 
+              value={state.metrics.openDefects} 
+              icon={<HiExclamationCircle />} 
+              onClick={() => handleMetricClick('open')}
+            />
+            <MetricsCard 
+              title="Closed Defects" 
+              value={state.metrics.closedDefects} 
+              icon={<HiClipboardList />} 
+              onClick={() => handleMetricClick('closed')}
+            />
+            <MetricsCard 
+              title="Critical Priority Issues" 
+              value={state.metrics.highSeverityCount} 
+              icon={<HiExclamationCircle />} 
+              onClick={() => handleMetricClick('critical')}
+            />
           </div>
         ) : null}
 
@@ -278,7 +329,7 @@ export default function Home() {
         ) : null}
 
         {/* Data Table */}
-        <div>
+        <div ref={defectsTableRef}>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-white flex items-center gap-2">
               <HiClipboardList className="w-5 h-5 text-blue-400" />

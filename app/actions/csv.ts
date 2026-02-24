@@ -6,6 +6,7 @@ import { parseCSVDate, normalizeEnumValue, extractColumnValue } from "@/lib/util
 import { Severity, Status, SeverityEnum, StatusEnum, QCStatusBBTEnum } from "@/lib/types";
 import { ZodError } from "zod";
 import { randomUUID } from "crypto";
+import { getCurrentUser } from "@/app/actions/auth";
 
 export interface UploadResult {
     success: boolean;
@@ -22,10 +23,15 @@ export interface UploadResult {
     };
 }
 
-export async function uploadCSV(csvData: string): Promise<UploadResult> {
+export async function uploadCSV(csvData: string, fileName?: string): Promise<UploadResult> {
     const errors: Array<{ row: number; reason: string }> = [];
     let inserted = 0;
     let skipped = 0;
+    const sourceFileName = fileName || `upload_${Date.now()}.csv`;
+    
+    // Get current user's name for uploadedBy tracking
+    const user = await getCurrentUser();
+    const uploadedByName = user?.name || "Unknown"
 
     try {
         // Parse CSV properly handling quoted multiline cells
@@ -297,8 +303,8 @@ export async function uploadCSV(csvData: string): Promise<UploadResult> {
                 const now = new Date();
 
                 await db.query(
-                    `INSERT INTO defect (id, "testCaseId", "dateReported", module, summary, "expectedResult", "actualResult", severity, priority, "assignedTo", status, "dateFixed", "qcStatusBbt", "createdAt")
-                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
+                    `INSERT INTO defect (id, "testCaseId", "dateReported", module, summary, "expectedResult", "actualResult", severity, priority, "assignedTo", status, "dateFixed", "qcStatusBbt", "sourceFile", "uploadedBy", "createdAt")
+                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`,
                     [
                         id,
                         testCaseId || null,
@@ -313,6 +319,8 @@ export async function uploadCSV(csvData: string): Promise<UploadResult> {
                         status,
                         dateFixed,
                         qcStatusBbt,
+                        sourceFileName,
+                        uploadedByName,
                         now,
                     ]
                 );

@@ -113,7 +113,7 @@ export async function loginAction(formData: FormData) {
     path: "/",
   });
 
-  redirect("/profile");
+  redirect("/");
 }
 
 export async function logoutAction() {

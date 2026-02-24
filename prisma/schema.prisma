@@ -68,10 +68,12 @@ model Defect {
   status          Status
   dateFixed       DateTime?     @db.Date
   qcStatusBbt     QCStatusBBT
+  sourceFile      String?       @db.VarChar(255)
   createdAt       DateTime      @default(now())
 
   @@index([dateReported])
   @@index([module])
   @@index([severity])
   @@index([status])
+  @@index([sourceFile])
 }

@@ -81,7 +81,7 @@ export default function Navigation() {
                 <span className="text-white font-bold text-sm">QA</span>
               </div>
               <span className="text-white font-semibold text-lg hidden sm:block">
-                Black Box Testing team
+                Black Box Testing Team
               </span>
             </Link>
           </div>
