@@ -28,9 +28,9 @@ export default function DefectsTrendChart({
   title = "Defects Trend Over Time",
 }: DefectsTrendChartProps) {
   return (
-    <div className="bg-gradient-to-br from-green-950 via-emerald-900 to-green-950 rounded-xl shadow-lg border border-green-800 p-8 hover:shadow-2xl transition-shadow backdrop-blur-sm">
+    <div className="bg-slate-900 rounded-lg border border-slate-800 shadow-sm p-8">
       <h3 className="text-lg font-semibold text-white mb-2 flex items-center gap-2">
-        <span className="w-8 h-8 rounded-lg bg-green-900 text-green-300 flex items-center justify-center text-sm"><HiTrendingUp className="w-5 h-5"/></span>
+        <HiTrendingUp className="w-5 h-5 text-blue-400" />
         {title}
       </h3>
       <p className="text-xs text-slate-400 mb-6">Historical trends of defect reports</p>

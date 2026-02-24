@@ -106,20 +106,20 @@ export default function ExportDefectsPanel({
         
         {/* Modal Dialog */}
         <div className="absolute inset-0 flex items-center justify-center p-4">
-          <div className={`bg-gradient-to-br from-rose-950 via-pink-900 to-rose-950 rounded-xl shadow-2xl max-w-md w-full transform transition-all duration-400 border border-rose-800 ${
+          <div className={`bg-slate-900 rounded-lg shadow-lg max-w-md w-full transform transition-all duration-400 border border-slate-800 ${
             isOpen ? "scale-100 opacity-100" : "scale-95 opacity-0"
           }`}>
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-rose-800">
+            <div className="flex items-center justify-between p-6 border-b border-slate-700">
               <div className="flex items-center gap-2">
-                <HiDownload className="w-5 h-5 text-rose-400" />
+                <HiDownload className="w-5 h-5 text-blue-400" />
                 <h2 className="text-lg font-semibold text-white">
                   Export All Defects
                 </h2>
               </div>
               <button
                 onClick={onClose}
-                className="p-1 hover:bg-rose-900 rounded-lg transition-colors"
+                className="p-1 hover:bg-slate-800 rounded-lg transition-colors"
                 aria-label="Close"
               >
                 <HiX className="w-5 h-5 text-slate-400" />
@@ -176,7 +176,7 @@ export default function ExportDefectsPanel({
             </div>
 
             {/* Footer */}
-            <div className="flex gap-3 p-6 border-t border-rose-800">
+            <div className="flex gap-3 p-6 border-t border-slate-700">
               <button
                 onClick={onClose}
                 disabled={isLoading}
@@ -187,7 +187,7 @@ export default function ExportDefectsPanel({
               <button
                 onClick={handleExport}
                 disabled={isLoading}
-                className="flex-1 px-4 py-2 bg-gradient-to-r from-rose-600 to-pink-600 text-white font-medium rounded-lg hover:from-rose-700 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+                className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
               >
                 {isLoading ? (
                   <>

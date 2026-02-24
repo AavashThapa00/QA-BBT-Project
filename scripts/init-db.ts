@@ -12,7 +12,7 @@ async function initializeDatabase() {
                 module VARCHAR(255) NOT NULL,
                 "expectedResult" TEXT NOT NULL,
                 "actualResult" TEXT NOT NULL,
-                severity VARCHAR(50) NOT NULL CHECK (severity IN ('CRITICAL', 'HIGH', 'MEDIUM', 'LOW')),
+                severity VARCHAR(50) NOT NULL CHECK (severity IN ('MAJOR', 'HIGH', 'MEDIUM', 'LOW')),
                 priority VARCHAR(100) NOT NULL,
                 status VARCHAR(50) NOT NULL CHECK (status IN ('OPEN', 'IN_PROGRESS', 'CLOSED', 'ON_HOLD', 'AS_IT_IS')),
                 "dateFixed" DATE,

@@ -8,7 +8,7 @@ datasource db {
 }
 
 enum Severity {
-  CRITICAL
+  MAJOR
   HIGH
   MEDIUM
   LOW
@@ -31,6 +31,7 @@ enum QCStatusBBT {
 
 model Defect {
   id              String        @id @default(uuid())
+  testCaseId      String?       @db.VarChar(100)
   dateReported    DateTime      @db.Date
   module          String        @db.VarChar(255)
   expectedResult  String        @db.Text

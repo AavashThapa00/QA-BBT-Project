@@ -17,14 +17,14 @@ interface DefectsBySeverityChartProps {
 }
 
 const COLORS: Record<string, string> = {
-  [SeverityEnum.CRITICAL]: "#dc2626",
+  [SeverityEnum.MAJOR]: "#dc2626",
   [SeverityEnum.HIGH]: "#ea580c",
   [SeverityEnum.MEDIUM]: "#ca8a04",
   [SeverityEnum.LOW]: "#16a34a",
 };
 
 const SEVERITY_ORDER: Record<Severity, number> = {
-  CRITICAL: 1,
+  MAJOR: 1,
   HIGH: 2,
   MEDIUM: 3,
   LOW: 4,
@@ -46,9 +46,9 @@ export default function DefectsBySeverityChart({
   }));
 
   return (
-    <div className="bg-gradient-to-br from-purple-950 via-purple-900 to-purple-950 rounded-xl shadow-lg border border-purple-800 p-8 hover:shadow-2xl transition-shadow backdrop-blur-sm">
+    <div className="bg-slate-900 rounded-lg border border-slate-800 shadow-sm p-8">
       <h3 className="text-lg font-semibold text-white mb-2 flex items-center gap-2">
-        <span className="w-8 h-8 rounded-lg bg-purple-900 text-purple-300 flex items-center justify-center text-sm"><HiChartBar className="w-5 h-5"/></span>
+        <HiChartBar className="w-5 h-5 text-blue-400" />
         {title}
       </h3>
       <p className="text-xs text-slate-400 mb-6">Number of defects by priority level</p>
@@ -60,47 +60,48 @@ export default function DefectsBySeverityChart({
           </div>
         </div>
       ) : (
-        <ResponsiveContainer width="100%" height={320}>
+        <ResponsiveContainer width="100%" height={480}>
           <BarChart
             data={chartData}
             layout="vertical"
-            margin={{ top: 10, right: 80, left: 80, bottom: 10 }}
+            margin={{ top: 20, right: 40, left: 5, bottom: 20 }}
           >
-            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={true} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
             <XAxis 
               type="number"
-              tick={{ fontSize: 12, fill: "#64748b" }}
-              axisLine={{ stroke: "#cbd5e1" }}
+              tick={{ fontSize: 13, fill: "#cbd5e1", fontWeight: 500 }}
+              axisLine={{ stroke: "#475569" }}
             />
             <YAxis
               type="category"
               dataKey="name"
-              tick={{ fontSize: 13, fill: "#64748b", fontWeight: 500 }}
-              axisLine={{ stroke: "#cbd5e1" }}
-              width={75}
+              tick={{ fontSize: 15, fill: "#e2e8f0", fontWeight: 700 }}
+              axisLine={{ stroke: "#475569" }}
+              width={100}
             />
             <Tooltip 
               contentStyle={{
                 backgroundColor: "#1e293b",
-                border: "none",
-                borderRadius: "8px",
-                boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+                border: "1px solid #475569",
+                borderRadius: "10px",
+                boxShadow: "0 8px 16px rgba(0, 0, 0, 0.3)",
+                padding: "12px",
               }}
-              labelStyle={{ color: "#f1f5f9" }}
+              labelStyle={{ color: "#f1f5f9", fontSize: 14, fontWeight: 600 }}
               formatter={(value) => [value, "Defects"]}
-              cursor={{ fill: "rgba(0, 0, 0, 0.05)" }}
+              cursor={{ fill: "rgba(200, 41, 54, 0.05)" }}
             />
-            <Bar dataKey="value" name="Defects" radius={[0, 8, 8, 0]} fill="#3b82f6">
+            <Bar dataKey="value" name="Defects" radius={[0, 10, 10, 0]} fill="#3b82f6">
               {chartData.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={COLORS[entry.severity] || "#999999"} />
               ))}
               <LabelList 
                 dataKey="value" 
                 position="right" 
-                fill="#1e293b"
-                fontSize={13}
-                fontWeight="600"
-                offset={8}
+                fill="#e2e8f0"
+                fontSize={14}
+                fontWeight="700"
+                offset={10}
               />
             </Bar>
           </BarChart>

@@ -1,0 +1,43 @@
+Bug ID,Test Case ID,Date Reported,Module / Component,Summary / Title,Description / Steps to Reproduce,Expected Result,Actual Result,Severity,Priority,Assigned To,Remarks / Notes,Status,Date Fixed ,QC Status by BBT
+,29th Dec-30th Dec (Issue Doc),,,,,,,,,,,,,
+B1,FP003,12/29/2025,Forgot Password,Verify reset with unregistered email,"1. Click “Forgot Password.”
+2. Enter a unregistered email.
+3. Click “Submit/Reset.”","Should Display correct messages like ""This email address is not registered. Please check and try again.""","It displays “Check your email” even when the email address is not registered. Additionally, no email is received.",Medium,Medium,Frontend,"If this needs to be handled then it needs to be 
+handled from backend first then frontend team",As it is,12/31/2025,TRUE
+B2,LG008,12/29/2025,Log In,Case sensitivity check for email,"1. Go to the Login page.
+2. Enter the registered email in different letter cases (e.g., uppercase, mixed case).
+3. Enter the correct password.
+4. Click “Login”.","even if the user is logged in, the correct email should be displayed in the profile section","Correct email: aavash.thapa@innovatetech.io
+
+Attempted login using aAvash.thapA@innovatetech.io
+>>>Logged in
+>>>Email displays the same Aavash.thapA@innovatetech.io in profile ",Medium,Medium,Frontend,Fixed,FIxed,12/31/2025,TRUE
+B3,A_DB005,12/29/2025,App.Dashboard,Verify “Learn more” button opens full suggestion or topic,1. Click “Learn more” in the Tips & Test section.,There should be Next and Previous button after clicking Learn More,"After Clicking Learn More the next, previous button is not visible",Medium,Medium,Devs,,As it is,,TRUE
+B4,G005,12/29/2025,Get one Answer a Day,"Verify if the contents are accordingly or not",Choose the specific subjects which require latex and go through the questions.,The content should display properly,"Latex issue in the questions, for example: AS/A Levels Chemistry Chapter Chemical Energetics",High,High,Devs,,Pending,,FALSE
+B5,RN004,12/29/2025,Revision Notes,"Verify Redirection  and functionality of Revison Notes ""Watch Videos"" feature","Pre Condition: Select A levels in the app
+
+1. Click on IGCSE Biology 
+2. CLick on Chapter 2
+3. Click on 2.01 - Cell Structure and Organisation (I)
+4. Click on Watch Videos",It should redirect to the Revision Notes content page of IGCSE Biology 1.01 - Characteristics of Living Organisms of app.homeschool.asia and should be able to watch videos ,"Redirected to the page of app.homeschool.asia
+Saying ""unauthorised to perform this action""",Major,Major,Devs,Already identified Issue>> Pending Issue,FIxed,12/31/2025,TRUE
+B6,RN029,12/29/2025,App → Revision Notes,Revision Notes content disappears after zooming out,"1.The issue occurs inside the Revision Notes section within any chapter.
+2. The content loads normally at first.
+3. When the user zooms out even once, all the content becomes blank.
+4. Zooming back to normal does NOT restore the content.
+5. User must reload the Revision Notes page to make the content appear again.",The Revision Notes content should remain visible after zooming in or out.,"Content becomes blank after zooming out, and does not return even after restoring normal zoom. Reloading is required.",Major,Major,Devs,Already identified Issue>> Pending Issue,FIxed,12/31/2025,TRUE
+B7,WF004,12/29/2025,Learning Hub,Verify user access to topical videos without authorization errors.,"1. Go to Learning Hub.
+2. Scroll down to ""Topical Videos for every lesson"" section.
+3. Select any lesson.",The video should open or redirect to the respective video page.,Displays error message: “Unauthorized to perform this action.”,Major,Major,Devs,Already identified Issue>> Pending Issue,FIxed,12/31/2025,TRUE
+B8,PB_03,12/30/2025,PlanBook,Verify that the user cannot create a planbook with past dates. summary,"1. Click on ""Create Plan"" Button
+2. Select the start date to the past date. and enter all required field
+3. Click on the save button","The error message ""StartDate must be greater than current date"" should be displayed","When a past date is selected, the “Create Plan” button is still visible and clickable. Upon clicking, the system displays the error message.",High,High,Devs,,Pending,,TRUE
+B9,RE013,12/31/2025,Registration,Verify the email verification ,"1. Register with new email
+2. Go to gmail for email verification
+3. Click on Verify Email","1. A message like verify your email should pop up just like in the app
+2. A proper message after verifying your email is a must","1. You don't receive a verification email message on the web. 
+2. After clicking on Verify Email from Gmail, You get redirected to the app with no proper your email has been verified (Just a toast message)",High,High,Devs,It's a requirement rather than issue,Hold,,FALSE
+B10,RE014,12/31/2025,Registration,Verify is the registration is accepted by using invalid name format from app,"1. Go to Registration page.
+2. Enter invalid name format (“Aavash 69”).
+3. Fill valid password.
+4. Click on “Sign Up”.",Names with numbers should be allowed,You are able to register with a name tat contains number and few special charcaters,Medium,Medium,Frontend,,FIxed,12/31/2025,TRUE

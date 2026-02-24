@@ -1,0 +1,49 @@
+Bug ID,Test Case ID,Date Reported,Module / Component,Summary / Title,Description / Steps to Reproduce,Expected Result,Actual Result,Severity,Priority,Assigned To,Remarks / Notes,Status,Date Fixed ,QC Status by BBT
+,Issue Log,,,,,,,,,,,,,
+B1,SP005,2/5/2026,Profile,Verify data accuracy in Payment Details modal,"1. Open Payment Details modal
+2. Review ""Subscribed By"" and dates",The Payment Details modal should display the actual subscription purchase date and time.,It shows the current time instead of the actual purchase time,High,High,Devs,,-,,FALSE
+B2,DB005,2/6/2026,Dashboard,Unavailable videos displayed while creating a Video Challenge,"1. Go to Dashboard page.
+2. Click on the  ""Create Video Challenge"" card.","When clicking ""Create Video Challenge"", few working links shows unavailable video
+https://www.youtube.com/watch?v=WioL50vGE04 
+https://www.youtube.com/watch?v=X37crY4O7yc&t=1s ",All available video links should load and play correctly when initiating a Video Challenge.,Medium,Medium,Devs,"The person who uploaded the video turned off embedding, so the video can’t be played.",,,FALSE
+B3,DJ006,2/6/2026,Dojo,"The Dojo name/title is displayed the same as the first dojo in the list for all other dojos. Regardless of which dojo is selected, the title does not update and continues to show the first dojo’s name.","1. Go to the Discover page.
+2. Create multiple Dojos (at least 4–5), choosing from any Sifus.
+3. Ensure that each Dojo is created using different modes (use all three available modes across the different Dojos).
+4. After creating the Dojos, navigate to the Filter/Dropdown section.
+5. Select Quiz Only and then Video Only to filter the Dojos.
+6. Click on the Status bar options (Active / Inactive) to further filter the list.
+7. Then click on all the Dojos from the list and observe the title name","The title/name should be displayed as per the selected dojo, and it's orignal name title","There appears to be an issue within the Dojo. Although the exact steps to reliably reproduce the issue are not yet confirmed, it has been observed by two team members.
+
+The issue is that regardless of which dojo is selected, the title name remains the same. Even after refreshing the page, the title does not update and continues to display the incorrect name.",Medium,Medium,Devs,"Since the issue cannot be consistently replicated and the steps to reproduce are not confirmed, the priority has been set to Low for now.
+
+Please refer to the Screenrecord for the issue reference.
+ Dojo.webm",-,,FALSE
+B4,DJ012,2/6/2026,Dojo,Dojos Page Not Reloading from Navigation,"1. Click on the “Dojos” icon in the left sidebar to load the Dojos page.
+2. Wait until the Dojos page is fully loaded.
+3. Click on the “Dojos” icon again to refresh or reopen the main dojo page.","The Dojo page should be refreshed after clicking ""Dojo"" from the navigation bar same as we refresh it from the browser","Search for any dojo that you haven't created and try to click on ""Dojos"" from navigation
+The page does not reload as it does not change but when refreshed rom the broswer itslef the  main dojo page appears",Medium,Medium,Devs,,,,FALSE
+B5,NB003,2/6/2026,Blogs,Blogs Link Redirects to Wrong Section,"1. Go to the Home page.
+2. Click on the ""Sifu Scroll"" link in the header.
+3. Click on the ""Blogs"" from the dropdown","Clicking on Blogs should redirect the user to the Blog section, not the Stories from the Dojo section.","After clicking Blgs it should redirect to the Blog section, but currently it redirects to the
+STORIES FROM THE DOJO section.",Medium,Medium,Frontend,,FIxed,,TRUE
+B6,RE004,2/6/2026,Registration - Name section,Enforce Restriction on Numeric-Only Usernames,"1. Go to Registration page.
+2. Enter invalid name format (“Aavash 67”).
+3. Fill valid password.
+4. Click on “Join as Sifu”.","Since special characters are already restricted in usernames, numeric-only usernames should also be restricted.","User name like ""12345"" is also being registered",Medium,Medium,Devs,,,,FALSE
+B7,RE009,2/6/2026,Registration - Wifi Off,Unclear Error Message Displayed to User,"1. Disconnect internet.
+2. Fill valid registration details.
+3. Click on “Join as Sifu”.","Proper message like ""Network error. Please check your internet connection and try again.
+"" SHould be displayed same as HSA","Improper message: Something Went Wrong"" is shown, which will cause confusion to the user",Low,Low,Devs,,,,FALSE
+B8,FP009,2/6/2026,Forgot Password - Wifi Off,Unclear Error Message Displayed to User,"1. Disconnect internet.
+2. Enter valid email.
+3. Click “Submit/Reset.”","Proper message like ""Network error. Please check your internet connection and try again.
+"" SHould be displayed same as HSA","Improper message: Something Went Wrong"" is shown, which will cause confusion to the user",Low,Low,Devs,,,,FALSE
+B9,LG007,2/6/2026,Login- Wifi off,Unclear Error Message Displayed to User,"1. Disconnect internet.
+2. Enter valid credentials.
+3. Click “Login”.","Proper message like ""Network error. Please check your internet connection and try again.
+"" SHould be displayed same as HSA","Improper message: Something Went Wrong"" is shown, which will cause confusion to the user",Low,Low,Devs,,,,FALSE
+B10,SS003,2/6/2026,Web-Sifu Scroll,“Learn More” button misaligned on minimized display,"1. Click on ""Sifu Scroll""
+2. Click on ""Stories""
+3. Observe the alignment of the “Learn More” button.",The “Learn More” button should remain properly aligned regardless of display size.,"When the display size is minimized, the ""Learn More"" alignment needs to be corrected.",Low,Low,Frontend,,FIxed,,TRUE
+B11,AR003,Global Content Type Filter - All,Discover>Around the Kung Fu Arena>Video Challenges,Screen flickers when switching between Video and Quiz Challenges filters,"1. Click the ""All"" button at the top of the section.
+2. Verify both Video and Quiz-only challenges are visible in the grid.","When switching between Video Challenges and Quiz Challenges filters, the content should update immediately without any screen flickering, and the filtered challenges should be displayed correctly",The screen flickers for a few seconds when clicking on Video Challenges or Quiz Challenges before the filtered content is displayed.,Medium,Medium,Devs,,,,

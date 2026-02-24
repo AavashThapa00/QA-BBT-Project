@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import { HiInbox, HiX, HiChevronDown } from "react-icons/hi";
 import { Defect, Severity } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
@@ -17,7 +18,7 @@ interface DefectsTableProps {
 }
 
 const SEVERITY_COLORS: Record<Severity, string> = {
-  CRITICAL: "bg-red-900 text-red-200",
+  MAJOR: "bg-red-900 text-red-200",
   HIGH: "bg-orange-900 text-orange-200",
   MEDIUM: "bg-yellow-900 text-yellow-200",
   LOW: "bg-green-900 text-green-200",
@@ -143,6 +144,7 @@ export default function DefectsTable({
   sortOrder,
   onSortChange,
 }: DefectsTableProps) {
+  const router = useRouter();
   const [moduleFilter, setModuleFilter] = useState<string[]>([]);
   const [severityFilter, setSeverityFilter] = useState<string[]>([]);
   const [priorityFilter, setPriorityFilter] = useState<string[]>([]);
@@ -169,10 +171,10 @@ export default function DefectsTable({
   });
 
   return (
-    <div className="bg-gradient-to-br from-slate-900 via-cyan-900 to-slate-900 rounded-xl shadow-lg border border-slate-800 overflow-hidden hover:shadow-2xl transition-shadow backdrop-blur-sm">
+    <div className="bg-slate-900 rounded-lg border border-slate-800 overflow-hidden shadow-sm">
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-slate-700">
-          <thead className="bg-gradient-to-r from-slate-800 to-slate-900">
+          <thead className="bg-slate-800 border-b border-slate-700">
             <tr>
               <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">
                 <SortButton
@@ -206,7 +208,7 @@ export default function DefectsTable({
                     { value: "LOW", label: "Low" },
                     { value: "MEDIUM", label: "Medium" },
                     { value: "HIGH", label: "High" },
-                    { value: "CRITICAL", label: "Major" },
+                    { value: "MAJOR", label: "Major" },
                   ]}
                   selectedValues={severityFilter}
                   onChange={setSeverityFilter}
@@ -252,7 +254,7 @@ export default function DefectsTable({
               </th>
             </tr>
           </thead>
-          <tbody className="bg-gradient-to-b from-slate-800 to-slate-900 divide-y divide-slate-700">
+          <tbody className="bg-slate-900 divide-y divide-slate-800">
             {isLoading ? (
               <tr>
                 <td colSpan={6} className="px-6 py-8 text-center">
@@ -277,7 +279,11 @@ export default function DefectsTable({
               </tr>
             ) : (
               filteredDefects.map((defect) => (
-                <tr key={defect.id} className="hover:bg-slate-700 transition-colors">
+                <tr 
+                  key={defect.id} 
+                  onClick={() => router.push(`/defects/${defect.id}`)}
+                  className="hover:bg-slate-700 transition-colors cursor-pointer"
+                >
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-white font-medium">
                     {defect.dateReported ? formatDate(defect.dateReported) : "N/A"}
                   </td>
@@ -286,7 +292,7 @@ export default function DefectsTable({
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span
-                      className={`inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold ${
+                      className={`inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold uppercase ${
                         SEVERITY_COLORS[defect.severity]
                       }`}
                     >
@@ -295,7 +301,7 @@ export default function DefectsTable({
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span
-                      className={`inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold ${
+                      className={`inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold uppercase ${
                         PRIORITY_COLORS[defect.priority] || "bg-slate-700 text-slate-200"
                       }`}
                     >
@@ -322,7 +328,7 @@ export default function DefectsTable({
       </div>
 
       {/* Pagination */}
-      <div className="bg-gradient-to-r from-slate-800 to-slate-900 px-6 py-4 border-t border-slate-700 flex items-center justify-between">
+      <div className="bg-slate-800 px-6 py-4 border-t border-slate-700 flex items-center justify-between">
         <div className="text-sm text-slate-300 font-medium">
           Page <span className="font-bold text-white">{currentPage}</span> of <span className="font-bold text-white">{totalPages}</span>
         </div>

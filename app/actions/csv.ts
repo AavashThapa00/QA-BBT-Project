@@ -17,6 +17,9 @@ export interface UploadResult {
         reason: string;
     }>;
     modules?: string[];
+    debug?: {
+        csvHeaders?: string[];
+    };
 }
 
 export async function uploadCSV(csvData: string): Promise<UploadResult> {
@@ -40,6 +43,9 @@ export async function uploadCSV(csvData: string): Promise<UploadResult> {
         }
 
         const headers = rows[0];
+        
+        // Log the headers found (for debugging)
+        console.log("CSV Headers found:", headers);
 
         for (let i = 1; i < rows.length; i++) {
             const values = rows[i];
@@ -47,6 +53,7 @@ export async function uploadCSV(csvData: string): Promise<UploadResult> {
             // Skip rows where all values are empty or whitespace-only
             const hasAnyData = values.some(v => v && v.trim().length > 0);
             if (!hasAnyData) {
+                skipped++;
                 continue;
             }
 
@@ -61,24 +68,47 @@ export async function uploadCSV(csvData: string): Promise<UploadResult> {
                 const validatedRow = CSVRowSchema.parse(row) as Record<string, string>;
 
                 // Extract and normalize values
-                const dateReported = parseCSVDate(
-                    extractColumnValue(
-                        validatedRow,
-                        [
-                            "Date Reported",
-                            "date reported",
-                            "dateReported",
-                            "date_reported",
-                        ]
-                    )
+                const dateReportedStr = extractColumnValue(
+                    validatedRow,
+                    [
+                        "Date Reported",
+                        "date reported",
+                        "dateReported",
+                        "date_reported",
+                    ]
                 );
+                
+                const dateReported = parseCSVDate(dateReportedStr);
 
-                // If Date Reported is missing, silently ignore this row (per user request)
-                if (!dateReported) {
+                // If Date Reported is missing but row has data, report error so user knows
+                if (!dateReported && (validatedRow.module || validatedRow["Fork and Module"] || validatedRow.expectedResult || validatedRow.actualResult)) {
+                    const errorMsg = !dateReportedStr 
+                        ? `Row has data but missing valid 'Date Reported' - got: "${dateReportedStr}"`
+                        : `Invalid date format: "${dateReportedStr}" (expected: MM/DD/YYYY or YYYY-MM-DD)`;
+                    
+                    errors.push({
+                        row: i + 1,
+                        reason: errorMsg,
+                    });
+                    skipped++;
+                    continue;
+                } else if (!dateReported) {
+                    // Row is empty or has minimal data - silently skip
+                    skipped++;
                     continue;
                 }
 
                 const finalDateReported = dateReported;
+
+                const testCaseId = extractColumnValue(
+                    validatedRow,
+                    [
+                        "Test Case ID",
+                        "test case id",
+                        "testCaseId",
+                        "test_case_id",
+                    ]
+                );
 
                 const module = extractColumnValue(
                     validatedRow,
@@ -128,7 +158,7 @@ export async function uploadCSV(csvData: string): Promise<UploadResult> {
                 if (severityStr) {
                     const lowerSeverity = severityStr.toLowerCase().trim();
                     if (lowerSeverity === "major" || lowerSeverity === "critical") {
-                        severity = SeverityEnum.CRITICAL;
+                        severity = SeverityEnum.MAJOR;
                     } else if (lowerSeverity === "high") {
                         severity = SeverityEnum.HIGH;
                     } else if (lowerSeverity === "medium") {
@@ -223,10 +253,11 @@ export async function uploadCSV(csvData: string): Promise<UploadResult> {
                 const now = new Date();
 
                 await db.query(
-                    `INSERT INTO defect (id, "dateReported", module, "expectedResult", "actualResult", severity, priority, status, "dateFixed", "qcStatusBbt", "createdAt")
-                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+                    `INSERT INTO defect (id, "testCaseId", "dateReported", module, "expectedResult", "actualResult", severity, priority, status, "dateFixed", "qcStatusBbt", "createdAt")
+                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
                     [
                         id,
+                        testCaseId || null,
                         finalDateReported === "N/A" ? null : finalDateReported,
                         finalModule,
                         expectedResult || "N/A",
@@ -244,14 +275,25 @@ export async function uploadCSV(csvData: string): Promise<UploadResult> {
             } catch (error) {
                 let reason = "Unknown error";
                 if (error instanceof ZodError) {
-                    reason = error.issues.map((e: any) => e.message).join(", ");
+                    // Get detailed field errors
+                    const fieldErrors = error.issues.map((e: any) => {
+                        const path = e.path.join(".");
+                        return `${path}: ${e.message}`;
+                    }).join("; ");
+                    reason = fieldErrors || "Validation failed";
                 } else if (error instanceof Error) {
                     reason = error.message;
                 }
-                errors.push({
-                    row: i + 1,
-                    reason,
-                });
+                
+                // Only report errors for rows that actually have data
+                if (values.some(v => v && v.trim().length > 0)) {
+                    console.error(`Row ${i + 1} validation error:`, reason);
+                    console.error(`Row data:`, values);
+                    errors.push({
+                        row: i + 1,
+                        reason,
+                    });
+                }
                 skipped++;
             }
         }
@@ -263,6 +305,9 @@ export async function uploadCSV(csvData: string): Promise<UploadResult> {
             skipped,
             errors: errors, // Return ALL errors, not just first 10
             modules: Array.from(modulesSet).sort(),
+            debug: {
+                csvHeaders: headers,
+            },
         };
     } catch (error) {
         return {

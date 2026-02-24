@@ -29,12 +29,19 @@ function extractMainModule(moduleName: string): string | null {
   
   // Extract the part before "-" or before a space followed by parenthesis
   // e.g., "HSA- Mock Exam" → "HSA", "KFQ Stage-Host Live" → "KFQ"
-  const match = moduleName.match(/^([A-Z]+)/);
-  const mainModule = match ? match[1] : moduleName;
+  const lowerName = moduleName.toLowerCase();
   
-  // Only allow specific modules
-  const allowedModules = ["HSA", "GMST", "KFQ", "NMST"];
-  return allowedModules.includes(mainModule) ? mainModule : null;
+  // Check for known module prefixes
+  if (lowerName.includes("hsa")) return "HSA";
+  if (lowerName.includes("kfq")) return "KFQ";
+  if (lowerName.includes("gmst")) return "GMST";
+  if (lowerName.includes("nmst")) return "NMST";
+  if (lowerName.includes("mst")) return "MST";
+  if (lowerName.includes("alston") || lowerName.includes("innovatetech")) return "Innovatetech";
+  
+  // If no known prefix, use the first word
+  const match = moduleName.match(/^([A-Z0-9]+)/);
+  return match ? match[1] : null;
 }
 
 interface DashboardState {
@@ -85,8 +92,8 @@ export default function Home() {
           avgResolutionTime,
         ] = await Promise.all([
           getDefectMetrics(filters),
-          getDefectsByModule(filters),
-          getDefectsBySeverity(filters),
+          getDefectsByModule(), // No filters - always show all data
+          getDefectsBySeverity(), // No filters - always show all data
           getDefectsTrend(filters, "day"),
           getDefects(filters, {
             page: pageNum,
@@ -221,10 +228,10 @@ export default function Home() {
         isExportPanelOpen ? "blur-sm opacity-50 pointer-events-none" : ""
       }`}>
         {/* CSV Upload */}
-        <div className="bg-gradient-to-br from-blue-950 via-sky-900 to-blue-950 rounded-xl shadow-lg border border-blue-800 hover:shadow-2xl transition-shadow backdrop-blur-sm">
+        <div className="bg-slate-900 rounded-lg border border-slate-800 shadow-sm">
           <div className="p-6 sm:p-8">
-            <h2 className="text-xl font-semibold text-white mb-6 flex items-center gap-2">
-              <span className="w-8 h-8 rounded-lg bg-blue-900 text-blue-300 flex items-center justify-center text-sm"><HiFolder className="w-5 h-5" /></span>
+            <h2 className="text-lg font-semibold text-white mb-6 flex items-center gap-2">
+              <HiFolder className="w-5 h-5 text-blue-400" />
               Upload Defects Data
             </h2>
             <CSVUpload onUploadSuccess={handleUploadSuccess} />
@@ -282,11 +289,11 @@ export default function Home() {
         {state.isLoading ? (
           <SkeletonCard />
         ) : state.averageResolutionTime > 0 ? (
-          <div className="bg-gradient-to-br from-orange-950 via-amber-900 to-orange-950 rounded-xl shadow-lg border border-orange-800 p-8 hover:shadow-2xl transition-shadow backdrop-blur-sm">
-            <h3 className="text-sm font-semibold text-orange-300 uppercase tracking-wide mb-3">
+          <div className="bg-slate-900 rounded-lg border border-slate-800 shadow-sm p-6">
+            <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-3">
               Average Resolution Time
             </h3>
-            <p className="text-5xl font-bold bg-gradient-to-r from-orange-400 to-amber-400 bg-clip-text text-transparent">
+            <p className="text-5xl font-bold text-white">
               {state.averageResolutionTime}
             </p>
             <p className="text-slate-400 text-sm mt-2">days to resolve defects</p>
@@ -295,8 +302,8 @@ export default function Home() {
 
         {/* Data Table */}
         <div>
-          <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
-            <span className="w-8 h-8 rounded-lg bg-blue-500 text-white flex items-center justify-center text-sm"><HiClipboardList className="w-5 h-5" /></span>
+          <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+            <HiClipboardList className="w-5 h-5 text-blue-400" />
             Defects List
           </h2>
           {state.isLoading ? (

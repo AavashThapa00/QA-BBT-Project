@@ -1,9 +1,11 @@
 // Type definitions for Defect
-export type Severity = "CRITICAL" | "HIGH" | "MEDIUM" | "LOW";
+export type Severity = "MAJOR" | "HIGH" | "MEDIUM" | "LOW";
 export type Status = "OPEN" | "IN_PROGRESS" | "CLOSED" | "ON_HOLD" | "AS_IT_IS";
+export type QCStatusBBT = "PASSED" | "FAILED" | "PENDING" | "REJECTED";
 
 export interface Defect {
     id: string;
+    testCaseId?: string;
     dateReported: Date | null;
     module: string;
     expectedResult: string;
@@ -12,13 +14,13 @@ export interface Defect {
     priority: string;
     status: Status;
     dateFixed: Date | null;
-    // qcStatusBbt removed
+    qcStatusBbt: QCStatusBBT;
     createdAt: Date;
 }
 
 // Export enum values
 export const SeverityEnum = {
-    CRITICAL: "CRITICAL" as Severity,
+    MAJOR: "MAJOR" as Severity,
     HIGH: "HIGH" as Severity,
     MEDIUM: "MEDIUM" as Severity,
     LOW: "LOW" as Severity,
@@ -33,7 +35,10 @@ export const StatusEnum = {
 } as const;
 
 export const QCStatusBBTEnum = {
-    // QCStatusBBT removed
+    PASSED: "PASSED" as QCStatusBBT,
+    FAILED: "FAILED" as QCStatusBBT,
+    PENDING: "PENDING" as QCStatusBBT,
+    REJECTED: "REJECTED" as QCStatusBBT,
 } as const;
 
 export interface DefectFilters {

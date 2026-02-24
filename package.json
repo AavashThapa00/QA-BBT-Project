@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "init-db": "tsx scripts/init-db.ts"
+    "init-db": "tsx scripts/init-db.ts",
+    "add-testCaseId": "tsx scripts/add-testCaseId.ts",
+    "migrate-critical-to-major": "tsx scripts/migrate-critical-to-major.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.4.1",

@@ -29,14 +29,17 @@ export async function getDefectMetrics(filters?: DefectFilters): Promise<{
 
         const [totalResult, openResult, closedResult, highSeverityResult] = await Promise.all([
             db.query<{ count: string }>(buildCountQuery(), baseParams),
-            // openDefects should count only Pending (ON_HOLD)
-            db.query<{ count: string }>(buildCountQuery(`status = $${paramOffset + 1}`), [...baseParams, StatusEnum.ON_HOLD]),
+            // openDefects should count OPEN, IN_PROGRESS, and ON_HOLD (Pending)
+            db.query<{ count: string }>(
+                buildCountQuery(`status IN ($${paramOffset + 1}, $${paramOffset + 2}, $${paramOffset + 3})`),
+                [...baseParams, StatusEnum.OPEN, StatusEnum.IN_PROGRESS, StatusEnum.ON_HOLD]
+            ),
             // closedDefects should include Fixed (CLOSED) and As it is (AS_IT_IS)
             db.query<{ count: string }>(
                 buildCountQuery(`status IN ($${paramOffset + 1}, $${paramOffset + 2})`),
                 [...baseParams, StatusEnum.CLOSED, StatusEnum.AS_IT_IS]
             ),
-            db.query<{ count: string }>(buildCountQuery(`severity = $${paramOffset + 1}`), [...baseParams, SeverityEnum.CRITICAL]),
+            db.query<{ count: string }>(buildCountQuery(`severity = $${paramOffset + 1}`), [...baseParams, SeverityEnum.MAJOR]),
         ]);
 
         return {
@@ -70,14 +73,42 @@ export async function getDefectsByModule(filters?: DefectFilters): Promise<
 
     try {
         const result = await db.query<{ module: string; count: string }>(query, whereClause.values);
-        return result.rows.map((row: { module: string; count: string }) => ({
-            module: row.module,
-            count: parseInt(row.count, 10),
-        }));
+        
+        // Extract main module prefix and group by it
+        const moduleMap: Record<string, number> = {};
+        
+        result.rows.forEach((row: { module: string; count: string }) => {
+            const count = parseInt(row.count, 10);
+            const mainModule = extractMainModuleFromName(row.module);
+            moduleMap[mainModule] = (moduleMap[mainModule] || 0) + count;
+        });
+        
+        // Convert to array and sort by count
+        return Object.entries(moduleMap)
+            .map(([module, count]) => ({ module, count }))
+            .sort((a, b) => b.count - a.count);
     } catch (error) {
         console.error("Error fetching defects by module:", error);
         throw error;
     }
+}
+
+function extractMainModuleFromName(moduleName: string): string {
+    if (!moduleName) return "Unknown";
+    
+    // Try to extract known module prefixes
+    const lowerName = moduleName.toLowerCase();
+    
+    if (lowerName.includes("hsa")) return "HSA";
+    if (lowerName.includes("kfq")) return "KFQ";
+    if (lowerName.includes("gmst")) return "GMST";
+    if (lowerName.includes("nmst")) return "NMST";
+    if (lowerName.includes("mst")) return "MST";
+    if (lowerName.includes("alston") || lowerName.includes("innovatetech")) return "Innovatetech";
+    
+    // If no known prefix, use the first word before "−" or space
+    const match = moduleName.match(/^([A-Z0-9]+)/);
+    return match ? match[1] : moduleName.substring(0, 20);
 }
 
 export async function getDefectsBySeverity(filters?: DefectFilters): Promise<
@@ -247,6 +278,14 @@ interface WhereClause {
     values: any[];
 }
 
+// Helper function to convert Date to YYYY-MM-DD string
+function formatDateForSQL(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+}
+
 function buildWhereClause(filters?: DefectFilters): WhereClause {
     const conditions: string[] = [];
     const values: any[] = [];
@@ -255,12 +294,12 @@ function buildWhereClause(filters?: DefectFilters): WhereClause {
     if (filters?.dateFrom || filters?.dateTo) {
         if (filters.dateFrom) {
             conditions.push(`"dateReported" >= $${paramCount}`);
-            values.push(filters.dateFrom);
+            values.push(formatDateForSQL(filters.dateFrom));
             paramCount++;
         }
         if (filters.dateTo) {
             conditions.push(`"dateReported" <= $${paramCount}`);
-            values.push(filters.dateTo);
+            values.push(formatDateForSQL(filters.dateTo));
             paramCount++;
         }
     }

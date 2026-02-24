@@ -60,21 +60,32 @@ export function parseCSVDate(dateString: string): Date | null {
     const formats = [
         // ISO format: 2024-01-15
         /^\d{4}-\d{2}-\d{2}$/,
-        // US format: 01/15/2024
+        // US format: 01/15/2024 or 1/15/2024
         /^\d{1,2}\/\d{1,2}\/\d{4}$/,
-        // DD-MM-YYYY
+        // DD-MM-YYYY: 1-1-2024 or 01-01-2024
         /^\d{1,2}-\d{1,2}-\d{4}$/,
+        // European format: 15.01.2024
+        /^\d{1,2}\.\d{1,2}\.\d{4}$/,
+        // Text format: 1/8/2026, 1/9/2026, etc (Google Sheets format)
+        /^\d{1,2}\/\d{1,2}\/\d{4}$/,
     ];
 
     let date: Date | null = null;
 
     if (formats[0].test(trimmed)) {
+        // ISO format: 2024-01-15
         date = new Date(trimmed);
     } else if (formats[1].test(trimmed)) {
+        // US format: 01/15/2024
         const [month, day, year] = trimmed.split("/");
         date = new Date(`${year}-${month}-${day}`);
     } else if (formats[2].test(trimmed)) {
+        // DD-MM-YYYY: 1-1-2024
         const [day, month, year] = trimmed.split("-");
+        date = new Date(`${year}-${month}-${day}`);
+    } else if (formats[3].test(trimmed)) {
+        // European format: 15.01.2024
+        const [day, month, year] = trimmed.split(".");
         date = new Date(`${year}-${month}-${day}`);
     }
 
