@@ -70,7 +70,7 @@ export async function getModuleTrends(): Promise<ModuleTrend[]> {
           WHEN module LIKE 'KFQ%' THEN 'KFQ'
           WHEN module LIKE 'GMST%' OR module LIKE 'GGMST%' THEN 'GMST'
           WHEN module LIKE 'NMST%' THEN 'NMST'
-          WHEN module LIKE 'MST%' THEN 'MST'
+          WHEN module LIKE 'MST%' THEN 'GMST'
           WHEN module LIKE '%Innovatetech%' OR module LIKE 'Innovatetech%' THEN 'Innovatetech'
           WHEN module LIKE '%Alston%' THEN 'Alston'
           ELSE 'Other'

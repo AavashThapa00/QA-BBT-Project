@@ -46,7 +46,6 @@ const MODULE_COLORS: Record<string, string> = {
   GMST: "#8144db",
   NMST: "#ff3520",
   Innovatetech: "#ffffff",
-  MST: "#3b82f6",
   Alston: "#ec4899",
   Other: "#6b7280",
 };

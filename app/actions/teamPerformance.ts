@@ -11,6 +11,15 @@ interface TeamMember {
   highSeverityCount: number;
 }
 
+interface TeamDefect {
+  id: string;
+  testCaseId: string | null;
+  module: string;
+  summary: string | null;
+  status: string;
+  dateReported: string | null;
+}
+
 export async function getTeamPerformance(): Promise<TeamMember[]> {
   try {
     const result = await db.query(
@@ -23,7 +32,7 @@ export async function getTeamPerformance(): Promise<TeamMember[]> {
         AVG(
           CASE 
             WHEN "dateFixed" IS NOT NULL AND "dateReported" IS NOT NULL AND (status = 'CLOSED' OR status = 'AS_IT_IS')
-            THEN EXTRACT(EPOCH FROM ("dateFixed"::timestamp - "dateReported"::timestamp)) / 86400
+            THEN GREATEST(1, EXTRACT(EPOCH FROM ("dateFixed"::timestamp - "dateReported"::timestamp)) / 86400)
             ELSE NULL
           END
         ) as avg_fix_time_days
@@ -43,6 +52,40 @@ export async function getTeamPerformance(): Promise<TeamMember[]> {
     }));
   } catch (error) {
     console.error("Error fetching team performance:", error);
+    return [];
+  }
+}
+
+export async function getTeamDefectsByStatus(
+  assignedTo: string,
+  statusGroup: "open" | "fixed"
+): Promise<TeamDefect[]> {
+  try {
+    const statusFilter =
+      statusGroup === "open"
+        ? "('OPEN', 'IN_PROGRESS', 'ON_HOLD')"
+        : "('CLOSED', 'AS_IT_IS')";
+
+    const hasTeamFilter = assignedTo !== "ALL";
+    const result = await db.query(
+      `SELECT id, "testCaseId", module, summary, status, "dateReported"
+       FROM defect
+       WHERE ${hasTeamFilter ? "\"assignedTo\" = $1 AND" : ""}
+         status IN ${statusFilter}
+       ORDER BY "dateReported" DESC NULLS LAST`,
+      hasTeamFilter ? [assignedTo] : []
+    );
+
+    return result.rows.map(row => ({
+      id: row.id,
+      testCaseId: row.testCaseId || null,
+      module: row.module,
+      summary: row.summary || null,
+      status: row.status,
+      dateReported: row.dateReported ? row.dateReported.toISOString().split("T")[0] : null,
+    }));
+  } catch (error) {
+    console.error("Error fetching team defects:", error);
     return [];
   }
 }

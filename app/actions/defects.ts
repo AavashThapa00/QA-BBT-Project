@@ -103,7 +103,7 @@ function extractMainModuleFromName(moduleName: string): string {
     if (lowerName.includes("kfq")) return "KFQ";
     if (lowerName.includes("gmst")) return "GMST";
     if (lowerName.includes("nmst")) return "NMST";
-    if (lowerName.includes("mst")) return "MST";
+    if (lowerName.includes("mst")) return "GMST";
     if (lowerName.includes("alston") || lowerName.includes("innovatetech")) return "Innovatetech";
     
     // If no known prefix, use the first word before "−" or space

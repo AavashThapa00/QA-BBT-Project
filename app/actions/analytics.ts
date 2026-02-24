@@ -36,7 +36,7 @@ export async function getDefectsByStatus(): Promise<StatusCount[]> {
 
 export async function getAverageFixTimeByModule(): Promise<ModuleFixTime[]> {
   try {
-    // Extract main module prefix (HSA, KFQ, GMST, NMST, MST, Innovatetech)
+    // Extract main module prefix (HSA, KFQ, GMST, NMST, Innovatetech)
     const result = await db.query(
       `SELECT 
         CASE
@@ -44,7 +44,7 @@ export async function getAverageFixTimeByModule(): Promise<ModuleFixTime[]> {
           WHEN module LIKE 'KFQ%' THEN 'KFQ'
           WHEN module LIKE 'GMST%' OR module LIKE 'GGMST%' THEN 'GMST'
           WHEN module LIKE 'NMST%' THEN 'NMST'
-          WHEN module LIKE 'MST%' THEN 'MST'
+          WHEN module LIKE 'MST%' THEN 'GMST'
           WHEN module LIKE '%Innovatetech%' OR module LIKE 'Innovatetech%' THEN 'Innovatetech'
           WHEN module LIKE '%Alston%' THEN 'Alston'
           ELSE 'Other'
@@ -54,7 +54,7 @@ export async function getAverageFixTimeByModule(): Promise<ModuleFixTime[]> {
         AVG(
           CASE 
             WHEN "dateFixed" IS NOT NULL AND "dateReported" IS NOT NULL 
-            THEN EXTRACT(EPOCH FROM ("dateFixed"::timestamp - "dateReported"::timestamp)) / 86400
+            THEN GREATEST(1, EXTRACT(EPOCH FROM ("dateFixed"::timestamp - "dateReported"::timestamp)) / 86400)
             ELSE NULL
           END
         ) as avg_days

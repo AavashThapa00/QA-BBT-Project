@@ -11,7 +11,12 @@
     "add-testCaseId": "tsx scripts/add-testCaseId.ts",
     "migrate-critical-to-major": "tsx scripts/migrate-critical-to-major.ts",
     "add-summary": "tsx scripts/add-summary.ts",
-    "add-assigned-to": "tsx scripts/add-assigned-to.ts"
+    "add-assigned-to": "tsx scripts/add-assigned-to.ts",
+    "backfill-assigned-to": "tsx scripts/backfill-assigned-to.ts",
+    "add-auth-tables": "tsx scripts/add-auth-tables.ts",
+    "create-user": "tsx scripts/create-user.ts",
+    "add-user-role": "tsx scripts/add-user-role.ts",
+    "create-super-admin": "tsx scripts/create-super-admin.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.4.1",

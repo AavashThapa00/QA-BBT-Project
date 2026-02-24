@@ -23,7 +23,7 @@ const STATUS_LABELS: Record<string, string> = {
   AS_IT_IS: "As it is",
 };
 
-const MODULES = ["ALL", "HSA", "KFQ", "GMST", "NMST", "MST", "Innovatetech"];
+const MODULES = ["ALL", "HSA", "KFQ", "GMST", "NMST", "Innovatetech"];
 
 export default function AllDefectsPage() {
   const router = useRouter();

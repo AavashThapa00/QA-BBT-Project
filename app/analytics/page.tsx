@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, LineChart, Line, XAxis, YAxis, CartesianGrid, BarChart, Bar } from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, LineChart, Line, XAxis, YAxis, CartesianGrid, BarChart, Bar, Sector } from "recharts";
 import { HiArrowLeft, HiTrendingUp } from "react-icons/hi";
 import { getDefectsByStatus, getAverageFixTimeByModule } from "@/app/actions/analytics";
 import { getMonthlyTrends, getSeverityTrends, getModuleTrends } from "@/app/actions/trends";
@@ -56,7 +56,6 @@ const MODULE_COLORS: Record<string, string> = {
   GMST: "#8144db",
   NMST: "#ff3520",
   Innovatetech: "#ffffff",
-  MST: "#3b82f6",
   Alston: "#ec4899",
   Other: "#6b7280",
 };
@@ -186,6 +185,12 @@ export default function AnalyticsPage() {
                   fill="#8884d8"
                   dataKey="value"
                   paddingAngle={2}
+                  activeShape={(props) => (
+                    <Sector
+                      {...props}
+                      stroke="none"
+                    />
+                  )}
                 >
                   {statusData.map((entry, index) => (
                     <Cell 
@@ -197,6 +202,7 @@ export default function AnalyticsPage() {
                   ))}
                 </Pie>
                 <Tooltip 
+                  cursor={{ fill: "transparent" }}
                   contentStyle={{
                     backgroundColor: '#1e293b',
                     border: '1px solid #475569',

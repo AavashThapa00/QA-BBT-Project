@@ -37,7 +37,6 @@ export default function DefectsByModuleChart({
     GMST: "#8144db",
     NMST: "#ff3520",
     "Innovatetech": "#ffffff",
-    MST: "#3b82f6", // Blue fallback for MST
   };
   
   // Get color based on module name
