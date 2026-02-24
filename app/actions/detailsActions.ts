@@ -6,7 +6,7 @@ import { Defect } from "@/lib/types";
 export async function getDefectById(id: string): Promise<Defect | null> {
   try {
     const result = await db.query<any>(
-      `SELECT id, "testCaseId", "dateReported", module, summary, "expectedResult", "actualResult", severity, priority, status, "dateFixed", "qcStatusBbt", "createdAt" 
+      `SELECT id, "testCaseId", "dateReported", module, summary, "expectedResult", "actualResult", severity, priority, "assignedTo", status, "dateFixed", "qcStatusBbt", "createdAt" 
        FROM defect WHERE id = $1`,
       [id]
     );
@@ -26,6 +26,7 @@ export async function getDefectById(id: string): Promise<Defect | null> {
       actualResult: row.actualResult || "",
       severity: row.severity,
       priority: row.priority || "",
+      assignedTo: row.assignedTo || undefined,
       status: row.status,
       dateFixed: row.dateFixed ? new Date(row.dateFixed) : null,
       qcStatusBbt: row.qcStatusBbt,
@@ -42,7 +43,7 @@ export async function getAllDefectsSorted(): Promise<Defect[]> {
   try {
     // Sort by status priority: ON_HOLD (Pending) and OPEN (Hold) first, then others
     const result = await db.query<any>(
-      `SELECT id, "testCaseId", "dateReported", module, summary, "expectedResult", "actualResult", severity, priority, status, "dateFixed", "qcStatusBbt", "createdAt"
+      `SELECT id, "testCaseId", "dateReported", module, summary, "expectedResult", "actualResult", severity, priority, "assignedTo", status, "dateFixed", "qcStatusBbt", "createdAt"
        FROM defect
        ORDER BY 
          CASE 
@@ -66,6 +67,7 @@ export async function getAllDefectsSorted(): Promise<Defect[]> {
       actualResult: row.actualResult || "",
       severity: row.severity,
       priority: row.priority || "",
+      assignedTo: row.assignedTo || undefined,
       status: row.status,
       dateFixed: row.dateFixed ? new Date(row.dateFixed) : null,
       qcStatusBbt: row.qcStatusBbt,

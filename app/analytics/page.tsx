@@ -2,15 +2,15 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
-import { HiArrowLeft } from "react-icons/hi";
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, LineChart, Line, XAxis, YAxis, CartesianGrid, BarChart, Bar } from "recharts";
+import { HiArrowLeft, HiTrendingUp } from "react-icons/hi";
 import { getDefectsByStatus, getAverageFixTimeByModule } from "@/app/actions/analytics";
-import { Status } from "@/lib/types";
+import { getMonthlyTrends, getSeverityTrends, getModuleTrends } from "@/app/actions/trends";
 
 interface StatusData {
   name: string;
   value: number;
-  status: Status;
+  key: "PENDING" | "FIXED" | "HOLD" | "AS_IT_IS";
 }
 
 interface ModuleFixTime {
@@ -20,20 +20,34 @@ interface ModuleFixTime {
   uncertainCount: number;
 }
 
-const STATUS_LABELS: Record<Status, string> = {
-  OPEN: "Pending",
-  IN_PROGRESS: "In Progress",
-  CLOSED: "Fixed",
-  ON_HOLD: "On Hold",
-  AS_IT_IS: "As It Is",
-};
+interface MonthlyTrend {
+  month: string;
+  reported: number;
+  fixed: number;
+}
 
-const STATUS_COLORS: Record<Status, string> = {
-  OPEN: "#ffc107",
-  IN_PROGRESS: "#2196f3",
-  CLOSED: "#4caf50",
-  ON_HOLD: "#ff9800",
-  AS_IT_IS: "#9e9e9e",
+interface SeverityTrend {
+  severity: string;
+  count: number;
+}
+
+interface ModuleTrend {
+  module: string;
+  count: number;
+}
+
+const STATUS_GROUPS = [
+  { key: "PENDING" as const, name: "Pending", color: "#ffc107" },
+  { key: "FIXED" as const, name: "Fixed", color: "#4caf50" },
+  { key: "HOLD" as const, name: "Hold", color: "#ff9800" },
+  { key: "AS_IT_IS" as const, name: "As it is", color: "#9e9e9e" },
+];
+
+const SEVERITY_COLORS: Record<string, string> = {
+  MAJOR: "#dc2626",
+  HIGH: "#ea580c",
+  MEDIUM: "#ca8a04",
+  LOW: "#16a34a",
 };
 
 const MODULE_COLORS: Record<string, string> = {
@@ -50,29 +64,59 @@ const MODULE_COLORS: Record<string, string> = {
 export default function AnalyticsPage() {
   const [statusData, setStatusData] = useState<StatusData[]>([]);
   const [moduleFixTime, setModuleFixTime] = useState<ModuleFixTime[]>([]);
+  const [monthlyTrends, setMonthlyTrends] = useState<MonthlyTrend[]>([]);
+  const [severityTrends, setSeverityTrends] = useState<SeverityTrend[]>([]);
+  const [moduleTrends, setModuleTrends] = useState<ModuleTrend[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchData() {
       setLoading(true);
       try {
-        const [statusCounts, fixTimes] = await Promise.all([
+        const [statusCounts, fixTimes, monthly, severity, module] = await Promise.all([
           getDefectsByStatus(),
           getAverageFixTimeByModule(),
+          getMonthlyTrends(),
+          getSeverityTrends(),
+          getModuleTrends(),
         ]);
 
-        console.log("Status counts:", statusCounts);
-        console.log("Fix times:", fixTimes);
+        const groupedCounts: Record<StatusData["key"], number> = {
+          PENDING: 0,
+          FIXED: 0,
+          HOLD: 0,
+          AS_IT_IS: 0,
+        };
 
-        // Transform status data for pie chart
-        const chartData: StatusData[] = statusCounts.map(item => ({
-          name: STATUS_LABELS[item.status],
-          value: item.count,
-          status: item.status,
+        statusCounts.forEach((item) => {
+          switch (item.status) {
+            case "OPEN":
+            case "IN_PROGRESS":
+              groupedCounts.PENDING += item.count;
+              break;
+            case "CLOSED":
+              groupedCounts.FIXED += item.count;
+              break;
+            case "ON_HOLD":
+              groupedCounts.HOLD += item.count;
+              break;
+            case "AS_IT_IS":
+              groupedCounts.AS_IT_IS += item.count;
+              break;
+          }
+        });
+
+        const chartData: StatusData[] = STATUS_GROUPS.map((group) => ({
+          key: group.key,
+          name: group.name,
+          value: groupedCounts[group.key],
         }));
 
         setStatusData(chartData);
         setModuleFixTime(fixTimes);
+        setMonthlyTrends(monthly);
+        setSeverityTrends(severity);
+        setModuleTrends(module);
       } catch (error) {
         console.error("Error fetching analytics data:", error);
       } finally {
@@ -106,8 +150,8 @@ export default function AnalyticsPage() {
               <HiArrowLeft className="w-4 h-4" />
               <span className="text-sm">Back to Dashboard</span>
             </Link>
-            <h1 className="text-3xl font-bold text-white">Analytics Dashboard</h1>
-            <p className="text-slate-400 mt-1">Defect status distribution and fix time analysis</p>
+            <h1 className="text-3xl font-bold text-white">Analytics & Trends</h1>
+            <p className="text-slate-400 mt-1">Performance, trends, and defect distribution insights</p>
           </div>
         </div>
 
@@ -146,7 +190,7 @@ export default function AnalyticsPage() {
                   {statusData.map((entry, index) => (
                     <Cell 
                       key={`cell-${index}`} 
-                      fill={STATUS_COLORS[entry.status]}
+                      fill={STATUS_GROUPS.find((group) => group.key === entry.key)?.color || "#64748b"}
                       stroke="#0f172a"
                       strokeWidth={2}
                     />
@@ -252,17 +296,105 @@ export default function AnalyticsPage() {
           )}
         </div>
 
+        {/* Monthly Trends */}
+        <div className="bg-slate-900 rounded-lg border border-slate-800 shadow-sm p-8">
+          <div className="mb-6">
+            <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+              <HiTrendingUp className="w-5 h-5 text-blue-400" />
+              Monthly Defect Trends
+            </h2>
+            <p className="text-xs text-slate-400 mt-1">Reported vs Fixed defects by month</p>
+          </div>
+          <div className="h-[350px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={monthlyTrends} margin={{ top: 10, right: 20, left: 10, bottom: 10 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                <XAxis dataKey="month" tick={{ fill: "#cbd5e1", fontSize: 12 }} />
+                <YAxis tick={{ fill: "#cbd5e1", fontSize: 12 }} />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "#1e293b",
+                    border: "1px solid #475569",
+                    borderRadius: "8px",
+                    color: "#f1f5f9",
+                  }}
+                />
+                <Line type="monotone" dataKey="reported" stroke="#f59e0b" strokeWidth={3} dot={{ fill: "#f59e0b" }} />
+                <Line type="monotone" dataKey="fixed" stroke="#10b981" strokeWidth={3} dot={{ fill: "#10b981" }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Severity Distribution */}
+          <div className="bg-slate-900 rounded-lg border border-slate-800 shadow-sm p-6">
+            <h2 className="text-lg font-semibold text-white mb-4">Severity Distribution</h2>
+            <div className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={severityTrends} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
+                  <XAxis type="number" tick={{ fill: "#cbd5e1", fontSize: 12 }} />
+                  <YAxis type="category" dataKey="severity" tick={{ fill: "#e2e8f0", fontSize: 13, fontWeight: 600 }} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "#1e293b",
+                      border: "1px solid #475569",
+                      borderRadius: "8px",
+                      color: "#f1f5f9",
+                    }}
+                  />
+                  <Bar dataKey="count" radius={[0, 6, 6, 0]}>
+                    {severityTrends.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={SEVERITY_COLORS[entry.severity] || "#64748b"} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Module Distribution */}
+          <div className="bg-slate-900 rounded-lg border border-slate-800 shadow-sm p-6">
+            <h2 className="text-lg font-semibold text-white mb-4">Module Distribution</h2>
+            <div className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={moduleTrends} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
+                  <XAxis type="number" tick={{ fill: "#cbd5e1", fontSize: 12 }} />
+                  <YAxis type="category" dataKey="module" tick={{ fill: "#e2e8f0", fontSize: 13, fontWeight: 600 }} width={100} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "#1e293b",
+                      border: "1px solid #475569",
+                      borderRadius: "8px",
+                      color: "#f1f5f9",
+                    }}
+                  />
+                  <Bar dataKey="count" radius={[0, 6, 6, 0]}>
+                    {moduleTrends.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={MODULE_COLORS[entry.module] || "#64748b"} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+
         {/* Summary Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {statusData.map((item) => (
             <div
-              key={item.status}
+              key={item.key}
               className="bg-slate-900 rounded-lg border border-slate-800 p-4"
             >
               <div className="flex items-center gap-3">
                 <div
                   className="w-4 h-4 rounded-full"
-                  style={{ backgroundColor: STATUS_COLORS[item.status] }}
+                  style={{
+                    backgroundColor: STATUS_GROUPS.find((group) => group.key === item.key)?.color || "#64748b",
+                  }}
                 ></div>
                 <div>
                   <p className="text-sm text-slate-400">{item.name}</p>

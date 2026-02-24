@@ -42,12 +42,18 @@ export const CSVRowSchema = z.object({
     severity: z.string().optional(),
     Priority: z.string().optional(),
     priority: z.string().optional(),
+    "Assigned To": z.string().optional(),
+    "assigned to": z.string().optional(),
+    assignedTo: z.string().optional(),
     Status: z.string().optional(),
     status: z.string().optional(),
     "Date Fixed": z.string().optional(),
     "Date Fixed ": z.string().optional(),
     "date fixed": z.string().optional(),
-    // QC Status column removed from parsing
+    "QC Status by BBT": z.string().optional(),
+    "QC Status": z.string().optional(),
+    "qc status by bbt": z.string().optional(),
+    "qc status": z.string().optional(),
 }).passthrough(); // Allow other columns to pass through
 
 export type CreateDefectInput = z.infer<typeof CreateDefectSchema>;

@@ -3,7 +3,7 @@
 import { db } from "@/lib/prisma";
 import { CreateDefectSchema, CSVRowSchema } from "@/lib/validators";
 import { parseCSVDate, normalizeEnumValue, extractColumnValue } from "@/lib/utils";
-import { Severity, Status, SeverityEnum, StatusEnum } from "@/lib/types";
+import { Severity, Status, SeverityEnum, StatusEnum, QCStatusBBTEnum } from "@/lib/types";
 import { ZodError } from "zod";
 import { randomUUID } from "crypto";
 
@@ -188,6 +188,11 @@ export async function uploadCSV(csvData: string): Promise<UploadResult> {
                     ["Priority", "priority"]
                 ) || "Medium";
 
+                const assignedTo = extractColumnValue(
+                    validatedRow,
+                    ["Assigned To", "assigned to", "assignedTo"]
+                );
+
                 const statusStr = extractColumnValue(
                     validatedRow,
                     ["Status", "status"]
@@ -225,8 +230,29 @@ export async function uploadCSV(csvData: string): Promise<UploadResult> {
                 );
                 const dateFixed = dateFixedStr ? parseCSVDate(dateFixedStr) : null;
 
-                // QC Status by BBT removed from parsing; use DB default value
-                const qcStatusBbt = 'PENDING';
+                const qcStatusStr = extractColumnValue(
+                    validatedRow,
+                    [
+                        "QC Status by BBT",
+                        "QC Status",
+                        "qc status by bbt",
+                        "qc status",
+                    ]
+                );
+
+                let qcStatusBbt = QCStatusBBTEnum.PENDING;
+                if (qcStatusStr) {
+                    const lowerQc = qcStatusStr.toLowerCase().trim();
+                    if (lowerQc === "true" || lowerQc === "passed" || lowerQc === "pass" || lowerQc === "yes") {
+                        qcStatusBbt = QCStatusBBTEnum.PASSED;
+                    } else if (lowerQc === "false" || lowerQc === "pending" || lowerQc === "not fixed" || lowerQc === "notfixed") {
+                        qcStatusBbt = QCStatusBBTEnum.PENDING;
+                    } else if (lowerQc.includes("reject")) {
+                        qcStatusBbt = QCStatusBBTEnum.REJECTED;
+                    } else if (lowerQc.includes("fail")) {
+                        qcStatusBbt = QCStatusBBTEnum.FAILED;
+                    }
+                }
 
                 // Final validation with Zod schema
                 const defectData = {
@@ -243,6 +269,8 @@ export async function uploadCSV(csvData: string): Promise<UploadResult> {
                 CreateDefectSchema.parse(defectData);
 
                 // Check for true duplicate based on date, module, expected result, and actual result
+                const dateReportedValue = typeof finalDateReported === "string" ? null : finalDateReported;
+
                 const duplicateCheck = await db.query(
                     `SELECT id, "testCaseId" FROM defect WHERE 
                      "dateReported" = $1 AND 
@@ -250,7 +278,7 @@ export async function uploadCSV(csvData: string): Promise<UploadResult> {
                      "expectedResult" = $3 AND 
                      "actualResult" = $4 
                      LIMIT 1`,
-                    [finalDateReported === "N/A" ? null : finalDateReported, finalModule, expectedResult || "N/A", actualResult || "N/A"]
+                    [dateReportedValue, finalModule, expectedResult || "N/A", actualResult || "N/A"]
                 );
 
                 if (duplicateCheck.rows.length > 0) {
@@ -269,18 +297,19 @@ export async function uploadCSV(csvData: string): Promise<UploadResult> {
                 const now = new Date();
 
                 await db.query(
-                    `INSERT INTO defect (id, "testCaseId", "dateReported", module, summary, "expectedResult", "actualResult", severity, priority, status, "dateFixed", "qcStatusBbt", "createdAt")
-                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+                    `INSERT INTO defect (id, "testCaseId", "dateReported", module, summary, "expectedResult", "actualResult", severity, priority, "assignedTo", status, "dateFixed", "qcStatusBbt", "createdAt")
+                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
                     [
                         id,
                         testCaseId || null,
-                        finalDateReported === "N/A" ? null : finalDateReported,
+                        dateReportedValue,
                         finalModule,
                         summary || null,
                         expectedResult || "N/A",
                         actualResult || "N/A",
                         severity,
                         priority,
+                        assignedTo || null,
                         status,
                         dateFixed,
                         qcStatusBbt,

@@ -19,8 +19,6 @@ async function checkSTDefects() {
     
   } catch (error) {
     console.error("Error:", error);
-  } finally {
-    await db.end();
   }
 }
 

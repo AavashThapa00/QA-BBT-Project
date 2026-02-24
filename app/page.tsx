@@ -200,35 +200,6 @@ export default function Home() {
         currentFilters={filters}
       />
 
-      {/* Header Section */}
-      <div className={`bg-slate-900 border-b border-slate-800 shadow-sm transition-all duration-200 ${
-        isExportPanelOpen ? "blur-sm opacity-50 pointer-events-none" : ""
-      }`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-semibold text-white">
-              QA Defect Management Dashboard
-            </h1>
-            <div className="flex items-center gap-3">
-              <Link
-                href="/analytics"
-                className="px-4 py-2 bg-purple-600 text-white font-medium text-sm rounded-lg hover:bg-purple-700 transition-all flex items-center gap-2 shadow-sm hover:shadow-md"
-              >
-                <HiChartBar className="w-4 h-4" />
-                <span>Analytics</span>
-              </Link>
-              <Link
-                href="/all-defects"
-                className="px-4 py-2 bg-blue-600 text-white font-medium text-sm rounded-lg hover:bg-blue-700 transition-all flex items-center gap-2 shadow-sm hover:shadow-md"
-              >
-                <HiViewList className="w-4 h-4" />
-                <span>View All Defects</span>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Main Content */}
       <div className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 transition-all duration-200 ${
         isExportPanelOpen ? "blur-sm opacity-50 pointer-events-none" : ""

@@ -13,6 +13,7 @@ export interface Defect {
     actualResult: string;
     severity: Severity;
     priority: string;
+    assignedTo?: string;
     status: Status;
     dateFixed: Date | null;
     qcStatusBbt: QCStatusBBT;
