@@ -25,7 +25,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { name: "Dashboard", href: "/", icon: HiHome },
   { name: "Manual Sheet", href: "/manual-entry", icon: HiViewList },
-  { name: "Test Execution", href: "/test-execution", icon: HiArrowRight },
+  { name: "Test Cycle", href: "/test-execution", icon: HiArrowRight },
   { name: "Analytics", href: "/analytics", icon: HiChartBar },
   { name: "All Defects", href: "/all-defects", icon: HiViewList },
   { name: "Performance", href: "/team-performance", icon: HiUserGroup },

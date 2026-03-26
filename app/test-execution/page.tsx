@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { HiArrowLeft, HiCheckCircle, HiXCircle, HiChevronDown, HiExclamationCircle, HiDownload } from "react-icons/hi";
+import { HiArrowLeft, HiCheckCircle, HiXCircle, HiChevronDown, HiExclamationCircle, HiDownload, HiTrash, HiArrowRight, HiX } from "react-icons/hi";
 import Link from "next/link";
 import { TestCycle, TestCaseWithExecution, TestExecutionStatus } from "@/lib/testCaseTypes";
 import TestCaseImportForm from "@/app/components/testExecution/TestCaseImportForm";
@@ -56,12 +56,25 @@ export default function TestCaseExecutionPage() {
     severity: "HIGH",
   });
   const [remarks, setRemarks] = useState<Record<string, string>>({});
-  const [expectedResults, setExpectedResults] = useState<Record<string, string>>({});
-  const [runName, setRunName] = useState("");
+  const [isNewCycleModalOpen, setIsNewCycleModalOpen] = useState(false);
+  const [newCycleFolderName, setNewCycleFolderName] = useState("");
+  const [runSearch, setRunSearch] = useState("");
   const [runs, setRuns] = useState<TestCycleRun[]>([]);
   const [savingRun, setSavingRun] = useState(false);
   const [downloadingRunId, setDownloadingRunId] = useState<string | null>(null);
+  const [deletingRunId, setDeletingRunId] = useState<string | null>(null);
+  const [restoringRunId, setRestoringRunId] = useState<string | null>(null);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  useEffect(() => {
+    if (!message) return;
+
+    const timer = window.setTimeout(() => {
+      setMessage(null);
+    }, 5000);
+
+    return () => window.clearTimeout(timer);
+  }, [message]);
 
   // Fetch test cycles
   useEffect(() => {
@@ -99,7 +112,6 @@ export default function TestCaseExecutionPage() {
         if (data.success) {
           setTestCases(data.data || []);
           setRemarks({});
-          setExpectedResults({});
         }
       } catch (error) {
         console.error("Failed to load test cases:", error);
@@ -168,11 +180,10 @@ export default function TestCaseExecutionPage() {
   };
 
   const handleFailClick = (testCase: TestCaseWithExecution) => {
-    const expectedResult = getDisplayExpectedResult(testCase.id, testCase.expectedResult);
     setFailModal({
       isOpen: true,
       testCaseId: testCase.id,
-      expectedResult,
+      expectedResult: testCase.expectedResult || "",
       issueSummary: `Failure in ${testCase.testCaseId} - ${testCase.title}`,
       issueDescription: testCase.executionRemarks || "",
       priority: "HIGH",
@@ -297,23 +308,6 @@ export default function TestCaseExecutionPage() {
     setRemarks((prev) => ({ ...prev, [testCaseId]: value }));
   };
 
-  const handleExpectedResultChange = (testCaseId: string, value: string) => {
-    setExpectedResults((prev) => ({ ...prev, [testCaseId]: value }));
-  };
-
-  const getDisplayExpectedResult = (testCaseId: string, expectedResult?: string | null) => {
-    const editedValue = expectedResults[testCaseId];
-    if (editedValue !== undefined) {
-      return editedValue;
-    }
-
-    if (!expectedResult || expectedResult.trim().toLowerCase() === "to be determined") {
-      return "";
-    }
-
-    return expectedResult;
-  };
-
   const handleImportSuccess = () => {
     // Refresh cycles list after successful import
     async function loadCycles() {
@@ -333,40 +327,6 @@ export default function TestCaseExecutionPage() {
 
   const handleImportError = (error: string) => {
     setMessage({ type: "error", text: `Import failed: ${error}` });
-  };
-
-  const handleSaveRun = async () => {
-    if (!selectedCycle) return;
-
-    const trimmedName = runName.trim();
-    if (!trimmedName) {
-      setMessage({ type: "error", text: "Enter a run folder name to save this test cycle run" });
-      return;
-    }
-
-    try {
-      setSavingRun(true);
-      const response = await fetch(`/api/v1/test-cycles/${selectedCycle}/runs`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: trimmedName }),
-      });
-      const data = await response.json();
-
-      if (!data.success) {
-        setMessage({ type: "error", text: data.error?.message || "Failed to save run folder" });
-        return;
-      }
-
-      setRuns((prev) => [data.data, ...prev]);
-      setRunName("");
-      setMessage({ type: "success", text: "Test cycle run saved to folder successfully" });
-    } catch (error) {
-      console.error("Failed to save cycle run:", error);
-      setMessage({ type: "error", text: "Failed to save run folder" });
-    } finally {
-      setSavingRun(false);
-    }
   };
 
   const handleDownloadRun = async (runId: string) => {
@@ -398,6 +358,173 @@ export default function TestCaseExecutionPage() {
     }
   };
 
+  const handleDeleteRun = async (runId: string) => {
+    if (!selectedCycle || !window.confirm("Are you sure you want to delete this run folder?")) return;
+
+    try {
+      setDeletingRunId(runId);
+      const response = await fetch(`/api/v1/test-cycles/${selectedCycle}/runs/${runId}`, {
+        method: "DELETE",
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setRuns((prev) => prev.filter((r) => r.id !== runId));
+        setMessage({ type: "success", text: "Run folder deleted successfully" });
+      } else {
+        setMessage({ type: "error", text: "Failed to delete run folder" });
+      }
+    } catch (error) {
+      console.error("Failed to delete run:", error);
+      setMessage({ type: "error", text: "Failed to delete run folder" });
+    } finally {
+      setDeletingRunId(null);
+    }
+  };
+
+  const handleOpenRun = async (runId: string) => {
+    if (!selectedCycle) return;
+
+    try {
+      setRestoringRunId(runId);
+      const response = await fetch(`/api/v1/test-cycles/${selectedCycle}/runs/${runId}`);
+      const data = await response.json();
+
+      if (!data.success || !data.data?.data?.executions) {
+        setMessage({ type: "error", text: "Failed to open run folder" });
+        return;
+      }
+
+      const executions = data.data.data.executions as Array<{
+        testCaseId: string;
+        status: "NOT_RUN" | "PASS" | "FAIL" | null;
+        remarks: string | null;
+        severity: "MAJOR" | "HIGH" | "MEDIUM" | "LOW" | null;
+      }>;
+
+      const executionMap = new Map(executions.map((item) => [item.testCaseId, item]));
+
+      const restoreRequests = testCases.map((testCase) => {
+        const saved = executionMap.get(testCase.testCaseId);
+        const status = saved?.status ?? "NOT_RUN";
+
+        return fetch("/api/v1/test-executions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            cycleId: selectedCycle,
+            testCaseId: testCase.id,
+            status,
+            remarks: saved?.remarks ?? null,
+            severity: saved?.severity ?? null,
+          }),
+        });
+      });
+
+      await Promise.all(restoreRequests);
+
+      const nextRemarks: Record<string, string> = {};
+      testCases.forEach((testCase) => {
+        const saved = executionMap.get(testCase.testCaseId);
+        if (saved?.remarks) {
+          nextRemarks[testCase.id] = saved.remarks;
+        }
+      });
+
+      setRemarks(nextRemarks);
+      setTestCases((prev) =>
+        prev.map((testCase) => {
+          const saved = executionMap.get(testCase.testCaseId);
+          return {
+            ...testCase,
+            executionStatus: saved?.status ?? "NOT_RUN",
+            executionRemarks: saved?.remarks ?? "",
+            executionSeverity: saved?.severity ?? null,
+          };
+        })
+      );
+      setMessage({ type: "success", text: "Run folder opened. You can continue testing from the saved state." });
+    } catch (error) {
+      console.error("Failed to open run folder:", error);
+      setMessage({ type: "error", text: "Failed to open run folder" });
+    } finally {
+      setRestoringRunId(null);
+    }
+  };
+
+  const handleNewTestCycle = () => {
+    if (!selectedCycle || testCases.length === 0) return;
+    setNewCycleFolderName("");
+    setIsNewCycleModalOpen(true);
+  };
+
+  const handleConfirmNewTestCycle = async () => {
+    if (!selectedCycle) return;
+
+    const trimmedName = newCycleFolderName.trim();
+    if (!trimmedName) {
+      setMessage({ type: "error", text: "Enter a folder name before starting a new test cycle" });
+      return;
+    }
+
+    try {
+      setSavingRun(true);
+
+      // Save current run snapshot before resetting statuses.
+      const saveResponse = await fetch(`/api/v1/test-cycles/${selectedCycle}/runs`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: trimmedName }),
+      });
+      const saveData = await saveResponse.json();
+
+      if (!saveData.success) {
+        setMessage({ type: "error", text: saveData.error?.message || "Failed to save run folder" });
+        return;
+      }
+
+      setRuns((prev) => [saveData.data, ...prev]);
+
+      const resetPromises = testCases.map((testCase) =>
+        fetch("/api/v1/test-executions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            cycleId: selectedCycle,
+            testCaseId: testCase.id,
+            status: "NOT_RUN",
+            remarks: null,
+            severity: null,
+          }),
+        })
+      );
+
+      await Promise.all(resetPromises);
+
+      setTestCases((prev) =>
+        prev.map((tc) => ({
+          ...tc,
+          executionStatus: "NOT_RUN",
+          executionRemarks: "",
+          executionSeverity: null,
+        }))
+      );
+      setRemarks({});
+      setIsNewCycleModalOpen(false);
+      setNewCycleFolderName("");
+      setMessage({ type: "success", text: "Run folder saved and new test cycle started (all test cases set to PENDING)." });
+    } catch (error) {
+      console.error("Failed to start new test cycle:", error);
+      setMessage({ type: "error", text: "Failed to start new test cycle" });
+    } finally {
+      setSavingRun(false);
+    }
+  };
+
+  const filteredRuns = runs.filter((run) =>
+    run.name.toLowerCase().includes(runSearch.trim().toLowerCase())
+  );
+
   if (loading && cycles.length === 0) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center p-8">
@@ -425,15 +552,23 @@ export default function TestCaseExecutionPage() {
               <HiArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
               <span className="text-sm font-medium">Back to Dashboard</span>
             </Link>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">Test Case Execution</h1>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">Test Cycle</h1>
             <p className="text-slate-400 mt-2 text-sm">Execute and track test cases for your test cycle</p>
           </div>
         </div>
 
         {/* Messages */}
         {message && (
-          <div className={`p-4 rounded-lg border ${message.type === "success" ? "bg-green-900/30 border-green-700/50 text-green-300" : "bg-red-900/30 border-red-700/50 text-red-300"}`}>
-            {message.text}
+          <div className={`p-4 rounded-lg border flex items-start justify-between gap-3 ${message.type === "success" ? "bg-green-900/30 border-green-700/50 text-green-300" : "bg-red-900/30 border-red-700/50 text-red-300"}`}>
+            <span>{message.text}</span>
+            <button
+              onClick={() => setMessage(null)}
+              className="shrink-0 inline-flex items-center justify-center rounded p-1 hover:bg-black/20 transition-colors"
+              aria-label="Dismiss message"
+              title="Dismiss"
+            >
+              <HiX className="w-4 h-4" />
+            </button>
           </div>
         )}
 
@@ -475,46 +610,70 @@ export default function TestCaseExecutionPage() {
 
         {/* Run Folder Archive */}
         <div className="backdrop-blur-xl bg-slate-900/50 rounded-2xl border border-slate-800/50 shadow-2xl p-8">
-          <h2 className="text-lg font-bold text-white mb-4">Test Cycle Run Folder</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold text-white">Test Cycle Run Folder</h2>
+            <button
+              onClick={handleNewTestCycle}
+              disabled={!selectedCycle || testCases.length === 0}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-900/70 hover:bg-blue-900/90 disabled:bg-slate-700 text-blue-200 disabled:text-slate-400 rounded-lg text-sm font-semibold transition-colors"
+              title="Reset all test cases to PENDING and start a new cycle"
+            >
+              <HiArrowRight className="w-4 h-4" />
+              New Test Cycle
+            </button>
+          </div>
           <p className="text-xs text-slate-400 mb-4">
             Save the current cycle run as a folder entry and download it with fail action issues.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-3 mb-5">
+          <div className="mb-5">
             <input
               type="text"
-              value={runName}
-              onChange={(e) => setRunName(e.target.value)}
-              placeholder="Run name (e.g., HSA Cycle - 26 Mar)"
-              className="flex-1 px-3 py-2 bg-slate-800/60 border border-slate-700/50 rounded-lg text-slate-200 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+              value={runSearch}
+              onChange={(e) => setRunSearch(e.target.value)}
+              placeholder="Search test cycle folders..."
+              className="w-full px-3 py-2 bg-slate-800/60 border border-slate-700/50 rounded-lg text-slate-200 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
-            <button
-              onClick={handleSaveRun}
-              disabled={savingRun || !selectedCycle}
-              className="px-4 py-2 bg-blue-900/60 hover:bg-blue-900/80 disabled:bg-slate-700 text-blue-200 disabled:text-slate-400 rounded-lg text-sm font-semibold transition-colors"
-            >
-              {savingRun ? "Saving..." : "Save Run Folder"}
-            </button>
           </div>
 
           {runs.length === 0 ? (
             <p className="text-sm text-slate-400">No saved run folders yet.</p>
+          ) : filteredRuns.length === 0 ? (
+            <p className="text-sm text-slate-400">No run folders match your search.</p>
           ) : (
             <div className="space-y-2">
-              {runs.map((run) => (
+              {filteredRuns.map((run) => (
                 <div key={run.id} className="flex items-center justify-between bg-slate-800/40 border border-slate-700/40 rounded-lg px-3 py-2">
-                  <div>
-                    <p className="text-sm text-slate-200 font-medium">{run.name}</p>
-                    <p className="text-xs text-slate-500">{new Date(run.createdAt).toLocaleString()}</p>
-                  </div>
                   <button
-                    onClick={() => handleDownloadRun(run.id)}
-                    disabled={downloadingRunId === run.id}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-900/50 hover:bg-emerald-900/70 disabled:bg-slate-700 text-emerald-200 disabled:text-slate-400 rounded text-xs font-semibold transition-colors"
+                    onClick={() => handleOpenRun(run.id)}
+                    disabled={restoringRunId === run.id}
+                    className="text-left hover:opacity-90 disabled:opacity-60 transition-opacity"
+                    title="Open this run folder to continue"
                   >
-                    <HiDownload className="w-4 h-4" />
-                    {downloadingRunId === run.id ? "Preparing..." : "Download"}
+                    <p className="text-sm text-slate-200 font-medium underline-offset-2 hover:underline">{run.name}</p>
+                    <p className="text-xs text-slate-500">{new Date(run.createdAt).toLocaleString()}</p>
+                    {restoringRunId === run.id && <p className="text-xs text-blue-300 mt-1">Opening...</p>}
                   </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleDownloadRun(run.id)}
+                      disabled={downloadingRunId === run.id}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-900/50 hover:bg-emerald-900/70 disabled:bg-slate-700 text-emerald-200 disabled:text-slate-400 rounded text-xs font-semibold transition-colors"
+                      title="Download run file"
+                    >
+                      <HiDownload className="w-4 h-4" />
+                      {downloadingRunId === run.id ? "Preparing..." : "Download"}
+                    </button>
+                    <button
+                      onClick={() => handleDeleteRun(run.id)}
+                      disabled={deletingRunId === run.id}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-900/50 hover:bg-red-900/70 disabled:bg-slate-700 text-red-200 disabled:text-slate-400 rounded text-xs font-semibold transition-colors"
+                      title="Delete run folder"
+                    >
+                      <HiTrash className="w-4 h-4" />
+                      {deletingRunId === run.id ? "Deleting..." : "Delete"}
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -539,7 +698,6 @@ export default function TestCaseExecutionPage() {
                       <th className="text-left px-4 py-3 text-slate-300 font-semibold">Test Case ID</th>
                       <th className="text-left px-4 py-3 text-slate-300 font-semibold">Title</th>
                       <th className="text-left px-4 py-3 text-slate-300 font-semibold">Steps</th>
-                      <th className="text-left px-4 py-3 text-slate-300 font-semibold">Expected Result</th>
                       <th className="text-left px-4 py-3 text-slate-300 font-semibold">Status</th>
                       <th className="text-left px-4 py-3 text-slate-300 font-semibold">Remarks</th>
                       <th className="text-center px-4 py-3 text-slate-300 font-semibold">Actions</th>
@@ -549,20 +707,11 @@ export default function TestCaseExecutionPage() {
                     {testCases.map((testCase, idx) => (
                       <tr key={testCase.id} className={`border-b border-slate-700/30 ${idx % 2 === 0 ? "bg-slate-800/20" : ""} hover:bg-slate-800/40 transition-colors`}>
                         <td className="px-4 py-3 text-slate-300 font-mono">{testCase.testCaseId}</td>
-                        <td className="px-4 py-3 text-slate-300 max-w-xs truncate">{testCase.title}</td>
+                        <td className="px-4 py-3 text-slate-300 max-w-sm break-words whitespace-normal">{testCase.title}</td>
                         <td className="px-4 py-3 text-slate-400 text-xs max-w-md whitespace-pre-line break-words align-top">{testCase.steps}</td>
                         <td className="px-4 py-3">
-                          <input
-                            type="text"
-                            value={getDisplayExpectedResult(testCase.id, testCase.expectedResult)}
-                            onChange={(e) => handleExpectedResultChange(testCase.id, e.target.value)}
-                            placeholder="Add expected result..."
-                            className="w-full px-2 py-1 bg-slate-800/50 border border-slate-700/50 rounded text-slate-300 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
-                          />
-                        </td>
-                        <td className="px-4 py-3">
                           <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold ${STATUS_COLORS[testCase.executionStatus].bg} ${STATUS_COLORS[testCase.executionStatus].text}`}>
-                            {STATUS_COLORS[testCase.executionStatus].icon}
+                            {testCase.executionStatus !== "NOT_RUN" && STATUS_COLORS[testCase.executionStatus].icon}
                             <span>{STATUS_LABELS[testCase.executionStatus]}</span>
                           </div>
                         </td>
@@ -614,7 +763,138 @@ export default function TestCaseExecutionPage() {
             )}
           </div>
         </div>
+
+        {/* Passed Test Cases Section */}
+        {testCases.filter((tc) => tc.executionStatus === "PASS").length > 0 && (
+          <div className="backdrop-blur-xl bg-slate-900/50 rounded-2xl border border-slate-800/50 shadow-2xl overflow-hidden w-full">
+            <div className="p-8">
+              <h2 className="text-xl font-bold text-green-400 mb-6">Passed Test Cases</h2>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-slate-700/50">
+                      <th className="text-left px-4 py-3 text-slate-300 font-semibold">Test Case ID</th>
+                      <th className="text-left px-4 py-3 text-slate-300 font-semibold">Title</th>
+                      <th className="text-left px-4 py-3 text-slate-300 font-semibold">Status</th>
+                      <th className="text-left px-4 py-3 text-slate-300 font-semibold">Remarks</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {testCases
+                      .filter((tc) => tc.executionStatus === "PASS")
+                      .map((testCase, idx) => (
+                        <tr key={testCase.id} className={`border-b border-slate-700/30 ${idx % 2 === 0 ? "bg-slate-800/20" : ""} hover:bg-slate-800/40 transition-colors`}>
+                          <td className="px-4 py-3 text-slate-300 font-mono">{testCase.testCaseId}</td>
+                          <td className="px-4 py-3 text-slate-300 max-w-sm break-words whitespace-normal">{testCase.title}</td>
+                          <td className="px-4 py-3">
+                            <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold ${STATUS_COLORS["PASS"].bg} ${STATUS_COLORS["PASS"].text}`}>
+                              {STATUS_COLORS["PASS"].icon}
+                              <span>PASS</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            <p className="text-slate-300 text-xs max-w-md break-words">{testCase.executionRemarks || "—"}</p>
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Failed Test Cases Section */}
+        {testCases.filter((tc) => tc.executionStatus === "FAIL").length > 0 && (
+          <div className="backdrop-blur-xl bg-slate-900/50 rounded-2xl border border-slate-800/50 shadow-2xl overflow-hidden w-full">
+            <div className="p-8">
+              <h2 className="text-xl font-bold text-red-400 mb-6">Failed Test Cases</h2>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-slate-700/50">
+                      <th className="text-left px-4 py-3 text-slate-300 font-semibold">Test Case ID</th>
+                      <th className="text-left px-4 py-3 text-slate-300 font-semibold">Title</th>
+                      <th className="text-left px-4 py-3 text-slate-300 font-semibold">Severity</th>
+                      <th className="text-left px-4 py-3 text-slate-300 font-semibold">Status</th>
+                      <th className="text-left px-4 py-3 text-slate-300 font-semibold">Remarks</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {testCases
+                      .filter((tc) => tc.executionStatus === "FAIL")
+                      .map((testCase, idx) => (
+                        <tr key={testCase.id} className={`border-b border-slate-700/30 ${idx % 2 === 0 ? "bg-slate-800/20" : ""} hover:bg-slate-800/40 transition-colors`}>
+                          <td className="px-4 py-3 text-slate-300 font-mono">{testCase.testCaseId}</td>
+                          <td className="px-4 py-3 text-slate-300 max-w-sm break-words whitespace-normal">{testCase.title}</td>
+                          <td className="px-4 py-3">
+                            <span className={`inline-block px-2 py-1 rounded text-xs font-semibold ${testCase.executionSeverity === "MAJOR" ? "bg-red-900/50 text-red-200" : testCase.executionSeverity === "HIGH" ? "bg-orange-900/50 text-orange-200" : testCase.executionSeverity === "MEDIUM" ? "bg-yellow-900/50 text-yellow-200" : "bg-green-900/50 text-green-200"}`}>
+                              {testCase.executionSeverity || "—"}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold ${STATUS_COLORS["FAIL"].bg} ${STATUS_COLORS["FAIL"].text}`}>
+                              {STATUS_COLORS["FAIL"].icon}
+                              <span>FAIL</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            <p className="text-slate-300 text-xs max-w-md break-words">{testCase.executionRemarks || "—"}</p>
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* New Test Cycle Modal */}
+      {isNewCycleModalOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl max-w-md w-full p-8 animate-in fade-in zoom-in">
+            <h3 className="text-lg font-bold text-white mb-2">Start New Test Cycle</h3>
+            <p className="text-sm text-slate-400 mb-5">
+              Name the folder to save the current test cycle before all test case statuses are reset to pending.
+            </p>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-slate-300 mb-2">Folder Name</label>
+                <input
+                  type="text"
+                  value={newCycleFolderName}
+                  onChange={(e) => setNewCycleFolderName(e.target.value)}
+                  placeholder="e.g., HSA Cycle - 26 Mar"
+                  className="w-full px-3 py-2 bg-slate-800/60 border border-slate-700/50 rounded-lg text-slate-200 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+
+              <div className="flex items-center gap-3 pt-2">
+                <button
+                  onClick={() => {
+                    setIsNewCycleModalOpen(false);
+                    setNewCycleFolderName("");
+                  }}
+                  disabled={savingRun}
+                  className="flex-1 px-4 py-2 bg-slate-800 hover:bg-slate-700 disabled:bg-slate-800 text-slate-300 rounded-lg font-semibold transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleConfirmNewTestCycle}
+                  disabled={savingRun}
+                  className="flex-1 px-4 py-2 bg-blue-900/60 hover:bg-blue-900/80 disabled:bg-slate-700 text-blue-200 disabled:text-slate-400 rounded-lg font-semibold transition-colors"
+                >
+                  {savingRun ? "Saving..." : "Save & Start"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Fail Modal */}
       {failModal.isOpen && (

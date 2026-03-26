@@ -370,3 +370,23 @@ export async function createTestCycleRunForApi(payload: CreateTestCycleRunPayloa
 
   return result.rows[0];
 }
+
+export async function deleteTestCycleRunForApi(cycleId: string, runId: string) {
+  try {
+    await ensureTestCaseSchema();
+
+    const result = await db.query(
+      `DELETE FROM test_cycle_run WHERE id = $1 AND "cycleId" = $2 RETURNING id`,
+      [runId, cycleId]
+    );
+
+    if (result.rowCount === 0) {
+      throw new Error("Run not found");
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("[API] Failed to delete test cycle run", error);
+    throw error;
+  }
+}
