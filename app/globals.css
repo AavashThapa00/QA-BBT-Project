@@ -3,6 +3,10 @@
 :root {
   --background: #f8fafc;
   --foreground: #0f172a;
+  --focus-ring: #2563eb;
+  --scrollbar-track: #e2e8f0;
+  --scrollbar-thumb: #94a3b8;
+  --scrollbar-thumb-hover: #64748b;
   --primary: #3b82f6;
   --primary-dark: #1e40af;
   --accent: #06b6d4;
@@ -16,6 +20,10 @@
 html.dark {
   --background: #0f172a;
   --foreground: #f1f5f9;
+  --focus-ring: #60a5fa;
+  --scrollbar-track: #1e293b;
+  --scrollbar-thumb: #475569;
+  --scrollbar-thumb-hover: #64748b;
 }
 
 html.light {
@@ -26,6 +34,10 @@ html.light {
 html[data-theme="dark"] {
   --background: #0f172a;
   --foreground: #f1f5f9;
+  --focus-ring: #60a5fa;
+  --scrollbar-track: #1e293b;
+  --scrollbar-thumb: #475569;
+  --scrollbar-thumb-hover: #64748b;
 }
 
 html[data-theme="light"] {
@@ -34,7 +46,15 @@ html[data-theme="light"] {
 }
 
 * {
-  @apply transition-colors duration-200;
+  box-sizing: border-box;
+}
+
+a,
+button,
+input,
+select,
+textarea {
+  transition: color 180ms ease, background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
 }
 
 html {
@@ -45,6 +65,23 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  line-height: 1.5;
+}
+
+::selection {
+  background: rgba(37, 99, 235, 0.22);
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+button:disabled,
+input:disabled,
+select:disabled,
+textarea:disabled {
+  cursor: not-allowed;
 }
 
 html.light body,
@@ -77,19 +114,39 @@ html.light .text-slate-300,
 html.light .text-slate-400,
 html.light .text-slate-500,
 html.light .text-slate-600,
+html.light .text-slate-100,
+html.light .text-slate-200,
+html.light .text-slate-700,
+html.light .text-slate-800,
+html.light .text-slate-900,
 html.light .text-gray-300,
 html.light .text-gray-400,
 html.light .text-gray-500,
 html.light .text-gray-600,
+html.light .text-gray-100,
+html.light .text-gray-200,
+html.light .text-gray-700,
+html.light .text-gray-800,
+html.light .text-gray-900,
 html.light .text-zinc-300,
 html.light .text-zinc-400,
 html.light .text-zinc-500,
 html.light .text-zinc-600,
+html.light .text-zinc-100,
+html.light .text-zinc-200,
+html.light .text-zinc-700,
+html.light .text-zinc-800,
+html.light .text-zinc-900,
 html.light .text-neutral-300,
 html.light .text-neutral-400,
 html.light .text-neutral-500,
-html.light .text-neutral-600 {
-  color: #334155 !important;
+html.light .text-neutral-600,
+html.light .text-neutral-100,
+html.light .text-neutral-200,
+html.light .text-neutral-700,
+html.light .text-neutral-800,
+html.light .text-neutral-900 {
+  color: #000000 !important;
 }
 
 /* Global light-theme utility remaps for existing dark-first pages */
@@ -150,7 +207,7 @@ html.light [class*="border-slate-"] {
 }
 
 html.light [class*="text-white"] {
-  color: #0f172a !important;
+  color: #000000 !important;
 }
 
 html.light [class*="from-slate-95"] {
@@ -175,16 +232,16 @@ html.light [class*="to-slate-95"] {
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: var(--scrollbar-track);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: var(--scrollbar-thumb);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: var(--scrollbar-thumb-hover);
 }
 
 /* Utility: hide scrollbar but allow horizontal scroll */

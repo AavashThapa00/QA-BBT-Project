@@ -248,7 +248,7 @@ export default function Home() {
         isExportPanelOpen ? "blur-sm opacity-50 pointer-events-none" : ""
       }`}>
         <div className="animate-in fade-in-up duration-500">
-          <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+          <h1 className="text-4xl md:text-5xl font-bold leading-[1.15] pb-1 bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
             Defect Intelligence Dashboard
           </h1>
           <p className="text-slate-400 mt-2 text-sm md:text-base">

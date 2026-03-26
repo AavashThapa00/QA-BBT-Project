@@ -139,27 +139,45 @@ export function exportToCSV(
     defects: DefectWithResolutionTime[],
     filename: string = "defects.csv"
 ): void {
+    const STATUS_LABELS: Record<string, string> = {
+        OPEN: "Open",
+        IN_PROGRESS: "In Progress",
+        CLOSED: "Fixed",
+        ON_HOLD: "Pending",
+        AS_IT_IS: "As it is",
+    };
+
     const headers = [
+        "Issue ID",
+        "Test Case ID",
         "Date Reported",
         "Module",
         "Severity",
         "Priority",
         "Status",
+        "Issue Summary",
         "Expected Result",
         "Actual Result",
+        "Description / Steps",
+        "Remarks",
         "Date Fixed",
         "Resolution Days",
         "Days Open",
     ];
 
     const rows = defects.map((defect: DefectWithResolutionTime) => [
+        defect.id || "N/A",
+        defect.testCaseId || "N/A",
         formatDate(defect.dateReported),
         defect.module || "N/A",
         defect.severity || "N/A",
         defect.priority || "N/A",
-        defect.status || "N/A",
+        STATUS_LABELS[defect.status] || defect.status || "N/A",
+        defect.summary || defect.testScenario || "N/A",
         defect.expectedResult || "N/A",
         defect.actualResult || "N/A",
+        defect.descriptionSteps || defect.testSteps || "N/A",
+        defect.remarks || "N/A",
         defect.dateFixed ? formatDate(defect.dateFixed) : "N/A",
         defect.resolutionDays !== undefined ? String(defect.resolutionDays) : "N/A",
         defect.daysOpen !== undefined ? String(defect.daysOpen) : "N/A",
