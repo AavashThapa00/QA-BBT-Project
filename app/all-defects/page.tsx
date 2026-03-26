@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { HiArrowLeft, HiCheckCircle, HiClock, HiExclamationCircle } from "react-icons/hi";
+import { HiArrowLeft, HiCheckCircle, HiClock, HiExclamationCircle, HiTrash } from "react-icons/hi";
 import { Defect } from "@/lib/types";
-import { getAllDefectsSorted } from "@/app/actions/detailsActions";
+import { deleteDefectById, getAllDefectsSorted } from "@/app/actions/detailsActions";
 import { formatDate } from "@/lib/utils";
 
 const STATUS_COLORS: Record<string, { bg: string; text: string; icon: React.ReactNode }> = {
@@ -31,6 +31,7 @@ export default function AllDefectsPage() {
   const [filteredDefects, setFilteredDefects] = useState<Defect[]>([]);
   const [selectedModule, setSelectedModule] = useState("ALL");
   const [isLoading, setIsLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     loadDefects();
@@ -57,6 +58,28 @@ export default function AllDefectsPage() {
       console.error("Error loading defects:", error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleDeleteIssue = async (id: string) => {
+    const confirmed = window.confirm("Remove this issue from the issue sheet? This action cannot be undone.");
+    if (!confirmed) return;
+
+    try {
+      setDeletingId(id);
+      const result = await deleteDefectById(id);
+      if (!result.success) {
+        window.alert(result.message);
+        return;
+      }
+
+      setDefects((prev) => prev.filter((defect) => defect.id !== id));
+      setFilteredDefects((prev) => prev.filter((defect) => defect.id !== id));
+    } catch (error) {
+      console.error("Error deleting issue:", error);
+      window.alert("Failed to remove issue");
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -127,6 +150,21 @@ export default function AllDefectsPage() {
                 className="bg-slate-900 rounded-lg border border-slate-800 p-6 hover:border-slate-700 transition-colors cursor-pointer"
                 onClick={() => router.push(`/defects/${defect.id}`)}
               >
+                <div className="flex items-center justify-end mb-2">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteIssue(defect.id);
+                    }}
+                    disabled={deletingId === defect.id}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-900/40 hover:bg-red-900/60 disabled:bg-slate-700 text-red-200 disabled:text-slate-400 text-xs font-semibold transition-colors"
+                  >
+                    <HiTrash className="w-4 h-4" />
+                    {deletingId === defect.id ? "Removing..." : "Remove"}
+                  </button>
+                </div>
+
                 {/* Summary/Title Header */}
                 {defect.summary && (
                   <h2 className="text-lg font-semibold text-white mb-4 leading-relaxed">

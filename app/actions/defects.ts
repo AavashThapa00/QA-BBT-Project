@@ -569,3 +569,22 @@ export async function updateManualDefect(id: string, updates: ManualDefectUpdate
         return { success: false, message: "Failed to update issue" };
     }
 }
+
+export async function deleteManualDefect(id: string): Promise<{ success: boolean; message: string }> {
+    if (!id) {
+        return { success: false, message: "Defect ID is required" };
+    }
+
+    try {
+        const result = await db.query(`DELETE FROM defect WHERE id = $1`, [id]);
+
+        if (!result.rowCount) {
+            return { success: false, message: "Issue not found" };
+        }
+
+        return { success: true, message: "Issue removed successfully" };
+    } catch (error) {
+        console.error("Error deleting manual defect:", error);
+        return { success: false, message: "Failed to remove issue" };
+    }
+}

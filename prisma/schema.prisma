@@ -110,3 +110,58 @@ model Defect {
   @@index([status])
   @@index([sourceFile])
 }
+
+enum TestExecutionStatus {
+  NOT_RUN
+  PASS
+  FAIL
+}
+
+model TestCycle {
+  id              String        @id @default(uuid())
+  name            String        @db.VarChar(255)
+  description     String?       @db.Text
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  testCases       TestCase[]
+  testExecutions  TestExecution[]
+
+  @@map("test_cycle")
+}
+
+model TestCase {
+  id              String        @id @default(uuid())
+  testCaseId      String        @db.VarChar(100)
+  title           String        @db.Text
+  steps           String        @db.Text
+  expectedResult  String        @db.Text
+  cycleId         String        @db.Uuid @map("cycleId")
+  createdAt       DateTime      @default(now())
+
+  cycle           TestCycle     @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  testExecutions  TestExecution[]
+
+  @@unique([testCaseId, cycleId])
+  @@index([cycleId])
+  @@map("test_case")
+}
+
+model TestExecution {
+  id              String        @id @default(uuid())
+  cycleId         String        @db.Uuid @map("cycleId")
+  testCaseId      String        @db.Uuid @map("testCaseId")
+  status          TestExecutionStatus @default(NOT_RUN)
+  remarks         String?       @db.Text
+  severity        Severity?
+  executedOn      DateTime      @default(now()) @map("executedOn")
+  executedBy      String?       @db.Uuid @map("executedBy")
+
+  cycle           TestCycle     @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  testCase        TestCase      @relation(fields: [testCaseId], references: [id], onDelete: Cascade)
+
+  @@unique([cycleId, testCaseId])
+  @@index([cycleId])
+  @@index([testCaseId])
+  @@map("test_execution")
+}
