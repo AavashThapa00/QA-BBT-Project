@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { HiArrowLeft, HiUserGroup, HiClock, HiExclamationCircle, HiX } from "react-icons/hi";
+import { HiArrowLeft, HiUserGroup, HiClock, HiX } from "react-icons/hi";
 import { getTeamPerformance, getTeamDefectsByStatus } from "@/app/actions/teamPerformance";
 
 interface TeamMember {

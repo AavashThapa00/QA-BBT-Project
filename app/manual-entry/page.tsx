@@ -103,7 +103,7 @@ export default function ManualEntryPage() {
     try {
       const defects = await getManualDefects(250);
       setRows(defects.map(mapDefectToRow));
-    } catch (err) {
+    } catch {
       setError("Failed to load manual issue sheet");
     } finally {
       setLoading(false);

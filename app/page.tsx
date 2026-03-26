@@ -1,11 +1,10 @@
 "use client";
 
 import React, { useState, useCallback, useEffect } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import ExportDefectsPanel from "@/app/components/exports/ExportDefectsPanel";
-import { HiDownload, HiClipboardList, HiChartBar, HiExclamationCircle, HiViewList } from "react-icons/hi";
+import { HiDownload, HiClipboardList, HiChartBar, HiExclamationCircle } from "react-icons/hi";
 import MetricsCard from "@/app/components/dashboard/MetricsCard";
 import FilterPanel from "@/app/components/filters/FilterPanel";
 import { SkeletonCard, SkeletonChart, SkeletonTable } from "@/app/components/common/SkeletonLoader";

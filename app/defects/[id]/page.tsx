@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { getDefectById } from "@/app/actions/detailsActions";
-import { Defect, SeverityEnum, StatusEnum } from "@/lib/types";
+import { Defect } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
 import { HiArrowLeft, HiCheckCircle, HiExclamationCircle, HiClock } from "react-icons/hi";
 

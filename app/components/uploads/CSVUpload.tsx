@@ -1,26 +1,22 @@
 "use client";
 
 import React, { useState, useRef } from "react";
-import { HiCheckCircle, HiXCircle, HiClipboardList } from "react-icons/hi";
+import { HiXCircle, HiClipboardList } from "react-icons/hi";
 import { uploadCSV, UploadResult } from "@/app/actions/csv";
 import Toast from "@/app/components/common/Toast";
 
 interface CSVUploadProps {
   onUploadSuccess?: (result: UploadResult) => void;
   onUploadError?: (error: string) => void;
-  onModulesSelected?: (modules: string[]) => void;
 }
 
 export default function CSVUpload({
   onUploadSuccess,
   onUploadError,
-  onModulesSelected,
 }: CSVUploadProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<UploadResult | null>(null);
   const [showToast, setShowToast] = useState(false);
-  const [modulesInFile, setModulesInFile] = useState<string[]>([]);
-  const [selectedModules, setSelectedModules] = useState<Record<string, boolean>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = async (
@@ -42,17 +38,6 @@ export default function CSVUpload({
       const text = await file.text();
       const uploadResult = await uploadCSV(text, file.name);
       setResult(uploadResult);
-
-        // populate modules list if present
-        if (uploadResult.modules && uploadResult.modules.length > 0) {
-          setModulesInFile(uploadResult.modules);
-          const sel: Record<string, boolean> = {};
-          uploadResult.modules.forEach((m) => (sel[m] = false));
-          setSelectedModules(sel);
-        } else {
-          setModulesInFile([]);
-          setSelectedModules({});
-        }
 
       if (uploadResult.success) {
         onUploadSuccess?.(uploadResult);

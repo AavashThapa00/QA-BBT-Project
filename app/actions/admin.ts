@@ -126,7 +126,7 @@ export async function deleteUserAction(formData: FormData) {
   try {
     await db.query(`DELETE FROM "user" WHERE id = $1`, [userId]);
     return { success: true, message: "User account deleted successfully" };
-  } catch (error) {
+  } catch {
     return { success: false, message: "Failed to delete user" };
   }
 }

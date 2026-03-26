@@ -376,34 +376,6 @@ export async function uploadCSV(csvData: string, fileName?: string): Promise<Upl
     }
 }
 
-function parseCSVLine(line: string): string[] {
-    const result: string[] = [];
-    let current = "";
-    let insideQuotes = false;
-
-    for (let i = 0; i < line.length; i++) {
-        const char = line[i];
-        const nextChar = line[i + 1];
-
-        if (char === '"') {
-            if (insideQuotes && nextChar === '"') {
-                current += '"';
-                i++; // Skip the next quote
-            } else {
-                insideQuotes = !insideQuotes;
-            }
-        } else if (char === "," && !insideQuotes) {
-            result.push(current.trim());
-            current = "";
-        } else {
-            current += char;
-        }
-    }
-
-    result.push(current.trim());
-    return result;
-}
-
 function parseCSVContent(content: string): string[][] {
     const rows: string[][] = [];
     let currentRow: string[] = [];

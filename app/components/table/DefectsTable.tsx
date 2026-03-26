@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { HiInbox, HiX, HiChevronDown } from "react-icons/hi";
+import { HiInbox, HiChevronDown } from "react-icons/hi";
 import { Defect, Severity } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
 

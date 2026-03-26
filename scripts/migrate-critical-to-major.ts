@@ -11,7 +11,7 @@ async function updateConstraintAndMigrate() {
                 `ALTER TABLE defect DROP CONSTRAINT defect_severity_check`
             );
             console.log("✅ Dropped old severity constraint");
-        } catch (e) {
+        } catch {
             console.log("ℹ️  Old constraint doesn't exist, skipping drop");
         }
 
@@ -28,7 +28,7 @@ async function updateConstraintAndMigrate() {
                 `ALTER TABLE defect ADD CONSTRAINT defect_severity_check CHECK (severity IN ('MAJOR', 'HIGH', 'MEDIUM', 'LOW'))`
             );
             console.log("✅ Added new severity constraint with MAJOR");
-        } catch (e) {
+        } catch {
             console.log("ℹ️  Constraint already exists, skipping add");
         }
 
