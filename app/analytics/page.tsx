@@ -60,9 +60,10 @@ const MODULE_COLORS: Record<string, string> = {
   Other: "#6b7280",
 };
 
-const renderPieLabel = ({ name, percent }: { name: string; percent?: number }) => {
+const renderPieLabel = ({ name, percent }: { name?: string | number; percent?: number }) => {
+  const label = typeof name === "string" ? name : String(name ?? "");
   const pct = percent ? Math.round(percent * 100) : 0;
-  return `${name} ${pct}%`;
+  return `${label} ${pct}%`;
 };
 
 export default function AnalyticsPage() {
@@ -93,7 +94,9 @@ export default function AnalyticsPage() {
         };
 
         statusCounts.forEach((item) => {
-          switch (item.status) {
+          const status = String(item.status);
+
+          switch (status) {
             case "AS_IT_IS":
               groupedCounts.AS_IT_IS += item.count;
               break;
