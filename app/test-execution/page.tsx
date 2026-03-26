@@ -44,6 +44,8 @@ export default function TestCaseExecutionPage() {
   const [selectedCycle, setSelectedCycle] = useState<string>("");
   const [testCases, setTestCases] = useState<TestCaseWithExecution[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingTestCases, setLoadingTestCases] = useState(false);
+  const [hasLoadedTestCases, setHasLoadedTestCases] = useState(false);
   const [isCycleDropdownOpen, setIsCycleDropdownOpen] = useState(false);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [failModal, setFailModal] = useState<FailModalState>({
@@ -106,7 +108,8 @@ export default function TestCaseExecutionPage() {
 
     async function loadTestCases() {
       try {
-        setLoading(true);
+        setLoadingTestCases(true);
+        setHasLoadedTestCases(false);
         const response = await fetch(`/api/v1/test-cycles/${selectedCycle}/test-cases`);
         const data = await response.json();
         if (data.success) {
@@ -117,7 +120,8 @@ export default function TestCaseExecutionPage() {
         console.error("Failed to load test cases:", error);
         setMessage({ type: "error", text: "Failed to load test cases" });
       } finally {
-        setLoading(false);
+        setLoadingTestCases(false);
+        setHasLoadedTestCases(true);
       }
     }
 
@@ -685,7 +689,12 @@ export default function TestCaseExecutionPage() {
           <div className="p-8">
             <h2 className="text-xl font-bold text-white mb-6">Test Cases</h2>
 
-            {testCases.length === 0 ? (
+            {loadingTestCases || !hasLoadedTestCases ? (
+              <div className="text-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-2 border-slate-700 border-t-blue-500 mx-auto mb-3"></div>
+                <p className="text-slate-400">Loading test cases...</p>
+              </div>
+            ) : testCases.length === 0 ? (
               <div className="text-center py-12">
                 <HiExclamationCircle className="w-12 h-12 text-slate-400 mx-auto mb-3" />
                 <p className="text-slate-400">No test cases found for this cycle</p>

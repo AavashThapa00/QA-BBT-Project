@@ -13,6 +13,8 @@ import {
   HiPlus,
   HiLogout,
   HiArrowRight,
+  HiMoon,
+  HiSun,
 } from "react-icons/hi";
 import { getCurrentUser, logoutAction } from "@/app/actions/auth";
 
@@ -35,9 +37,40 @@ const navItems: NavItem[] = [
 export default function Navigation() {
   const pathname = usePathname();
   const [isAuthed, setIsAuthed] = useState(false);
+  const [theme, setTheme] = useState<"light" | "dark">("dark");
   const [authRole, setAuthRole] = useState<"super_admin" | "admin" | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
+
+  const applyTheme = (nextTheme: "light" | "dark") => {
+    const root = document.documentElement;
+    root.classList.remove("light", "dark");
+    root.classList.add(nextTheme);
+    root.setAttribute("data-theme", nextTheme);
+    localStorage.setItem("theme", nextTheme);
+    setTheme(nextTheme);
+  };
+
+  const toggleTheme = () => {
+    const root = document.documentElement;
+    const nextTheme: "light" | "dark" = root.classList.contains("dark") ? "light" : "dark";
+    applyTheme(nextTheme);
+  };
+
+  useEffect(() => {
+    const stored = localStorage.getItem("theme");
+    if (stored === "light" || stored === "dark") {
+      setTheme(stored);
+      return;
+    }
+
+    const root = document.documentElement;
+    if (root.classList.contains("light") || root.getAttribute("data-theme") === "light") {
+      setTheme("light");
+      return;
+    }
+    setTheme("dark");
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -123,6 +156,17 @@ export default function Navigation() {
               );
             })}
             </div>
+
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-300 text-slate-300 border border-transparent hover:bg-slate-800/70 hover:border-slate-700 hover:text-white"
+              title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+              aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            >
+              {theme === "dark" ? <HiSun className="w-4 h-4" /> : <HiMoon className="w-4 h-4" />}
+              <span className="hidden lg:block">{theme === "dark" ? "Light" : "Dark"}</span>
+            </button>
 
             {isAuthed ? (
               <div className="relative" ref={menuRef}>
