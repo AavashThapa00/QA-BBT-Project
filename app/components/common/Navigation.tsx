@@ -10,6 +10,7 @@ import {
   HiUserGroup,
   HiClipboardCheck,
   HiUserCircle,
+  HiPlus,
   HiLogout,
 } from "react-icons/hi";
 import { getCurrentUser, logoutAction } from "@/app/actions/auth";
@@ -148,6 +149,7 @@ export default function Navigation() {
                         role="menuitem"
                         onClick={() => setMenuOpen(false)}
                       >
+                        <HiPlus className="w-4 h-4" />
                         Add Admin
                       </Link>
                     )}
