@@ -132,6 +132,8 @@ export interface CreateTestCaseDefectPayload {
   cycleId: string;
   title: string;
   description: string;
+  expectedResult: string;
+  priority: "LOW" | "MEDIUM" | "HIGH" | "MAJOR";
   severity: "MAJOR" | "HIGH" | "MEDIUM" | "LOW";
 }
 
@@ -221,7 +223,7 @@ export async function createTestCaseDefectForApi(payload: CreateTestCaseDefectPa
           payload.title,
           payload.description,
           payload.severity,
-          "High",
+          payload.priority,
           today,
           defectId,
         ]
@@ -256,10 +258,10 @@ export async function createTestCaseDefectForApi(payload: CreateTestCaseDefectPa
         today,
         moduleName,
         payload.title,
-        context.expectedResult || "",
+        payload.expectedResult || context.expectedResult || "",
         payload.description,
         payload.severity,
-        "High",
+        payload.priority,
         "OPEN",
         "PENDING",
       ]

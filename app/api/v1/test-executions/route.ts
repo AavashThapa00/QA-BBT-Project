@@ -17,6 +17,8 @@ const saveExecutionSchema = z.object({
   createDefect: z.boolean().optional().default(false),
   defectTitle: z.string().optional(),
   defectDescription: z.string().optional(),
+  defectExpectedResult: z.string().optional(),
+  defectPriority: z.enum(["LOW", "MEDIUM", "HIGH", "MAJOR"]).optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -33,7 +35,14 @@ export async function POST(request: NextRequest) {
       return fail("Invalid request body", 400, parsed.error.flatten());
     }
 
-    const { createDefect, defectTitle, defectDescription, ...executionData } = parsed.data;
+    const {
+      createDefect,
+      defectTitle,
+      defectDescription,
+      defectExpectedResult,
+      defectPriority,
+      ...executionData
+    } = parsed.data;
 
     // Save test execution
     await saveTestExecutionForApi({
@@ -56,6 +65,8 @@ export async function POST(request: NextRequest) {
         cycleId: executionData.cycleId,
         title: defectTitle,
         description: defectDescription || "",
+        expectedResult: defectExpectedResult || "",
+        priority: defectPriority || "HIGH",
         severity: executionData.severity || "HIGH",
       });
     }

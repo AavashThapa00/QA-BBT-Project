@@ -74,6 +74,11 @@ export default function Navigation() {
     };
   }, [menuOpen]);
 
+  // Keep auth screens distraction-free.
+  if (pathname === "/login") {
+    return null;
+  }
+
   return (
     <nav className="sticky top-0 z-50 backdrop-blur-xl bg-slate-950/60 border-b border-slate-800/60 shadow-2xl shadow-slate-950/30">
       <div className="w-full px-2 sm:px-4 lg:px-10 xl:px-12">

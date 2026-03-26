@@ -9,7 +9,10 @@ import TestCaseImportForm from "@/app/components/testExecution/TestCaseImportFor
 interface FailModalState {
   isOpen: boolean;
   testCaseId: string;
-  remarks: string;
+  expectedResult: string;
+  issueSummary: string;
+  issueDescription: string;
+  priority: "LOW" | "MEDIUM" | "HIGH" | "MAJOR";
   severity: "MAJOR" | "HIGH" | "MEDIUM" | "LOW";
 }
 
@@ -27,7 +30,14 @@ const STATUS_COLORS: Record<TestExecutionStatus, { bg: string; text: string; ico
   FAIL: { bg: "bg-red-900", text: "text-red-200", icon: <HiXCircle /> },
 };
 
+const STATUS_LABELS: Record<TestExecutionStatus, string> = {
+  NOT_RUN: "PENDING",
+  PASS: "PASS",
+  FAIL: "FAIL",
+};
+
 const SEVERITY_OPTIONS = ["LOW", "MEDIUM", "HIGH", "MAJOR"] as const;
+const PRIORITY_OPTIONS = ["LOW", "MEDIUM", "HIGH", "MAJOR"] as const;
 
 export default function TestCaseExecutionPage() {
   const [cycles, setCycles] = useState<TestCycle[]>([]);
@@ -39,7 +49,10 @@ export default function TestCaseExecutionPage() {
   const [failModal, setFailModal] = useState<FailModalState>({
     isOpen: false,
     testCaseId: "",
-    remarks: "",
+    expectedResult: "",
+    issueSummary: "",
+    issueDescription: "",
+    priority: "HIGH",
     severity: "HIGH",
   });
   const [remarks, setRemarks] = useState<Record<string, string>>({});
@@ -155,24 +168,78 @@ export default function TestCaseExecutionPage() {
   };
 
   const handleFailClick = (testCase: TestCaseWithExecution) => {
+    const expectedResult = getDisplayExpectedResult(testCase.id, testCase.expectedResult);
     setFailModal({
       isOpen: true,
       testCaseId: testCase.id,
-      remarks: testCase.executionRemarks || "",
+      expectedResult,
+      issueSummary: `Failure in ${testCase.testCaseId} - ${testCase.title}`,
+      issueDescription: testCase.executionRemarks || "",
+      priority: "HIGH",
       severity: testCase.executionSeverity || "HIGH",
     });
   };
 
+  const handleRevertToPending = async (testCaseId: string) => {
+    if (!selectedCycle) return;
+
+    try {
+      setSavingId(testCaseId);
+      const response = await fetch("/api/v1/test-executions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          cycleId: selectedCycle,
+          testCaseId,
+          status: "NOT_RUN",
+          remarks: null,
+          severity: null,
+        }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setTestCases((prev) =>
+          prev.map((tc) =>
+            tc.id === testCaseId
+              ? { ...tc, executionStatus: "NOT_RUN", executionRemarks: "", executionSeverity: null }
+              : tc
+          )
+        );
+        setMessage({ type: "success", text: "Test case reverted to PENDING" });
+      } else {
+        setMessage({ type: "error", text: "Failed to revert test execution" });
+      }
+    } catch (error) {
+      console.error("Failed to revert execution:", error);
+      setMessage({ type: "error", text: "Failed to revert test execution" });
+    } finally {
+      setSavingId(null);
+    }
+  };
+
   const handleFailConfirm = async () => {
     if (!selectedCycle) return;
+
+    const issueSummary = failModal.issueSummary.trim();
+    const issueDescription = failModal.issueDescription.trim();
+    const expectedResult = failModal.expectedResult.trim();
+
+    if (!expectedResult || !issueSummary || !issueDescription) {
+      setMessage({
+        type: "error",
+        text: "Expected Result, Issue Summary, and Issue Description are required for failed test cases",
+      });
+      return;
+    }
 
     try {
       setSavingId(failModal.testCaseId);
       const testCase = testCases.find((tc) => tc.id === failModal.testCaseId);
       if (!testCase) return;
 
-      const defectTitle = `Failure in ${testCase.testCaseId} - ${testCase.title}`;
-      const defectDescription = `Steps: ${testCase.steps}\n\nRemarks: ${failModal.remarks}`;
+      const defectTitle = issueSummary;
+      const defectDescription = `Issue Description: ${issueDescription}\n\nTest Steps: ${testCase.steps}`;
 
       const response = await fetch("/api/v1/test-executions", {
         method: "POST",
@@ -181,11 +248,13 @@ export default function TestCaseExecutionPage() {
           cycleId: selectedCycle,
           testCaseId: failModal.testCaseId,
           status: "FAIL",
-          remarks: failModal.remarks,
+          remarks: issueDescription,
           severity: failModal.severity,
           createDefect: true,
           defectTitle,
           defectDescription,
+          defectExpectedResult: expectedResult,
+          defectPriority: failModal.priority,
         }),
       });
 
@@ -197,14 +266,22 @@ export default function TestCaseExecutionPage() {
               ? {
                   ...tc,
                   executionStatus: "FAIL",
-                  executionRemarks: failModal.remarks,
+                  executionRemarks: issueDescription,
                   executionSeverity: failModal.severity,
                 }
               : tc
           )
         );
         setMessage({ type: "success", text: "Test case marked as FAIL and issue logged in Defects" });
-        setFailModal({ isOpen: false, testCaseId: "", remarks: "", severity: "HIGH" });
+        setFailModal({
+          isOpen: false,
+          testCaseId: "",
+          expectedResult: "",
+          issueSummary: "",
+          issueDescription: "",
+          priority: "HIGH",
+          severity: "HIGH",
+        });
       } else {
         setMessage({ type: "error", text: "Failed to save test execution" });
       }
@@ -486,7 +563,7 @@ export default function TestCaseExecutionPage() {
                         <td className="px-4 py-3">
                           <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold ${STATUS_COLORS[testCase.executionStatus].bg} ${STATUS_COLORS[testCase.executionStatus].text}`}>
                             {STATUS_COLORS[testCase.executionStatus].icon}
-                            <span>{testCase.executionStatus}</span>
+                            <span>{STATUS_LABELS[testCase.executionStatus]}</span>
                           </div>
                         </td>
                         <td className="px-4 py-3">
@@ -499,21 +576,34 @@ export default function TestCaseExecutionPage() {
                           />
                         </td>
                         <td className="px-4 py-3">
-                          <div className="flex items-center justify-center gap-2">
+                          <div className="flex flex-wrap items-center justify-center gap-2">
                             <button
                               onClick={() => handlePass(testCase.id)}
                               disabled={savingId === testCase.id}
+                              title="Mark as Pass"
+                              aria-label="Mark as Pass"
                               className="px-3 py-1 bg-green-900/50 hover:bg-green-900/70 disabled:bg-slate-700 text-green-200 disabled:text-slate-400 rounded text-xs font-semibold transition-colors"
                             >
-                              {savingId === testCase.id ? "..." : "Pass"}
+                              {savingId === testCase.id ? "..." : <HiCheckCircle className="w-4 h-4" />}
                             </button>
                             <button
                               onClick={() => handleFailClick(testCase)}
                               disabled={savingId === testCase.id}
+                              title="Mark as Fail"
+                              aria-label="Mark as Fail"
                               className="px-3 py-1 bg-red-900/50 hover:bg-red-900/70 disabled:bg-slate-700 text-red-200 disabled:text-slate-400 rounded text-xs font-semibold transition-colors"
                             >
-                              {savingId === testCase.id ? "..." : "Fail"}
+                              {savingId === testCase.id ? "..." : <HiXCircle className="w-4 h-4" />}
                             </button>
+                            {testCase.executionStatus !== "NOT_RUN" && (
+                              <button
+                                onClick={() => handleRevertToPending(testCase.id)}
+                                disabled={savingId === testCase.id}
+                                className="px-3 py-1 bg-slate-700/80 hover:bg-slate-600 disabled:bg-slate-700 text-slate-200 disabled:text-slate-400 rounded text-xs font-semibold transition-colors"
+                              >
+                                {savingId === testCase.id ? "..." : "Revert"}
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -534,20 +624,56 @@ export default function TestCaseExecutionPage() {
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-slate-300 mb-2">Remarks</label>
+                <label className="block text-sm font-semibold text-slate-300 mb-2">Expected Result</label>
                 <textarea
-                  value={failModal.remarks}
-                  onChange={(e) => setFailModal({ ...failModal, remarks: e.target.value })}
-                  placeholder="Enter failure remarks..."
+                  value={failModal.expectedResult}
+                  onChange={(e) => setFailModal({ ...failModal, expectedResult: e.target.value })}
+                  placeholder="Enter expected result..."
+                  className="w-full px-3 py-2 bg-slate-800/50 border border-slate-700/50 rounded-lg text-slate-300 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none h-20"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-slate-300 mb-2">Issue Summary</label>
+                <input
+                  type="text"
+                  value={failModal.issueSummary}
+                  onChange={(e) => setFailModal({ ...failModal, issueSummary: e.target.value })}
+                  placeholder="Enter issue summary..."
+                  className="w-full px-3 py-2 bg-slate-800/50 border border-slate-700/50 rounded-lg text-slate-300 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-slate-300 mb-2">Issue Description</label>
+                <textarea
+                  value={failModal.issueDescription}
+                  onChange={(e) => setFailModal({ ...failModal, issueDescription: e.target.value })}
+                  placeholder="Describe the failure..."
                   className="w-full px-3 py-2 bg-slate-800/50 border border-slate-700/50 rounded-lg text-slate-300 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none h-24"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-slate-300 mb-2">Priority</label>
+                <select
+                  value={failModal.priority}
+                  onChange={(e) => setFailModal({ ...failModal, priority: e.target.value as FailModalState["priority"] })}
+                  className="w-full px-3 py-2 bg-slate-800/50 border border-slate-700/50 rounded-lg text-slate-300 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                >
+                  {PRIORITY_OPTIONS.map((priority) => (
+                    <option key={priority} value={priority}>
+                      {priority}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div>
                 <label className="block text-sm font-semibold text-slate-300 mb-2">Severity</label>
                 <select
                   value={failModal.severity}
-                  onChange={(e) => setFailModal({ ...failModal, severity: e.target.value as any })}
+                  onChange={(e) => setFailModal({ ...failModal, severity: e.target.value as FailModalState["severity"] })}
                   className="w-full px-3 py-2 bg-slate-800/50 border border-slate-700/50 rounded-lg text-slate-300 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
                 >
                   {SEVERITY_OPTIONS.map((sev) => (
@@ -560,7 +686,17 @@ export default function TestCaseExecutionPage() {
 
               <div className="flex items-center gap-3 pt-4">
                 <button
-                  onClick={() => setFailModal({ isOpen: false, testCaseId: "", remarks: "", severity: "HIGH" })}
+                  onClick={() =>
+                    setFailModal({
+                      isOpen: false,
+                      testCaseId: "",
+                      expectedResult: "",
+                      issueSummary: "",
+                      issueDescription: "",
+                      priority: "HIGH",
+                      severity: "HIGH",
+                    })
+                  }
                   className="flex-1 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg font-semibold transition-colors"
                 >
                   Cancel

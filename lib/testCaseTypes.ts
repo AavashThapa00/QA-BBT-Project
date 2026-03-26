@@ -45,4 +45,6 @@ export interface TestExecutionInput {
   createDefect?: boolean;
   defectTitle?: string;
   defectDescription?: string;
+  defectExpectedResult?: string;
+  defectPriority?: "LOW" | "MEDIUM" | "HIGH" | "MAJOR";
 }
