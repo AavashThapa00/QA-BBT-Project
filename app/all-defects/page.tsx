@@ -61,10 +61,17 @@ export default function AllDefectsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 overflow-hidden relative">
+      {/* Animated Background */}
+      <div className="fixed inset-0 opacity-30 -z-10">
+        <div className="absolute top-20 left-1/4 w-80 h-80 bg-blue-600 rounded-full mix-blend-multiply filter blur-3xl animate-blob"></div>
+        <div className="absolute top-1/2 right-1/3 w-80 h-80 bg-purple-600 rounded-full mix-blend-multiply filter blur-3xl animate-blob" style={{ animationDelay: '2s' }}></div>
+        <div className="absolute bottom-20 left-1/2 w-80 h-80 bg-pink-600 rounded-full mix-blend-multiply filter blur-3xl animate-blob" style={{ animationDelay: '4s' }}></div>
+      </div>
+
       {/* Header */}
-      <div className="bg-slate-900 border-b border-slate-800 shadow-sm sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <div className="backdrop-blur-lg bg-slate-900/50 border-b border-slate-800/50 shadow-lg sticky top-0 z-10">
+        <div className="w-full px-4 sm:px-6 lg:px-10 xl:px-12 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <button
@@ -85,7 +92,7 @@ export default function AllDefectsPage() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="w-full px-4 sm:px-6 lg:px-10 xl:px-12 py-8">
         {/* Module Navigation */}
         <div className="mb-6 flex gap-2 overflow-x-auto pb-2">
           {MODULES.map((module) => (

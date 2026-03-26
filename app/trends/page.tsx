@@ -90,27 +90,33 @@ export default function TrendsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 p-8">
-      <div className="max-w-7xl mx-auto space-y-8">
-        <div className="flex items-center justify-between">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-8 overflow-hidden relative">
+      <div className="fixed inset-0 opacity-30 -z-10">
+        <div className="absolute top-20 left-1/4 w-80 h-80 bg-cyan-600 rounded-full mix-blend-multiply filter blur-3xl animate-blob"></div>
+        <div className="absolute top-1/2 right-1/3 w-80 h-80 bg-blue-600 rounded-full mix-blend-multiply filter blur-3xl animate-blob" style={{ animationDelay: '2s' }}></div>
+        <div className="absolute bottom-20 left-1/2 w-80 h-80 bg-indigo-600 rounded-full mix-blend-multiply filter blur-3xl animate-blob" style={{ animationDelay: '4s' }}></div>
+      </div>
+
+      <div className="w-full px-4 sm:px-6 lg:px-10 xl:px-12 space-y-8">
+        <div className="flex items-center justify-between animate-in fade-in duration-500">
           <div>
             <Link
               href="/"
-              className="inline-flex items-center gap-2 text-slate-400 hover:text-white transition-colors mb-4"
+              className="inline-flex items-center gap-2 text-slate-400 hover:text-cyan-400 transition-all duration-300 transform hover:translate-x-1 mb-4 group"
             >
-              <HiArrowLeft className="w-4 h-4" />
+              <HiArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
               <span className="text-sm">Back to Dashboard</span>
             </Link>
-            <h1 className="text-3xl font-bold text-white">Trends & Insights</h1>
-            <p className="text-slate-400 mt-1">Defect patterns and trends over time</p>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">Trends & Insights</h1>
+            <p className="text-slate-400 mt-2 text-sm">Defect patterns and trends over time</p>
           </div>
         </div>
 
         {/* Monthly Trends */}
-        <div className="bg-slate-900 rounded-lg border border-slate-800 shadow-sm p-8">
+        <div className="backdrop-blur-xl bg-slate-900/50 rounded-2xl border border-slate-800/50 shadow-2xl p-8 hover:shadow-cyan-500/10 transition-all duration-300 animate-in fade-in-up duration-500">
           <div className="mb-6">
             <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-              <HiTrendingUp className="w-5 h-5 text-blue-400" />
+              <HiTrendingUp className="w-5 h-5 text-cyan-400" />
               Monthly Defect Trends
             </h2>
             <p className="text-xs text-slate-400 mt-1">Reported vs Fixed defects by month</p>
@@ -138,7 +144,7 @@ export default function TrendsPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Severity Distribution */}
-          <div className="bg-slate-900 rounded-lg border border-slate-800 shadow-sm p-6">
+          <div className="backdrop-blur-xl bg-slate-900/50 rounded-2xl border border-slate-800/50 shadow-2xl p-6 hover:shadow-cyan-500/10 transition-all duration-300 animate-in fade-in-up duration-500">
             <h2 className="text-lg font-semibold text-white mb-4">Severity Distribution</h2>
             <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
@@ -165,7 +171,7 @@ export default function TrendsPage() {
           </div>
 
           {/* Module Distribution */}
-          <div className="bg-slate-900 rounded-lg border border-slate-800 shadow-sm p-6">
+          <div className="backdrop-blur-xl bg-slate-900/50 rounded-2xl border border-slate-800/50 shadow-2xl p-6 hover:shadow-cyan-500/10 transition-all duration-300 animate-in fade-in-up duration-500">
             <h2 className="text-lg font-semibold text-white mb-4">Module Distribution</h2>
             <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">

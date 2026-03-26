@@ -22,6 +22,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { name: "Dashboard", href: "/", icon: HiHome },
+  { name: "Manual Sheet", href: "/manual-entry", icon: HiViewList },
   { name: "Analytics", href: "/analytics", icon: HiChartBar },
   { name: "All Defects", href: "/all-defects", icon: HiViewList },
   { name: "Performance", href: "/team-performance", icon: HiUserGroup },
@@ -71,23 +72,27 @@ export default function Navigation() {
   }, [menuOpen]);
 
   return (
-    <nav className="bg-slate-900 border-b border-slate-800 shadow-sm sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+    <nav className="sticky top-0 z-50 backdrop-blur-xl bg-slate-950/60 border-b border-slate-800/60 shadow-2xl shadow-slate-950/30">
+      <div className="w-full px-2 sm:px-4 lg:px-10 xl:px-12">
+        <div className="flex items-center justify-between min-h-16 py-2.5 gap-2 sm:gap-3">
           {/* Logo/Title */}
-          <div className="flex-shrink-0">
-            <Link href="/" className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">QA</span>
+          <div className="flex-shrink-0 min-w-0">
+            <Link href="/" className="flex items-center gap-3 group">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/30 ring-1 ring-white/10 transition-all duration-300 group-hover:scale-105 group-hover:shadow-purple-500/40">
+                <span className="text-white font-black text-sm tracking-wide">BBT</span>
               </div>
-              <span className="text-white font-semibold text-lg hidden sm:block">
-                Black Box Testing Team
-              </span>
+              <div className="hidden sm:block leading-tight">
+                <p className="text-white font-semibold text-sm md:text-base bg-gradient-to-r from-blue-300 to-purple-300 bg-clip-text text-transparent">
+                  Black Box Testing
+                </p>
+                <p className="hidden md:block text-slate-400 text-xs">QA Intelligence Platform</p>
+              </div>
             </Link>
           </div>
 
           {/* Navigation Links */}
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 min-w-0">
+            <div className="flex items-center gap-1 overflow-x-auto no-scrollbar pr-1">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = pathname === item.href;
@@ -97,24 +102,26 @@ export default function Navigation() {
                   key={item.href}
                   href={item.href}
                   className={`
-                    flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all
+                    flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-300 whitespace-nowrap border
                     ${isActive 
-                      ? 'bg-blue-600 text-white shadow-sm' 
-                      : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                      ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white border-blue-500/40 shadow-lg shadow-blue-500/25' 
+                      : 'text-slate-300 border-transparent hover:bg-slate-800/70 hover:border-slate-700 hover:text-white'
                     }
                   `}
                 >
                   <Icon className="w-4 h-4" />
-                  <span className="hidden lg:block">{item.name}</span>
+                  <span className="hidden lg:inline">{item.name}</span>
                 </Link>
               );
             })}
+            </div>
+
             {isAuthed ? (
               <div className="relative" ref={menuRef}>
                 <button
                   type="button"
                   onClick={() => setMenuOpen((open) => !open)}
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all text-slate-300 hover:bg-slate-800 hover:text-white"
+                  className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-300 text-slate-300 border border-transparent hover:bg-slate-800/70 hover:border-slate-700 hover:text-white"
                   aria-haspopup="menu"
                   aria-expanded={menuOpen}
                 >
@@ -123,11 +130,11 @@ export default function Navigation() {
                 {menuOpen && (
                   <div
                     role="menu"
-                    className="absolute right-0 mt-2 w-48 bg-slate-900 border border-slate-800 rounded-lg shadow-xl overflow-hidden"
+                    className="absolute right-0 mt-2 w-52 backdrop-blur-xl bg-slate-900/95 border border-slate-700/70 rounded-xl shadow-2xl overflow-hidden"
                   >
                     <Link
                       href="/profile"
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800"
+                      className="flex items-center gap-2 px-4 py-2.5 text-sm text-slate-200 hover:bg-slate-800/80"
                       role="menuitem"
                       onClick={() => setMenuOpen(false)}
                     >
@@ -137,7 +144,7 @@ export default function Navigation() {
                     {authRole === "super_admin" && (
                       <Link
                         href="/super-admin"
-                        className="flex items-center gap-2 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800"
+                        className="flex items-center gap-2 px-4 py-2.5 text-sm text-slate-200 hover:bg-slate-800/80"
                         role="menuitem"
                         onClick={() => setMenuOpen(false)}
                       >
@@ -147,7 +154,7 @@ export default function Navigation() {
                     <button
                       type="button"
                       onClick={() => logoutAction()}
-                      className="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800"
+                      className="w-full text-left flex items-center gap-2 px-4 py-2.5 text-sm text-slate-200 hover:bg-slate-800/80"
                       role="menuitem"
                     >
                       <HiLogout className="w-4 h-4" />
@@ -160,10 +167,10 @@ export default function Navigation() {
               <Link
                 href="/login"
                 className={`
-                  flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all
+                  flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-300 border
                   ${pathname === "/login"
-                    ? "bg-blue-600 text-white shadow-sm"
-                    : "text-slate-300 hover:bg-slate-800 hover:text-white"
+                    ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white border-blue-500/40 shadow-lg shadow-blue-500/25"
+                    : "text-slate-300 border-transparent hover:bg-slate-800/70 hover:border-slate-700 hover:text-white"
                   }
                 `}
               >
@@ -177,3 +184,4 @@ export default function Navigation() {
     </nav>
   );
 }
+

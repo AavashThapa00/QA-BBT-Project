@@ -1,7 +1,18 @@
 "use server";
 
+import { randomUUID } from "crypto";
 import { db } from "@/lib/prisma";
-import { Defect, Severity, Status, DefectFilters, PaginationParams, StatusEnum, SeverityEnum } from "@/lib/types";
+import {
+    Defect,
+    Severity,
+    Status,
+    QCStatusBBT,
+    DefectFilters,
+    PaginationParams,
+    StatusEnum,
+    SeverityEnum,
+    QCStatusBBTEnum,
+} from "@/lib/types";
 
 export async function getDefectMetrics(filters?: DefectFilters): Promise<{
     totalDefects: number;
@@ -337,4 +348,224 @@ function buildWhereClause(filters?: DefectFilters): WhereClause {
         clause: conditions.length > 0 ? conditions.join(" AND ") : "",
         values,
     };
+}
+
+export interface ManualDefectInput {
+    testCaseId?: string;
+    module: string;
+    descriptionSteps?: string;
+    summary?: string;
+    expectedResult: string;
+    actualResult: string;
+    remarks?: string;
+    testType?: "smoke" | "cycle";
+    testScenario?: string;
+    testSteps?: string;
+    priority: string;
+    severity: Severity;
+    status: Status;
+    qcStatusBbt: QCStatusBBT;
+    issueTestDate: string;
+    fixedDate?: string;
+    sheetType?: string;
+}
+
+export interface ManualDefectUpdateInput {
+    issueTestDate?: string;
+    fixedDate?: string | null;
+    priority?: string;
+    severity?: Severity;
+    status?: Status;
+    qcStatusBbt?: QCStatusBBT;
+}
+
+function parseDateInput(dateValue: string): Date {
+    const parsed = new Date(dateValue);
+    if (Number.isNaN(parsed.getTime())) {
+        throw new Error(`Invalid date value: ${dateValue}`);
+    }
+    return parsed;
+}
+
+function isValidSeverity(value: string): value is Severity {
+    return Object.values(SeverityEnum).includes(value as Severity);
+}
+
+function isValidStatus(value: string): value is Status {
+    return Object.values(StatusEnum).includes(value as Status);
+}
+
+function isValidQcStatus(value: string): value is QCStatusBBT {
+    return Object.values(QCStatusBBTEnum).includes(value as QCStatusBBT);
+}
+
+export async function getManualDefects(limit = 200): Promise<Defect[]> {
+    const safeLimit = Math.max(1, Math.min(limit, 1000));
+    const query = `
+        SELECT * FROM defect
+        ORDER BY "dateReported" DESC NULLS LAST, "createdAt" DESC
+        LIMIT $1
+    `;
+    const result = await db.query<Defect>(query, [safeLimit]);
+    return result.rows;
+}
+
+export async function createManualDefect(input: ManualDefectInput): Promise<{ success: boolean; message: string; id?: string }> {
+    const module = input.module?.trim();
+    const expectedResult = input.expectedResult?.trim();
+    const actualResult = input.actualResult?.trim();
+    const priority = input.priority?.trim();
+
+    if (!module) return { success: false, message: "Module is required" };
+    if (!expectedResult) return { success: false, message: "Expected Result is required" };
+    if (!actualResult) return { success: false, message: "Actual Result is required" };
+    if (!priority) return { success: false, message: "Priority is required" };
+    if (!input.issueTestDate) return { success: false, message: "Issue Test Date is required" };
+    if (!isValidSeverity(input.severity)) return { success: false, message: "Invalid severity" };
+    if (!isValidStatus(input.status)) return { success: false, message: "Invalid status" };
+    if (!isValidQcStatus(input.qcStatusBbt)) return { success: false, message: "Invalid QC status" };
+    if ((input.testType || "smoke") === "cycle" && !input.testScenario?.trim()) {
+        return { success: false, message: "Test scenario is required for cycle test" };
+    }
+    if ((input.testType || "smoke") === "cycle" && !input.testSteps?.trim()) {
+        return { success: false, message: "Test steps are required for cycle test" };
+    }
+
+    try {
+        const id = randomUUID();
+        const issueTestDate = parseDateInput(input.issueTestDate);
+        const fixedDate = input.fixedDate ? parseDateInput(input.fixedDate) : null;
+
+        await db.query(
+            `INSERT INTO defect (
+                id,
+                "testCaseId",
+                "dateReported",
+                module,
+                "descriptionSteps",
+                summary,
+                "expectedResult",
+                "actualResult",
+                remarks,
+                "testType",
+                "testScenario",
+                "testSteps",
+                severity,
+                priority,
+                status,
+                "dateFixed",
+                "qcStatusBbt",
+                "sourceFile"
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)`,
+            [
+                id,
+                input.testCaseId?.trim() || null,
+                issueTestDate,
+                module,
+                input.descriptionSteps?.trim() || null,
+                input.summary?.trim() || null,
+                expectedResult,
+                actualResult,
+                input.remarks?.trim() || null,
+                input.testType || "smoke",
+                input.testScenario?.trim() || null,
+                input.testSteps?.trim() || null,
+                input.severity,
+                priority,
+                input.status,
+                fixedDate,
+                input.qcStatusBbt,
+                input.sheetType || "Smoke Testing Sheet",
+            ]
+        );
+
+        return { success: true, message: "Issue added successfully", id };
+    } catch (error) {
+        console.error("Error creating manual defect:", error);
+        return { success: false, message: "Failed to add issue" };
+    }
+}
+
+export async function updateManualDefect(id: string, updates: ManualDefectUpdateInput): Promise<{ success: boolean; message: string }> {
+    if (!id) {
+        return { success: false, message: "Defect ID is required" };
+    }
+
+    const setClauses: string[] = [];
+    const values: any[] = [];
+    let param = 1;
+
+    if (updates.issueTestDate !== undefined) {
+        const parsed = parseDateInput(updates.issueTestDate);
+        setClauses.push(`"dateReported" = $${param++}`);
+        values.push(parsed);
+    }
+
+    if (updates.fixedDate !== undefined) {
+        if (updates.fixedDate === null || updates.fixedDate === "") {
+            setClauses.push(`"dateFixed" = NULL`);
+        } else {
+            const parsed = parseDateInput(updates.fixedDate);
+            setClauses.push(`"dateFixed" = $${param++}`);
+            values.push(parsed);
+        }
+    }
+
+    if (updates.priority !== undefined) {
+        const priority = updates.priority.trim();
+        if (!priority) {
+            return { success: false, message: "Priority cannot be empty" };
+        }
+        setClauses.push(`priority = $${param++}`);
+        values.push(priority);
+    }
+
+    if (updates.severity !== undefined) {
+        if (!isValidSeverity(updates.severity)) {
+            return { success: false, message: "Invalid severity" };
+        }
+        setClauses.push(`severity = $${param++}`);
+        values.push(updates.severity);
+    }
+
+    if (updates.status !== undefined) {
+        if (!isValidStatus(updates.status)) {
+            return { success: false, message: "Invalid status" };
+        }
+        setClauses.push(`status = $${param++}`);
+        values.push(updates.status);
+    }
+
+    if (updates.qcStatusBbt !== undefined) {
+        if (!isValidQcStatus(updates.qcStatusBbt)) {
+            return { success: false, message: "Invalid QC status" };
+        }
+        setClauses.push(`"qcStatusBbt" = $${param++}`);
+        values.push(updates.qcStatusBbt);
+    }
+
+    if (setClauses.length === 0) {
+        return { success: false, message: "No fields to update" };
+    }
+
+    values.push(id);
+
+    try {
+        const result = await db.query(
+            `UPDATE defect
+             SET ${setClauses.join(", ")}
+             WHERE id = $${param}`,
+            values
+        );
+
+        if (!result.rowCount) {
+            return { success: false, message: "Issue not found" };
+        }
+
+        return { success: true, message: "Issue updated successfully" };
+    } catch (error) {
+        console.error("Error updating manual defect:", error);
+        return { success: false, message: "Failed to update issue" };
+    }
 }

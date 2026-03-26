@@ -11,13 +11,12 @@ A production-ready Next.js 15 analytics dashboard for tracking and analyzing QA/
 - **Validation**: Zod
 - **Charts**: Recharts
 - **Styling**: Tailwind CSS
-- **CSV Processing**: PapaParse
 
 ## Features
 
 ### Core Features
 
-- ✅ **CSV Upload**: Import defects from Google Sheets CSV exports
+- ✅ **Manual Entry Sheet**: In-platform defect input with inline editing
 - ✅ **Analytics Dashboard**: Real-time metrics and charts
 - ✅ **Data Visualization**: Multiple chart types (bar, pie, line)
 - ✅ **Filtering**: Filter by date, severity, module, and status
@@ -94,13 +93,13 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 sheet-webapp/
 ├── app/
 │   ├── actions/
-│   │   ├── csv.ts              # CSV upload server action
-│   │   └── defects.ts          # Defect data operations
+│   │   └── defects.ts          # Defect data operations and manual entry
 │   ├── components/
 │   │   ├── dashboard/          # Dashboard chart components
 │   │   ├── filters/            # Filter components
 │   │   ├── table/              # Data table component
-│   │   └── uploads/            # CSV upload component
+│   │   └── exports/            # Export functionality
+│   ├── manual-entry/           # Manual entry sheet page
 │   ├── generated/
 │   │   └── prisma/             # Generated Prisma types
 │   ├── globals.css             # Global styles
@@ -121,29 +120,31 @@ sheet-webapp/
 └── next.config.ts              # Next.js config
 ```
 
-## CSV Import Format
+## Manual Entry Sheet
 
-The dashboard accepts CSV files exported from Google Sheets with the following columns:
+The dashboard includes an in-platform manual entry sheet for adding and updating defects directly without external CSV files.
 
-| Column             | Type   | Required | Notes                                       |
-| ------------------ | ------ | -------- | ------------------------------------------- |
-| Date Reported      | Date   | Yes      | Formats: YYYY-MM-DD, MM/DD/YYYY, DD-MM-YYYY |
-| Module / Component | String | Yes      | Name of the module/component                |
-| Expected Result    | String | Yes      | What should have happened                   |
-| Actual Result      | String | Yes      | What actually happened                      |
-| Severity           | Enum   | Yes      | CRITICAL, HIGH, MEDIUM, LOW                 |
-| Priority           | String | Yes      | Any priority level                          |
-| Status             | Enum   | Yes      | OPEN, IN_PROGRESS, CLOSED, ON_HOLD          |
-| Date Fixed         | Date   | No       | When the defect was fixed                   |
-| QC Status by BBT   | Enum   | Yes      | PASSED, FAILED, PENDING, REJECTED           |
+### Features
+- **Add New Defect**: Form with fields for testCaseId, module, priority, severity, status, QC status, test date, and fixed date
+- **Inline Editing**: Update defect attributes directly in the sheet table
+- **Real-time Validation**: All inputs are validated against enum constraints
+- **Sheet Display**: Up to 250 defects shown in a sortable, editable table
 
-### Sample CSV Structure
+### Supported Fields
 
-```csv
-Date Reported,Module / Component,Expected Result,Actual Result,Severity,Priority,Status,Date Fixed,QC Status by BBT
-2024-01-15,Authentication,User login successful,User login failed,HIGH,P1,OPEN,,PENDING
-2024-01-16,Dashboard,Page loads in 2s,Page loads in 5s,LOW,P2,CLOSED,2024-01-19,PASSED
-```
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| Test Case ID | String | Optional | Reference to test case |
+| Module | String | Yes | Name of the module/component |
+| Priority | Enum | Yes | Any priority level |
+| Severity | Enum | Yes | CRITICAL, MAJOR, MEDIUM, LOW |
+| Status | Enum | Yes | OPEN, IN_PROGRESS, ON_HOLD, CLOSED, AS_IT_IS |
+| QC Status | Enum | Yes | PASSED, FAILED, PENDING, REJECTED |
+| Issue Test Date | Date | Yes | When the issue was found |
+| Fixed Date | Date | Optional | When the issue was fixed |
+| Expected Result | String | Yes | What should have happened |
+| Actual Result | String | Yes | What actually happened |
+| Summary | String | Optional | Brief summary of the issue |
 
 ## Database Schema
 
@@ -284,14 +285,6 @@ Error: Client is unable to connect
 - Check Neon network access settings
 - Ensure database is active
 
-### CSV Upload Fails
-
-**Solution**:
-
-- Verify CSV format matches expected columns
-- Check date formats are valid
-- Ensure enum values match CRITICAL/HIGH/MEDIUM/LOW, OPEN/IN_PROGRESS/CLOSED/ON_HOLD, etc.
-
 ### Charts Not Displaying
 
 **Solution**:
@@ -299,6 +292,15 @@ Error: Client is unable to connect
 - Clear browser cache
 - Ensure data exists in database
 - Check browser console for errors
+
+### Manual Entry Form Issues
+
+**Solution**:
+
+- Verify all required fields are filled (module, severity, priority, status, QC status)
+- Check that dates are in valid format (YYYY-MM-DD)
+- Ensure status and severity values match the allowed enums
+- Check browser console for validation error details
 
 ## Development Commands
 
@@ -330,10 +332,10 @@ npx prisma migrate reset
 
 ## Performance Metrics
 
-- **CSV Upload**: ~1-2 seconds for 100 records
 - **Dashboard Load**: ~500-800ms (depending on data size)
 - **Table Pagination**: ~100-200ms per page
 - **Chart Rendering**: ~300-500ms
+- **Manual Entry Save**: ~100-300ms per row
 
 ## Contributing
 

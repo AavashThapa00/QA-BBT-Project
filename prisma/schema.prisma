@@ -34,13 +34,31 @@ model User {
   name         String    @db.VarChar(120)
   email        String    @unique @db.VarChar(255)
   phone        String?   @db.VarChar(50)
+  googleId     String?   @unique @map("google_id") @db.VarChar(255)
   passwordHash String    @map("password_hash") @db.Text
   role         String    @default("admin") @db.VarChar(20)
   createdAt    DateTime  @default(now()) @map("createdAt")
   updatedAt    DateTime  @default(now()) @map("updatedAt")
   sessions     Session[]
+  resetTokens  PasswordResetToken[]
+  loginCodes   LoginVerificationCode[]
 
   @@map("user")
+}
+
+model LoginVerificationCode {
+  id        String    @id @db.Uuid
+  userId    String    @db.Uuid @map("userId")
+  codeHash  String    @map("code_hash") @db.Text
+  expiresAt DateTime  @map("expiresAt")
+  usedAt    DateTime? @map("usedAt")
+  createdAt DateTime  @default(now()) @map("createdAt")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("login_verification_code")
 }
 
 model Session {
@@ -52,6 +70,21 @@ model Session {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("session")
+}
+
+model PasswordResetToken {
+  id        String    @id @db.Uuid
+  userId    String    @db.Uuid @map("userId")
+  tokenHash String    @unique @map("token_hash") @db.Text
+  expiresAt DateTime  @map("expiresAt")
+  usedAt    DateTime? @map("usedAt")
+  createdAt DateTime  @default(now()) @map("createdAt")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("password_reset_token")
 }
 
 model Defect {

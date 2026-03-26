@@ -27,8 +27,8 @@ export default function DefectsByModuleChart({
   data,
   title = "Defects by Module",
 }: DefectsByModuleChartProps) {
-  // Find the module with highest defects for highlighting
-  const maxCount = data.length > 0 ? Math.max(...data.map(d => d.count)) : 0;
+  const sortedData = [...data].sort((a, b) => b.count - a.count);
+  const topModule = sortedData[0] ?? null;
   
   // Module color mapping
   const moduleColors: Record<string, string> = {
@@ -40,29 +40,27 @@ export default function DefectsByModuleChart({
   };
   
   // Get color based on module name
-  const getBarColor = (moduleName: string, count: number) => {
-    const color = moduleColors[moduleName] || "#14b8a6"; // Default teal if module not found
-    // If this is the highest module, keep the color but ensure it's visible
-    return color;
+  const getBarColor = (moduleName: string) => {
+    return moduleColors[moduleName] || "#14b8a6";
   };
 
   return (
-    <div className="bg-slate-900 rounded-lg border border-slate-800 shadow-sm p-8">
+    <div className="backdrop-blur-xl bg-slate-900/50 rounded-2xl border border-slate-800/50 shadow-2xl p-8 hover:shadow-cyan-500/10 transition-all duration-300">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-            <HiChartBar className="w-5 h-5 text-blue-400" />
+            <HiChartBar className="w-5 h-5 text-cyan-400" />
             {title}
           </h3>
           <p className="text-xs text-slate-400 mt-1">Defects grouped by main platform</p>
         </div>
-        {data.length > 0 && (
+        {topModule && (
           <div className="text-right">
             <p className="text-xs text-slate-400">Highest</p>
-            <p className="text-lg font-bold" style={{ color: moduleColors[data[0].module] || "#14b8a6" }}>
-              {data[0].module}
+            <p className="text-lg font-bold" style={{ color: moduleColors[topModule.module] || "#14b8a6" }}>
+              {topModule.module}
             </p>
-            <p className="text-sm text-slate-400">{data[0].count} issues</p>
+            <p className="text-sm text-slate-400">{topModule.count} issues</p>
           </div>
         )}
       </div>
@@ -77,10 +75,16 @@ export default function DefectsByModuleChart({
       ) : (
         <ResponsiveContainer width="100%" height={320}>
           <BarChart
-            data={data}
+            data={sortedData}
             layout="vertical"
             margin={{ top: 10, right: 30, left: 5, bottom: 10 }}
           >
+            <defs>
+              <linearGradient id="moduleBarGlow" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stopColor="#22d3ee" stopOpacity={0.9} />
+                <stop offset="100%" stopColor="#3b82f6" stopOpacity={0.9} />
+              </linearGradient>
+            </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
             <XAxis 
               type="number"
@@ -96,24 +100,29 @@ export default function DefectsByModuleChart({
             />
             <Tooltip 
               contentStyle={{
-                backgroundColor: "#1e293b",
-                border: "1px solid #475569",
-                borderRadius: "8px",
-                boxShadow: "0 4px 12px rgba(0, 0, 0, 0.4)",
-                padding: "10px",
+                backgroundColor: "rgba(15, 23, 42, 0.95)",
+                border: "1px solid rgba(71, 85, 105, 0.8)",
+                borderRadius: "12px",
+                boxShadow: "0 8px 24px rgba(0, 0, 0, 0.45)",
+                padding: "10px 12px",
               }}
               labelStyle={{ color: "#f1f5f9", fontSize: 12, fontWeight: 600 }}
               formatter={(value) => [value, "Issues"]}
-              cursor={{ fill: "rgba(20, 184, 255, 0.05)" }}
+              cursor={{ fill: "rgba(56, 189, 248, 0.08)" }}
             />
             <Bar 
               dataKey="count" 
               name="Issues" 
               radius={[0, 8, 8, 0]}
+              barSize={20}
+              background={{ fill: "rgba(51, 65, 85, 0.35)", radius: 8 }}
               isAnimationActive={true}
             >
-              {data.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={getBarColor(entry.module, entry.count)} />
+              {sortedData.map((entry, index) => (
+                <Cell
+                  key={`cell-${index}`}
+                  fill={index === 0 ? "url(#moduleBarGlow)" : getBarColor(entry.module)}
+                />
               ))}
             </Bar>
           </BarChart>
@@ -121,11 +130,11 @@ export default function DefectsByModuleChart({
       )}
       
       <div className="mt-6 pt-4 border-t border-slate-700">
-        <div className="grid grid-cols-2 gap-4">
-          {data.slice(0, 4).map((item) => (
-            <div key={item.module} className="flex items-center justify-between p-2 rounded-lg bg-slate-800/50">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+          {sortedData.slice(0, 4).map((item, index) => (
+            <div key={item.module} className="flex items-center justify-between p-2.5 rounded-lg bg-slate-800/40 border border-slate-700/40 hover:border-cyan-500/30 transition-colors">
               <span className="text-sm text-slate-300 font-medium">{item.module}</span>
-              <span className="text-sm font-bold" style={{ color: moduleColors[item.module] || "#14b8a6" }}>
+              <span className="text-sm font-bold" style={{ color: index === 0 ? "#22d3ee" : moduleColors[item.module] || "#14b8a6" }}>
                 {item.count}
               </span>
             </div>

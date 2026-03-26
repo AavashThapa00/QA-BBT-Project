@@ -85,7 +85,7 @@ export default function FilterPanel({
   };
 
   return (
-    <div className="bg-slate-900 rounded-lg border border-slate-800 shadow-sm p-6 sm:p-8\">
+    <div className="bg-slate-900 rounded-lg border border-slate-800 shadow-sm p-6 sm:p-8">
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-lg font-semibold text-white flex items-center gap-2">
           <HiFilter className="w-5 h-5 text-blue-400" />

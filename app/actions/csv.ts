@@ -210,12 +210,14 @@ export async function uploadCSV(csvData: string, fileName?: string): Promise<Upl
                     const lowerStatus = statusStr.toLowerCase().trim();
                     if (lowerStatus.includes("fix") || lowerStatus.includes("closed")) {
                         status = StatusEnum.CLOSED;
+                    } else if (lowerStatus === "hold" || lowerStatus === "on hold" || lowerStatus.includes("hold")) {
+                        status = StatusEnum.ON_HOLD;
+                    } else if (lowerStatus === "pending") {
+                        status = StatusEnum.OPEN;
                     } else if (lowerStatus.includes("progress") || lowerStatus.includes("in progress")) {
                         status = StatusEnum.IN_PROGRESS;
                     } else if (lowerStatus === "as it is") {
                         status = StatusEnum.AS_IT_IS;
-                    } else if (lowerStatus.includes("hold") || lowerStatus === "pending") {
-                        status = StatusEnum.ON_HOLD;
                     } else {
                         const normalized = normalizeEnumValue(statusStr, Object.values(StatusEnum));
                         status = (normalized as Status) || StatusEnum.OPEN;

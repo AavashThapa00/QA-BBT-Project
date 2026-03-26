@@ -8,15 +8,21 @@ export interface Defect {
     testCaseId?: string;
     dateReported: Date | null;
     module: string;
+    descriptionSteps?: string;
     summary?: string;
     expectedResult: string;
     actualResult: string;
+    remarks?: string;
+    testType?: "smoke" | "cycle";
+    testScenario?: string;
+    testSteps?: string;
     severity: Severity;
     priority: string;
     assignedTo?: string;
     status: Status;
     dateFixed: Date | null;
     qcStatusBbt: QCStatusBBT;
+    sourceFile?: string;
     createdAt: Date;
 }
 

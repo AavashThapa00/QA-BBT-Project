@@ -3,17 +3,12 @@
 import React, { useState, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import CSVUpload from "@/app/components/uploads/CSVUpload";
+import dynamic from "next/dynamic";
 import ExportDefectsPanel from "@/app/components/exports/ExportDefectsPanel";
-import { HiDownload, HiFolder, HiClipboardList, HiChartBar, HiExclamationCircle, HiViewList } from "react-icons/hi";
+import { HiDownload, HiClipboardList, HiChartBar, HiExclamationCircle, HiViewList } from "react-icons/hi";
 import MetricsCard from "@/app/components/dashboard/MetricsCard";
-import DefectsByModuleChart from "@/app/components/dashboard/DefectsByModuleChart";
-import DefectsBySeverityChart from "@/app/components/dashboard/DefectsBySeverityChart";
-import DefectsTrendChart from "@/app/components/dashboard/DefectsTrendChart";
-import DefectsTable from "@/app/components/table/DefectsTable";
 import FilterPanel from "@/app/components/filters/FilterPanel";
 import { SkeletonCard, SkeletonChart, SkeletonTable } from "@/app/components/common/SkeletonLoader";
-import { UploadResult } from "@/app/actions/csv";
 import {
   getDefectMetrics,
   getDefectsByModule,
@@ -23,28 +18,26 @@ import {
   getAverageResolutionTime,
 } from "@/app/actions/defects";
 import { DefectFilters, DashboardMetrics, DefectByModule, DefectBySeverity, DefectTrend, Defect } from "@/lib/types";
-import { enrichDefectsWithCalculations, exportToCSV } from "@/lib/utils";
 
-// Helper function to extract main module name
-function extractMainModule(moduleName: string): string | null {
-  if (!moduleName) return null;
-  
-  // Extract the part before "-" or before a space followed by parenthesis
-  // e.g., "HSA- Mock Exam" → "HSA", "KFQ Stage-Host Live" → "KFQ"
-  const lowerName = moduleName.toLowerCase();
-  
-  // Check for known module prefixes
-  if (lowerName.includes("hsa")) return "HSA";
-  if (lowerName.includes("kfq")) return "KFQ";
-  if (lowerName.includes("gmst")) return "GMST";
-  if (lowerName.includes("nmst")) return "NMST";
-  if (lowerName.includes("mst")) return "GMST";
-  if (lowerName.includes("alston") || lowerName.includes("innovatetech")) return "Innovatetech";
-  
-  // If no known prefix, use the first word
-  const match = moduleName.match(/^([A-Z0-9]+)/);
-  return match ? match[1] : null;
-}
+const DefectsByModuleChart = dynamic(
+  () => import("@/app/components/dashboard/DefectsByModuleChart"),
+  { ssr: false, loading: () => <SkeletonChart /> }
+);
+
+const DefectsBySeverityChart = dynamic(
+  () => import("@/app/components/dashboard/DefectsBySeverityChart"),
+  { ssr: false, loading: () => <SkeletonChart /> }
+);
+
+const DefectsTrendChart = dynamic(
+  () => import("@/app/components/dashboard/DefectsTrendChart"),
+  { ssr: false, loading: () => <SkeletonChart /> }
+);
+
+const DefectsTable = dynamic(
+  () => import("@/app/components/table/DefectsTable"),
+  { ssr: false, loading: () => <SkeletonTable /> }
+);
 
 interface DashboardState {
   metrics: DashboardMetrics | null;
@@ -80,7 +73,29 @@ export default function Home() {
   });
   const [tableLoading, setTableLoading] = useState(false);
   const [isExportPanelOpen, setIsExportPanelOpen] = useState(false);
+  const [moduleSeverityLoaded, setModuleSeverityLoaded] = useState(false);
   const defectsTableRef = React.useRef<HTMLDivElement>(null);
+
+  const loadStaticChartData = useCallback(async () => {
+    try {
+      const [moduleData, severityData] = await Promise.all([
+        getDefectsByModule(),
+        getDefectsBySeverity(),
+      ]);
+
+      const modules = moduleData.map((m) => m.module).sort();
+
+      setState((prev) => ({
+        ...prev,
+        defectsByModule: moduleData,
+        defectsBySeverity: severityData,
+        availableModules: modules,
+      }));
+      setModuleSeverityLoaded(true);
+    } catch (error) {
+      console.error("Failed to load static chart data:", error);
+    }
+  }, []);
 
   const loadDashboardData = useCallback(
     async (pageNum = 1) => {
@@ -89,15 +104,11 @@ export default function Home() {
       try {
         const [
           metricsData,
-          moduleData,
-          severityData,
           trendData,
           defectsResponse,
           avgResolutionTime,
         ] = await Promise.all([
           getDefectMetrics(filters),
-          getDefectsByModule(), // No filters - always show all data
-          getDefectsBySeverity(), // No filters - always show all data
           getDefectsTrend(filters, "day"),
           getDefects(filters, {
             page: pageNum,
@@ -108,20 +119,14 @@ export default function Home() {
           getAverageResolutionTime(filters),
         ]);
 
-        // Extract unique main modules for filter using moduleData (which has all modules)
-        const modules = moduleData.map((m) => m.module).sort();
-
         setState((prev) => ({
           ...prev,
           metrics: metricsData,
-          defectsByModule: moduleData,
-          defectsBySeverity: severityData,
           defectsTrend: trendData,
           defects: defectsResponse.defects,
           currentPage: defectsResponse.page,
           totalPages: defectsResponse.totalPages,
           averageResolutionTime: avgResolutionTime,
-          availableModules: modules,
           isLoading: false,
         }));
       } catch (error) {
@@ -133,19 +138,27 @@ export default function Home() {
   );
 
   useEffect(() => {
+    loadStaticChartData();
+  }, [loadStaticChartData]);
+
+  useEffect(() => {
     loadDashboardData();
   }, [loadDashboardData]);
 
   // Fetch only the table data (used for pagination and sort changes)
   const fetchTableData = useCallback(
-    async (pageNum = 1) => {
+    async (
+      pageNum = 1,
+      sortBy: "date" | "severity" | "status" = state.sortBy || "date",
+      sortOrder: "asc" | "desc" = state.sortOrder || "desc"
+    ) => {
       setTableLoading(true);
       try {
         const defectsResponse = await getDefects(filters, {
           page: pageNum,
           pageSize: 10,
-          sortBy: state.sortBy,
-          sortOrder: state.sortOrder,
+          sortBy,
+          sortOrder,
         });
 
         setState((prev) => ({
@@ -163,13 +176,6 @@ export default function Home() {
     [filters, state.sortBy, state.sortOrder]
   );
 
-  const handleUploadSuccess = (result: UploadResult) => {
-    if (result.success && result.inserted > 0) {
-      setState((prev) => ({ ...prev, currentPage: 1 }));
-      loadDashboardData(1);
-    }
-  };
-
   const handlePageChange = (newPage: number) => {
     // Load only the table page to avoid reloading charts and metrics
     fetchTableData(newPage);
@@ -180,8 +186,8 @@ export default function Home() {
     sortOrder: "asc" | "desc"
   ) => {
     setState((prev) => ({ ...prev, sortBy, sortOrder, currentPage: 1 }));
-    // Refresh only the table when sort changes
-    fetchTableData(1);
+    // Refresh only the table using the requested sort, avoiding stale state reads
+    fetchTableData(1, sortBy, sortOrder);
   };
 
   const handleExportCSV = () => {
@@ -224,6 +230,13 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+      {/* Animated Background */}
+      <div className="fixed inset-0 opacity-40 -z-10">
+        <div className="absolute top-10 left-1/4 w-80 h-80 bg-blue-600 rounded-full mix-blend-multiply filter blur-3xl animate-blob"></div>
+        <div className="absolute top-1/2 right-1/3 w-80 h-80 bg-purple-600 rounded-full mix-blend-multiply filter blur-3xl animate-blob" style={{ animationDelay: '2s' }}></div>
+        <div className="absolute bottom-10 left-1/2 w-80 h-80 bg-pink-600 rounded-full mix-blend-multiply filter blur-3xl animate-blob" style={{ animationDelay: '4s' }}></div>
+      </div>
+
       {/* Export Panel Modal */}
       <ExportDefectsPanel
         isOpen={isExportPanelOpen}
@@ -232,25 +245,23 @@ export default function Home() {
       />
 
       {/* Main Content */}
-      <div className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 transition-all duration-200 ${
+      <div className={`relative w-full px-4 sm:px-6 lg:px-10 xl:px-12 py-8 space-y-8 transition-all duration-200 ${
         isExportPanelOpen ? "blur-sm opacity-50 pointer-events-none" : ""
       }`}>
-        {/* CSV Upload */}
-        <div className="bg-slate-900 rounded-lg border border-slate-800 shadow-sm">
-          <div className="p-6 sm:p-8">
-            <h2 className="text-lg font-semibold text-white mb-6 flex items-center gap-2">
-              <HiFolder className="w-5 h-5 text-blue-400" />
-              Upload Defects Data
-            </h2>
-            <CSVUpload onUploadSuccess={handleUploadSuccess} />
-          </div>
+        <div className="animate-in fade-in-up duration-500">
+          <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+            Defect Intelligence Dashboard
+          </h1>
+          <p className="text-slate-400 mt-2 text-sm md:text-base">
+            Live visibility across modules, priorities, and trend movement.
+          </p>
         </div>
 
         {/* Filters */}
         <FilterPanel
           onFiltersChange={setFilters}
           availableModules={state.availableModules}
-          isLoading={state.isLoading}
+          isLoading={state.isLoading || !moduleSeverityLoaded}
         />
 
         {/* Metrics Grid */}
@@ -317,7 +328,7 @@ export default function Home() {
         {state.isLoading ? (
           <SkeletonCard />
         ) : state.averageResolutionTime > 0 ? (
-          <div className="bg-slate-900 rounded-lg border border-slate-800 shadow-sm p-6">
+          <div className="backdrop-blur-xl bg-slate-900/50 rounded-2xl border border-slate-800/50 shadow-2xl p-6 hover:shadow-blue-500/10 transition-all duration-300">
             <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-3">
               Average Resolution Time
             </h3>

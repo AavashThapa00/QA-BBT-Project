@@ -90,61 +90,67 @@ export default function SuperAdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 p-8">
-      <div className="max-w-6xl mx-auto space-y-8">
-        <div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-8 overflow-hidden relative">
+      <div className="fixed inset-0 opacity-30 -z-10">
+        <div className="absolute top-20 left-1/4 w-80 h-80 bg-red-600 rounded-full mix-blend-multiply filter blur-3xl animate-blob"></div>
+        <div className="absolute top-1/2 right-1/3 w-80 h-80 bg-pink-600 rounded-full mix-blend-multiply filter blur-3xl animate-blob" style={{ animationDelay: '2s' }}></div>
+        <div className="absolute bottom-20 left-1/2 w-80 h-80 bg-orange-600 rounded-full mix-blend-multiply filter blur-3xl animate-blob" style={{ animationDelay: '4s' }}></div>
+      </div>
+
+      <div className="w-full px-4 sm:px-6 lg:px-10 xl:px-12 space-y-8">
+        <div className="animate-in fade-in duration-500">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 text-slate-400 hover:text-white transition-colors mb-4"
+            className="inline-flex items-center gap-2 text-slate-400 hover:text-rose-400 transition-all duration-300 transform hover:translate-x-1 mb-4 group"
           >
-            <HiArrowLeft className="w-4 h-4" />
+            <HiArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
             <span className="text-sm">Back to Dashboard</span>
           </Link>
-          <h1 className="text-3xl font-bold text-white">Super Admin Panel</h1>
-          <p className="text-slate-400 mt-1">Create admins and manage access</p>
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-red-400 to-pink-400 bg-clip-text text-transparent">Super Admin Panel</h1>
+          <p className="text-slate-400 mt-2 text-sm">Create admins and manage access</p>
           {authRole && (
             <div className="mt-3">
-              <span className="text-xs uppercase tracking-wide bg-slate-800 text-slate-200 px-2 py-1 rounded">
+              <span className="text-xs uppercase tracking-wide bg-gradient-to-r from-red-600/30 to-pink-600/30 border border-red-500/30 text-slate-200 px-3 py-1 rounded-full font-semibold">
                 Role: {authRole.replace("_", " ")}
               </span>
             </div>
           )}
         </div>
 
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
-          <h2 className="text-lg font-semibold text-white">Create Admin</h2>
+        <div className="backdrop-blur-xl bg-slate-900/50 border border-slate-800/50 rounded-2xl p-6 hover:shadow-2xl hover:shadow-rose-500/10 transition-all duration-300 animate-in fade-in-up duration-500">
+          <h2 className="text-lg font-semibold bg-gradient-to-r from-rose-400 to-orange-400 bg-clip-text text-transparent">Create Admin</h2>
           <form action={onCreateUser} className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-            <input name="name" placeholder="Full name" className="bg-slate-800 border border-slate-700 text-white rounded-lg px-3 py-2" required />
-            <input name="email" type="email" placeholder="Email" className="bg-slate-800 border border-slate-700 text-white rounded-lg px-3 py-2" required />
-            <input name="phone" placeholder="Phone" className="bg-slate-800 border border-slate-700 text-white rounded-lg px-3 py-2" />
-            <input name="password" type="password" placeholder="Password" className="bg-slate-800 border border-slate-700 text-white rounded-lg px-3 py-2" required />
-            <select name="role" className="bg-slate-800 border border-slate-700 text-white rounded-lg px-3 py-2">
+            <input name="name" placeholder="Full name" className="bg-slate-800/50 border border-slate-700/50 text-white rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-rose-500/40 focus:border-rose-500/50 transition-all" required />
+            <input name="email" type="email" placeholder="Email" className="bg-slate-800/50 border border-slate-700/50 text-white rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-rose-500/40 focus:border-rose-500/50 transition-all" required />
+            <input name="phone" placeholder="Phone" className="bg-slate-800/50 border border-slate-700/50 text-white rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-rose-500/40 focus:border-rose-500/50 transition-all" />
+            <input name="password" type="password" placeholder="Password" className="bg-slate-800/50 border border-slate-700/50 text-white rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-rose-500/40 focus:border-rose-500/50 transition-all" required />
+            <select name="role" className="bg-slate-800/50 border border-slate-700/50 text-white rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-rose-500/40 focus:border-rose-500/50 transition-all">
               <option value="admin">Admin</option>
               <option value="super_admin">Super Admin</option>
             </select>
-            <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-4 py-2 font-semibold">
+            <button type="submit" className="bg-gradient-to-r from-rose-600 to-orange-600 hover:from-rose-500 hover:to-orange-500 text-white rounded-lg px-4 py-2 font-semibold transition-all duration-300 hover:shadow-lg hover:shadow-rose-500/40 hover:scale-105 active:scale-95">
               Create Admin
             </button>
           </form>
-          {createMessage && <p className="text-sm text-slate-300 mt-3">{createMessage}</p>}
+          {createMessage && <p className="text-sm text-slate-300 mt-3 bg-slate-800/40 border border-slate-700/50 rounded-lg px-3 py-2 animate-in fade-in duration-300">{createMessage}</p>}
         </div>
 
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
-          <h2 className="text-lg font-semibold text-white">Users</h2>
+        <div className="backdrop-blur-xl bg-slate-900/50 border border-slate-800/50 rounded-2xl p-6 hover:shadow-2xl hover:shadow-rose-500/10 transition-all duration-300 animate-in fade-in-up duration-500">
+          <h2 className="text-lg font-semibold bg-gradient-to-r from-rose-400 to-orange-400 bg-clip-text text-transparent">Users</h2>
           <div className="overflow-x-auto mt-4">
             <table className="w-full text-sm text-left">
               <thead>
-                <tr className="border-b border-slate-700">
-                  <th className="py-3 px-4 text-slate-300">Name</th>
-                  <th className="py-3 px-4 text-slate-300">Email</th>
-                  <th className="py-3 px-4 text-slate-300">Role</th>
-                  <th className="py-3 px-4 text-slate-300">Change Role</th>
-                  <th className="py-3 px-4 text-slate-300">Actions</th>
+                <tr className="border-b border-slate-700/50 bg-gradient-to-r from-rose-600/5 to-orange-600/5">
+                  <th className="py-3 px-4 text-rose-300 text-xs uppercase tracking-wide">Name</th>
+                  <th className="py-3 px-4 text-rose-300 text-xs uppercase tracking-wide">Email</th>
+                  <th className="py-3 px-4 text-rose-300 text-xs uppercase tracking-wide">Role</th>
+                  <th className="py-3 px-4 text-rose-300 text-xs uppercase tracking-wide">Change Role</th>
+                  <th className="py-3 px-4 text-rose-300 text-xs uppercase tracking-wide">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {users.map((user) => (
-                  <tr key={user.id} className="border-b border-slate-800 hover:bg-slate-800">
+                  <tr key={user.id} className="border-b border-slate-800/40 hover:bg-slate-800/50 transition-colors">
                     <td className="py-3 px-4 text-white">{user.name}</td>
                     <td className="py-3 px-4 text-white">{user.email}</td>
                     <td className="py-3 px-4">
@@ -161,7 +167,7 @@ export default function SuperAdminPage() {
                         value={user.role}
                         onChange={(e) => onRoleChange(user.id, e.target.value as UserRole)}
                         disabled={user.id === currentUserId}
-                        className="bg-slate-800 border border-slate-700 text-white rounded-lg px-3 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="bg-slate-800/60 border border-slate-700/60 text-white rounded-lg px-3 py-2 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-rose-500/40 focus:border-rose-500/50 transition-all"
                       >
                         <option value="admin">Admin</option>
                         <option value="super_admin">Super Admin</option>
@@ -171,7 +177,7 @@ export default function SuperAdminPage() {
                       <button
                         onClick={() => onDeleteUser(user.id, user.name)}
                         disabled={user.id === currentUserId || deleting === user.id}
-                        className="text-red-400 hover:text-red-300 hover:bg-red-500/10 p-2 rounded transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                        className="text-red-400 hover:text-red-300 hover:bg-red-500/20 p-2 rounded-lg transition-all duration-300 disabled:opacity-30 disabled:cursor-not-allowed"
                         title={user.id === currentUserId ? "Cannot delete your own account" : "Delete user account"}
                       >
                         <HiTrash className="w-5 h-5" />
@@ -182,7 +188,7 @@ export default function SuperAdminPage() {
               </tbody>
             </table>
           </div>
-          {message && <p className="text-sm text-slate-300 mt-3">{message}</p>}
+          {message && <p className="text-sm text-slate-300 mt-3 bg-slate-800/40 border border-slate-700/50 rounded-lg px-3 py-2 animate-in fade-in duration-300">{message}</p>}
         </div>
       </div>
     </div>
