@@ -1,6 +1,8 @@
 "use server";
 
-import { db } from "@/lib/prisma";
+import { Collection } from "mongodb";
+import { mongoCollections } from "@/lib/mongodb";
+import { DefectDoc } from "@/lib/mongo-defects";
 
 interface TeamMember {
   assignedTo: string;
@@ -20,34 +22,84 @@ interface TeamDefect {
   dateReported: string | null;
 }
 
+const getDefectsCollection = async () =>
+  (await mongoCollections.defects()) as unknown as Collection<DefectDoc>;
+
 export async function getTeamPerformance(): Promise<TeamMember[]> {
   try {
-    const result = await db.query(
-      `SELECT 
-        "assignedTo",
-        COUNT(*)::int as total_defects,
-        COUNT(*) FILTER (WHERE status IN ('OPEN', 'IN_PROGRESS', 'ON_HOLD'))::int as open_defects,
-        COUNT(*) FILTER (WHERE status = 'CLOSED' OR status = 'AS_IT_IS')::int as closed_defects,
-        COUNT(*) FILTER (WHERE severity IN ('MAJOR', 'HIGH'))::int as high_severity_count,
-        AVG(
-          CASE 
-            WHEN "dateFixed" IS NOT NULL AND "dateReported" IS NOT NULL AND (status = 'CLOSED' OR status = 'AS_IT_IS')
-            THEN GREATEST(1, EXTRACT(EPOCH FROM ("dateFixed"::timestamp - "dateReported"::timestamp)) / 86400)
-            ELSE NULL
-          END
-        ) as avg_fix_time_days
-       FROM defect
-       WHERE "assignedTo" IS NOT NULL AND "assignedTo" != ''
-       GROUP BY "assignedTo"
-       ORDER BY closed_defects DESC, total_defects DESC`
-    );
+    const defects = await getDefectsCollection();
+    const result = await defects
+      .aggregate<{
+        _id: string;
+        total_defects: number;
+        open_defects: number;
+        closed_defects: number;
+        high_severity_count: number;
+        avg_fix_time_days: number | null;
+      }>([
+        { $match: { assignedTo: { $exists: true, $ne: "" } } },
+        {
+          $group: {
+            _id: "$assignedTo",
+            total_defects: { $sum: 1 },
+            open_defects: {
+              $sum: {
+                $cond: [
+                  { $in: ["$status", ["OPEN", "IN_PROGRESS", "ON_HOLD"]] },
+                  1,
+                  0,
+                ],
+              },
+            },
+            closed_defects: {
+              $sum: {
+                $cond: [{ $in: ["$status", ["CLOSED", "AS_IT_IS"]] }, 1, 0],
+              },
+            },
+            high_severity_count: {
+              $sum: {
+                $cond: [{ $in: ["$severity", ["MAJOR", "HIGH"]] }, 1, 0],
+              },
+            },
+            avg_fix_time_days: {
+              $avg: {
+                $cond: [
+                  {
+                    $and: [
+                      { $in: ["$status", ["CLOSED", "AS_IT_IS"]] },
+                      { $ne: ["$dateReported", null] },
+                      { $ne: ["$dateFixed", null] },
+                    ],
+                  },
+                  {
+                    $max: [
+                      1,
+                      {
+                        $divide: [
+                          { $subtract: ["$dateFixed", "$dateReported"] },
+                          1000 * 60 * 60 * 24,
+                        ],
+                      },
+                    ],
+                  },
+                  null,
+                ],
+              },
+            },
+          },
+        },
+        { $sort: { closed_defects: -1, total_defects: -1 } },
+      ])
+      .toArray();
 
-    return result.rows.map(row => ({
-      assignedTo: row.assignedTo,
+    return result.map((row) => ({
+      assignedTo: row._id,
       totalDefects: row.total_defects,
       openDefects: row.open_defects,
       closedDefects: row.closed_defects,
-      avgFixTimeDays: row.avg_fix_time_days ? parseFloat(parseFloat(row.avg_fix_time_days).toFixed(1)) : null,
+      avgFixTimeDays: row.avg_fix_time_days
+        ? parseFloat(row.avg_fix_time_days.toFixed(1))
+        : null,
       highSeverityCount: row.high_severity_count,
     }));
   } catch (error) {
@@ -58,31 +110,44 @@ export async function getTeamPerformance(): Promise<TeamMember[]> {
 
 export async function getTeamDefectsByStatus(
   assignedTo: string,
-  statusGroup: "open" | "fixed"
+  statusGroup: "open" | "fixed",
 ): Promise<TeamDefect[]> {
   try {
+    const defects = await getDefectsCollection();
     const statusFilter =
       statusGroup === "open"
-        ? "('OPEN', 'IN_PROGRESS', 'ON_HOLD')"
-        : "('CLOSED', 'AS_IT_IS')";
+        ? ["OPEN", "IN_PROGRESS", "ON_HOLD"]
+        : ["CLOSED", "AS_IT_IS"];
 
     const hasTeamFilter = assignedTo !== "ALL";
-    const result = await db.query(
-      `SELECT id, "testCaseId", module, summary, status, "dateReported"
-       FROM defect
-       WHERE ${hasTeamFilter ? "\"assignedTo\" = $1 AND" : ""}
-         status IN ${statusFilter}
-       ORDER BY "dateReported" DESC NULLS LAST`,
-      hasTeamFilter ? [assignedTo] : []
-    );
+    const query: Record<string, unknown> = { status: { $in: statusFilter } };
+    if (hasTeamFilter) {
+      query.assignedTo = assignedTo;
+    }
 
-    return result.rows.map(row => ({
+    const result = await defects
+      .find(query, {
+        projection: {
+          id: 1,
+          testCaseId: 1,
+          module: 1,
+          summary: 1,
+          status: 1,
+          dateReported: 1,
+        },
+      })
+      .sort({ dateReported: -1 })
+      .toArray();
+
+    return result.map((row) => ({
       id: row.id,
       testCaseId: row.testCaseId || null,
       module: row.module,
       summary: row.summary || null,
       status: row.status,
-      dateReported: row.dateReported ? row.dateReported.toISOString().split("T")[0] : null,
+      dateReported: row.dateReported
+        ? row.dateReported.toISOString().split("T")[0]
+        : null,
     }));
   } catch (error) {
     console.error("Error fetching team defects:", error);

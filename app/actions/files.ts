@@ -1,7 +1,9 @@
 "use server";
 
-import { db } from "@/lib/prisma";
+import { Collection } from "mongodb";
+import { mongoCollections } from "@/lib/mongodb";
 import { getCurrentUser } from "@/app/actions/auth";
+import { DefectDoc } from "@/lib/mongo-defects";
 
 interface UploadedFile {
   name: string;
@@ -10,7 +12,11 @@ interface UploadedFile {
   uploadedBy: string;
 }
 
-const isAdminRole = (role?: string) => role === "admin" || role === "super_admin";
+const isAdminRole = (role?: string) =>
+  role === "admin" || role === "super_admin";
+
+const getDefectsCollection = async () =>
+  (await mongoCollections.defects()) as unknown as Collection<DefectDoc>;
 
 export async function getUploadedFiles(): Promise<UploadedFile[]> {
   const user = await getCurrentUser();
@@ -18,18 +24,31 @@ export async function getUploadedFiles(): Promise<UploadedFile[]> {
     return [];
   }
 
-  const result = await db.query(
-    `SELECT "sourceFile", COUNT(*) as count, MIN("createdAt") as "uploadedAt", MAX("uploadedBy") as "uploadedBy"
-     FROM defect
-     WHERE "sourceFile" IS NOT NULL
-     GROUP BY "sourceFile"
-     ORDER BY MIN("createdAt") DESC`
-  );
+  const defects = await getDefectsCollection();
+  const result = await defects
+    .aggregate<{
+      _id: string;
+      count: number;
+      uploadedAt: Date | null;
+      uploadedBy: string | null;
+    }>([
+      { $match: { sourceFile: { $ne: null } } },
+      {
+        $group: {
+          _id: "$sourceFile",
+          count: { $sum: 1 },
+          uploadedAt: { $min: "$createdAt" },
+          uploadedBy: { $max: "$uploadedBy" },
+        },
+      },
+      { $sort: { uploadedAt: -1 } },
+    ])
+    .toArray();
 
-  return result.rows.map((row) => ({
-    name: row.sourceFile,
-    count: parseInt(row.count, 10),
-    uploadedAt: new Date(row.uploadedAt).toISOString().split("T")[0],
+  return result.map((row) => ({
+    name: row._id,
+    count: row.count,
+    uploadedAt: (row.uploadedAt || new Date()).toISOString().split("T")[0],
     uploadedBy: row.uploadedBy || "Unknown",
   }));
 }
@@ -45,14 +64,12 @@ export async function deleteFileData(fileName: string) {
   }
 
   try {
-    const result = await db.query(
-      `DELETE FROM defect WHERE "sourceFile" = $1`,
-      [fileName]
-    );
+    const defects = await getDefectsCollection();
+    const result = await defects.deleteMany({ sourceFile: fileName });
 
     return {
       success: true,
-      message: `Deleted ${result.rowCount} defect(s) from ${fileName}`,
+      message: `Deleted ${result.deletedCount} defect(s) from ${fileName}`,
     };
   } catch (error) {
     console.error("Error deleting file data:", error);

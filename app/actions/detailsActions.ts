@@ -1,43 +1,44 @@
 "use server";
 
-import { db } from "@/lib/prisma";
+import { Collection } from "mongodb";
+import { mongoCollections } from "@/lib/mongodb";
 import { Defect } from "@/lib/types";
+import { DefectDoc, toDefect } from "@/lib/mongo-defects";
+
+const getDefectsCollection = async () =>
+  (await mongoCollections.defects()) as unknown as Collection<DefectDoc>;
 
 export async function getDefectById(id: string): Promise<Defect | null> {
   try {
-    const result = await db.query<any>(
-      `SELECT id, "testCaseId", "dateReported", module, "descriptionSteps", summary, "expectedResult", "actualResult", remarks, "testScenario", "testSteps", severity, priority, "assignedTo", status, "dateFixed", "qcStatusBbt", "createdAt" 
-       FROM defect WHERE id = $1`,
-      [id]
+    const defects = await getDefectsCollection();
+    const row = await defects.findOne(
+      { id },
+      {
+        projection: {
+          id: 1,
+          testCaseId: 1,
+          dateReported: 1,
+          module: 1,
+          descriptionSteps: 1,
+          summary: 1,
+          expectedResult: 1,
+          actualResult: 1,
+          remarks: 1,
+          testScenario: 1,
+          testSteps: 1,
+          severity: 1,
+          priority: 1,
+          assignedTo: 1,
+          status: 1,
+          dateFixed: 1,
+          qcStatusBbt: 1,
+          createdAt: 1,
+        },
+      },
     );
-    
-    if (result.rows.length === 0) return null;
-    
-    const row = result.rows[0];
-    
-    // Transform database row to Defect type
-    const defect: Defect = {
-      id: row.id,
-      testCaseId: row.testCaseId || undefined,
-      dateReported: row.dateReported ? new Date(row.dateReported) : null,
-      module: row.module,
-      descriptionSteps: row.descriptionSteps || undefined,
-      summary: row.summary || undefined,
-      expectedResult: row.expectedResult || "",
-      actualResult: row.actualResult || "",
-      remarks: row.remarks || undefined,
-      testScenario: row.testScenario || undefined,
-      testSteps: row.testSteps || undefined,
-      severity: row.severity,
-      priority: row.priority || "",
-      assignedTo: row.assignedTo || undefined,
-      status: row.status,
-      dateFixed: row.dateFixed ? new Date(row.dateFixed) : null,
-      qcStatusBbt: row.qcStatusBbt,
-      createdAt: new Date(row.createdAt),
-    };
-    
-    return defect;
+
+    if (!row) return null;
+    return toDefect(row);
   } catch (error) {
     console.error("Error fetching defect:", error);
     return null;
@@ -45,55 +46,49 @@ export async function getDefectById(id: string): Promise<Defect | null> {
 }
 export async function getAllDefectsSorted(): Promise<Defect[]> {
   try {
-    // Sort by status priority: ON_HOLD (Pending) and OPEN (Hold) first, then others
-    const result = await db.query<any>(
-      `SELECT id, "testCaseId", "dateReported", module, summary, "expectedResult", "actualResult", severity, priority, "assignedTo", status, "dateFixed", "qcStatusBbt", "createdAt"
-       FROM defect
-       ORDER BY 
-         CASE 
-           WHEN status = 'ON_HOLD' THEN 1
-           WHEN status = 'OPEN' THEN 2
-           WHEN status = 'IN_PROGRESS' THEN 3
-           WHEN status = 'AS_IT_IS' THEN 4
-           WHEN status = 'CLOSED' THEN 5
-           ELSE 6
-         END,
-         "dateReported" DESC`
-    );
-    
-    const defects: Defect[] = result.rows.map((row: any) => ({
-      id: row.id,
-      testCaseId: row.testCaseId || undefined,
-      dateReported: row.dateReported ? new Date(row.dateReported) : null,
-      module: row.module,
-      summary: row.summary || undefined,
-      expectedResult: row.expectedResult || "",
-      actualResult: row.actualResult || "",
-      severity: row.severity,
-      priority: row.priority || "",
-      assignedTo: row.assignedTo || undefined,
-      status: row.status,
-      dateFixed: row.dateFixed ? new Date(row.dateFixed) : null,
-      qcStatusBbt: row.qcStatusBbt,
-      createdAt: new Date(row.createdAt),
-    }));
-    
-    return defects;
+    const defects = await getDefectsCollection();
+    const result = await defects
+      .aggregate<DefectDoc>([
+        {
+          $addFields: {
+            __statusPriority: {
+              $switch: {
+                branches: [
+                  { case: { $eq: ["$status", "ON_HOLD"] }, then: 1 },
+                  { case: { $eq: ["$status", "OPEN"] }, then: 2 },
+                  { case: { $eq: ["$status", "IN_PROGRESS"] }, then: 3 },
+                  { case: { $eq: ["$status", "AS_IT_IS"] }, then: 4 },
+                  { case: { $eq: ["$status", "CLOSED"] }, then: 5 },
+                ],
+                default: 6,
+              },
+            },
+          },
+        },
+        { $sort: { __statusPriority: 1, dateReported: -1 } },
+        { $project: { __statusPriority: 0 } },
+      ])
+      .toArray();
+
+    return result.map(toDefect);
   } catch (error) {
     console.error("Error fetching all defects:", error);
     return [];
   }
 }
 
-export async function deleteDefectById(id: string): Promise<{ success: boolean; message: string }> {
+export async function deleteDefectById(
+  id: string,
+): Promise<{ success: boolean; message: string }> {
   if (!id) {
     return { success: false, message: "Issue ID is required" };
   }
 
   try {
-    const result = await db.query(`DELETE FROM defect WHERE id = $1`, [id]);
+    const defects = await getDefectsCollection();
+    const result = await defects.deleteOne({ id });
 
-    if (!result.rowCount) {
+    if (!result.deletedCount) {
       return { success: false, message: "Issue not found" };
     }
 

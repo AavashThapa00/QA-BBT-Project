@@ -25,7 +25,8 @@
     "backfill-sourceFile": "tsx scripts/backfill-sourceFile.ts",
     "add-uploadedBy": "tsx scripts/add-uploadedBy.ts",
     "backfill-uploadedBy": "tsx scripts/backfill-uploadedBy.ts",
-    "fix-uploadedBy": "tsx scripts/fix-uploadedBy.ts"
+    "fix-uploadedBy": "tsx scripts/fix-uploadedBy.ts",
+    "seed-mongodb": "tsx scripts/seed-mongodb.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.4.1",
@@ -33,6 +34,7 @@
     "@types/nodemailer": "^7.0.11",
     "@types/papaparse": "^5.5.2",
     "dotenv": "^17.3.1",
+    "mongodb": "^6.18.0",
     "next": "16.1.6",
     "nodemailer": "^8.0.3",
     "papaparse": "^5.5.3",

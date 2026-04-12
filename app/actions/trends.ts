@@ -1,6 +1,8 @@
 "use server";
 
-import { db } from "@/lib/prisma";
+import { Collection } from "mongodb";
+import { mongoCollections } from "@/lib/mongodb";
+import { DefectDoc } from "@/lib/mongo-defects";
 
 interface MonthlyTrend {
   month: string;
@@ -18,21 +20,73 @@ interface ModuleTrend {
   count: number;
 }
 
+const moduleExpr = {
+  $switch: {
+    branches: [
+      {
+        case: { $regexMatch: { input: "$module", regex: /^HSA/i } },
+        then: "HSA",
+      },
+      {
+        case: { $regexMatch: { input: "$module", regex: /^KFQ/i } },
+        then: "KFQ",
+      },
+      {
+        case: { $regexMatch: { input: "$module", regex: /^(GMST|GGMST)/i } },
+        then: "GMST",
+      },
+      {
+        case: { $regexMatch: { input: "$module", regex: /^NMST/i } },
+        then: "NMST",
+      },
+      {
+        case: { $regexMatch: { input: "$module", regex: /^MST/i } },
+        then: "GMST",
+      },
+      {
+        case: { $regexMatch: { input: "$module", regex: /(Innovatetech)/i } },
+        then: "Innovatetech",
+      },
+      {
+        case: { $regexMatch: { input: "$module", regex: /(Alston)/i } },
+        then: "Alston",
+      },
+    ],
+    default: "Other",
+  },
+};
+
+const getDefectsCollection = async () =>
+  (await mongoCollections.defects()) as unknown as Collection<DefectDoc>;
+
 export async function getMonthlyTrends(): Promise<MonthlyTrend[]> {
   try {
-    const result = await db.query(
-      `SELECT 
-        TO_CHAR("dateReported", 'YYYY-MM') as month,
-        COUNT(*)::int as reported,
-        COUNT(*) FILTER (WHERE status IN ('CLOSED', 'AS_IT_IS'))::int as fixed
-       FROM defect
-       WHERE "dateReported" IS NOT NULL
-       GROUP BY month
-       ORDER BY month`
-    );
+    const defects = await getDefectsCollection();
+    const result = await defects
+      .aggregate<{ _id: string; reported: number; fixed: number }>([
+        { $match: { dateReported: { $ne: null, $type: "date" } } },
+        {
+          $group: {
+            _id: {
+              $dateToString: {
+                format: "%Y-%m",
+                date: "$dateReported",
+              },
+            },
+            reported: { $sum: 1 },
+            fixed: {
+              $sum: {
+                $cond: [{ $in: ["$status", ["CLOSED", "AS_IT_IS"]] }, 1, 0],
+              },
+            },
+          },
+        },
+        { $sort: { _id: 1 } },
+      ])
+      .toArray();
 
-    return result.rows.map(row => ({
-      month: row.month,
+    return result.map((row) => ({
+      month: row._id,
       reported: row.reported,
       fixed: row.fixed,
     }));
@@ -44,15 +98,16 @@ export async function getMonthlyTrends(): Promise<MonthlyTrend[]> {
 
 export async function getSeverityTrends(): Promise<SeverityTrend[]> {
   try {
-    const result = await db.query(
-      `SELECT severity, COUNT(*)::int as count
-       FROM defect
-       GROUP BY severity
-       ORDER BY count DESC`
-    );
+    const defects = await getDefectsCollection();
+    const result = await defects
+      .aggregate<{
+        _id: string;
+        count: number;
+      }>([{ $group: { _id: "$severity", count: { $sum: 1 } } }, { $sort: { count: -1 } }])
+      .toArray();
 
-    return result.rows.map(row => ({
-      severity: row.severity,
+    return result.map((row) => ({
+      severity: row._id,
       count: row.count,
     }));
   } catch (error) {
@@ -63,26 +118,16 @@ export async function getSeverityTrends(): Promise<SeverityTrend[]> {
 
 export async function getModuleTrends(): Promise<ModuleTrend[]> {
   try {
-    const result = await db.query(
-      `SELECT 
-        CASE
-          WHEN module LIKE 'HSA%' THEN 'HSA'
-          WHEN module LIKE 'KFQ%' THEN 'KFQ'
-          WHEN module LIKE 'GMST%' OR module LIKE 'GGMST%' THEN 'GMST'
-          WHEN module LIKE 'NMST%' THEN 'NMST'
-          WHEN module LIKE 'MST%' THEN 'GMST'
-          WHEN module LIKE '%Innovatetech%' OR module LIKE 'Innovatetech%' THEN 'Innovatetech'
-          WHEN module LIKE '%Alston%' THEN 'Alston'
-          ELSE 'Other'
-        END as main_module,
-        COUNT(*)::int as count
-       FROM defect
-       GROUP BY main_module
-       ORDER BY count DESC`
-    );
+    const defects = await getDefectsCollection();
+    const result = await defects
+      .aggregate<{
+        _id: string;
+        count: number;
+      }>([{ $project: { main_module: moduleExpr } }, { $group: { _id: "$main_module", count: { $sum: 1 } } }, { $sort: { count: -1 } }])
+      .toArray();
 
-    return result.rows.map(row => ({
-      module: row.main_module,
+    return result.map((row) => ({
+      module: row._id,
       count: row.count,
     }));
   } catch (error) {

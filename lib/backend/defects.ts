@@ -1,5 +1,7 @@
 import { randomUUID } from "crypto";
-import { db } from "@/lib/prisma";
+import { Collection, Filter } from "mongodb";
+import { mongoCollections } from "@/lib/mongodb";
+import { DefectDoc } from "@/lib/mongo-defects";
 import { QCStatusBBT, Severity, Status } from "@/lib/types";
 
 export interface DefectListFilters {
@@ -34,108 +36,86 @@ export interface CreateDefectPayload {
   sourceFile?: string | null;
 }
 
-interface WhereClause {
-  clause: string;
-  values: unknown[];
-}
+const getDefectsCollection = async () =>
+  (await mongoCollections.defects()) as unknown as Collection<DefectDoc>;
 
-function buildWhereClause(filters?: DefectListFilters): WhereClause {
-  const conditions: string[] = [];
-  const values: unknown[] = [];
-  let index = 1;
+function buildApiFilter(filters?: DefectListFilters): Filter<DefectDoc> {
+  const andClauses: Filter<DefectDoc>[] = [];
 
-  if (filters?.dateFrom) {
-    conditions.push(`"dateReported" >= $${index}`);
-    values.push(filters.dateFrom);
-    index += 1;
-  }
-
-  if (filters?.dateTo) {
-    conditions.push(`"dateReported" <= $${index}`);
-    values.push(filters.dateTo);
-    index += 1;
+  if (filters?.dateFrom || filters?.dateTo) {
+    const range: Record<string, Date> = {};
+    if (filters.dateFrom) {
+      const from = new Date(filters.dateFrom);
+      from.setHours(0, 0, 0, 0);
+      range.$gte = from;
+    }
+    if (filters.dateTo) {
+      const to = new Date(filters.dateTo);
+      to.setHours(23, 59, 59, 999);
+      range.$lte = to;
+    }
+    andClauses.push({ dateReported: range as never });
   }
 
   if (filters?.severity?.length) {
-    const placeholders = filters.severity.map(() => `$${index++}`).join(", ");
-    conditions.push(`severity IN (${placeholders})`);
-    values.push(...filters.severity);
+    andClauses.push({ severity: { $in: filters.severity } as never });
   }
 
   if (filters?.status?.length) {
-    const placeholders = filters.status.map(() => `$${index++}`).join(", ");
-    conditions.push(`status IN (${placeholders})`);
-    values.push(...filters.status);
+    andClauses.push({ status: { $in: filters.status } as never });
   }
 
   if (filters?.module?.length) {
-    const placeholders = filters.module.map(() => `$${index++}`).join(", ");
-    conditions.push(`module IN (${placeholders})`);
-    values.push(...filters.module);
+    andClauses.push({ module: { $in: filters.module } as never });
   }
 
   if (filters?.search?.trim()) {
-    const likeValue = `%${filters.search.trim()}%`;
-    conditions.push(`(
-      module ILIKE $${index}
-      OR COALESCE(summary, '') ILIKE $${index}
-      OR "expectedResult" ILIKE $${index}
-      OR "actualResult" ILIKE $${index}
-      OR COALESCE("testCaseId", '') ILIKE $${index}
-    )`);
-    values.push(likeValue);
+    const q = filters.search.trim();
+    andClauses.push({
+      $or: [
+        { module: { $regex: q, $options: "i" } },
+        { summary: { $regex: q, $options: "i" } },
+        { expectedResult: { $regex: q, $options: "i" } },
+        { actualResult: { $regex: q, $options: "i" } },
+        { testCaseId: { $regex: q, $options: "i" } },
+      ],
+    } as never);
   }
 
-  return {
-    clause: conditions.join(" AND "),
-    values,
-  };
+  if (!andClauses.length) return {};
+  return { $and: andClauses } as Filter<DefectDoc>;
 }
 
-function getOrderBy(sortBy?: DefectPagination["sortBy"], sortOrder: DefectPagination["sortOrder"] = "desc"): string {
-  const order = sortOrder === "asc" ? "ASC" : "DESC";
-
-  if (sortBy === "severity") {
-    return `severity ${order}`;
-  }
-
-  if (sortBy === "status") {
-    return `status ${order}`;
-  }
-
-  return `"dateReported" ${order}`;
+function getSort(
+  sortBy?: DefectPagination["sortBy"],
+  sortOrder: DefectPagination["sortOrder"] = "desc",
+) {
+  const dir = sortOrder === "asc" ? 1 : -1;
+  if (sortBy === "severity") return { severity: dir };
+  if (sortBy === "status") return { status: dir };
+  return { dateReported: dir };
 }
 
-export async function getDefectsForApi(filters: DefectListFilters, pagination: DefectPagination) {
-  const where = buildWhereClause(filters);
-  const whereSQL = where.clause ? `WHERE ${where.clause}` : "";
-  const orderBy = getOrderBy(pagination.sortBy, pagination.sortOrder);
-
+export async function getDefectsForApi(
+  filters: DefectListFilters,
+  pagination: DefectPagination,
+) {
+  const defects = await getDefectsCollection();
+  const where = buildApiFilter(filters);
   const offset = Math.max(0, (pagination.page - 1) * pagination.pageSize);
-  const limitParam = where.values.length + 1;
-  const offsetParam = where.values.length + 2;
 
-  const [rowsResult, countResult] = await Promise.all([
-    db.query(
-      `SELECT *
-       FROM defect
-       ${whereSQL}
-       ORDER BY ${orderBy}
-       LIMIT $${limitParam} OFFSET $${offsetParam}`,
-      [...where.values, pagination.pageSize, offset]
-    ),
-    db.query<{ total: string }>(
-      `SELECT COUNT(*)::text as total
-       FROM defect
-       ${whereSQL}`,
-      where.values
-    ),
+  const [rows, total] = await Promise.all([
+    defects
+      .find(where)
+      .sort(getSort(pagination.sortBy, pagination.sortOrder) as never)
+      .skip(offset)
+      .limit(pagination.pageSize)
+      .toArray(),
+    defects.countDocuments(where),
   ]);
 
-  const total = parseInt(countResult.rows[0]?.total || "0", 10);
-
   return {
-    defects: rowsResult.rows,
+    defects: rows,
     page: pagination.page,
     pageSize: pagination.pageSize,
     total,
@@ -144,85 +124,56 @@ export async function getDefectsForApi(filters: DefectListFilters, pagination: D
 }
 
 export async function getDefectMetricsForApi(filters: DefectListFilters) {
-  const where = buildWhereClause(filters);
+  const defects = await getDefectsCollection();
+  const where = buildApiFilter(filters);
 
-  const buildCountQuery = (extra?: string) => {
-    const parts: string[] = [];
-    if (where.clause) {
-      parts.push(where.clause);
-    }
-    if (extra) {
-      parts.push(extra);
-    }
-
-    const whereSQL = parts.length ? `WHERE ${parts.join(" AND ")}` : "";
-    return `SELECT COUNT(*)::text as count FROM defect ${whereSQL}`;
-  };
-
-  const base = where.values;
-  const start = base.length;
-
-  const [total, open, closed, major] = await Promise.all([
-    db.query<{ count: string }>(buildCountQuery(), base),
-    db.query<{ count: string }>(
-      buildCountQuery(`status IN ($${start + 1}, $${start + 2}, $${start + 3})`),
-      [...base, "OPEN", "IN_PROGRESS", "ON_HOLD"]
-    ),
-    db.query<{ count: string }>(
-      buildCountQuery(`status IN ($${start + 1}, $${start + 2})`),
-      [...base, "CLOSED", "AS_IT_IS"]
-    ),
-    db.query<{ count: string }>(buildCountQuery(`severity = $${start + 1}`), [...base, "MAJOR"]),
-  ]);
+  const [totalDefects, openDefects, closedDefects, highSeverityCount] =
+    await Promise.all([
+      defects.countDocuments(where),
+      defects.countDocuments({
+        $and: [
+          where as never,
+          { status: { $in: ["OPEN", "IN_PROGRESS", "ON_HOLD"] } },
+        ],
+      } as never),
+      defects.countDocuments({
+        $and: [where as never, { status: { $in: ["CLOSED", "AS_IT_IS"] } }],
+      } as never),
+      defects.countDocuments({
+        $and: [where as never, { severity: "MAJOR" }],
+      } as never),
+    ]);
 
   return {
-    totalDefects: parseInt(total.rows[0]?.count || "0", 10),
-    openDefects: parseInt(open.rows[0]?.count || "0", 10),
-    closedDefects: parseInt(closed.rows[0]?.count || "0", 10),
-    highSeverityCount: parseInt(major.rows[0]?.count || "0", 10),
+    totalDefects,
+    openDefects,
+    closedDefects,
+    highSeverityCount,
   };
 }
 
 export async function createDefectForApi(payload: CreateDefectPayload) {
+  const defects = await getDefectsCollection();
   const id = randomUUID();
 
-  const result = await db.query(
-    `INSERT INTO defect (
-      id,
-      "testCaseId",
-      "dateReported",
-      module,
-      summary,
-      "expectedResult",
-      "actualResult",
-      severity,
-      priority,
-      "assignedTo",
-      status,
-      "dateFixed",
-      "qcStatusBbt",
-      "sourceFile"
-    ) VALUES (
-      $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14
-    )
-    RETURNING *`,
-    [
-      id,
-      payload.testCaseId ?? null,
-      payload.dateReported,
-      payload.module,
-      payload.summary ?? null,
-      payload.expectedResult,
-      payload.actualResult,
-      payload.severity,
-      payload.priority,
-      payload.assignedTo ?? null,
-      payload.status,
-      payload.dateFixed ?? null,
-      payload.qcStatusBbt ?? "PENDING",
-      payload.sourceFile ?? null,
-    ]
-  );
+  const doc: DefectDoc = {
+    id,
+    testCaseId: payload.testCaseId ?? null,
+    dateReported: new Date(payload.dateReported),
+    module: payload.module,
+    summary: payload.summary ?? null,
+    expectedResult: payload.expectedResult,
+    actualResult: payload.actualResult,
+    severity: payload.severity,
+    priority: payload.priority,
+    assignedTo: payload.assignedTo ?? null,
+    status: payload.status,
+    dateFixed: payload.dateFixed ? new Date(payload.dateFixed) : null,
+    qcStatusBbt: payload.qcStatusBbt ?? "PENDING",
+    sourceFile: payload.sourceFile ?? null,
+    createdAt: new Date(),
+  };
 
-  return result.rows[0];
+  await defects.insertOne(doc);
+  return doc;
 }

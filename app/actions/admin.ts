@@ -1,6 +1,7 @@
 "use server";
 
-import { db } from "@/lib/prisma";
+import { Collection } from "mongodb";
+import { mongoCollections } from "@/lib/mongodb";
 import { getCurrentUser, createUser } from "@/app/actions/auth";
 import { randomBytes, scryptSync } from "crypto";
 
@@ -15,9 +16,23 @@ interface AdminUser {
   createdAt: string;
 }
 
-const isAdminRole = (role: UserRole | undefined) => role === "admin" || role === "super_admin";
+const isAdminRole = (role: UserRole | undefined) =>
+  role === "admin" || role === "super_admin";
 const isSuperAdmin = (role: UserRole | undefined) => role === "super_admin";
-const normalizeRole = (role?: string): UserRole => (role === "super_admin" ? "super_admin" : "admin");
+const normalizeRole = (role?: string): UserRole =>
+  role === "super_admin" ? "super_admin" : "admin";
+
+const getUsersCollection = async () =>
+  (await mongoCollections.users()) as unknown as Collection<{
+    id: string;
+    name: string;
+    email: string;
+    phone?: string | null;
+    role?: string;
+    createdAt?: Date;
+    updatedAt?: Date;
+    password_hash?: string;
+  }>;
 
 const hashPassword = (password: string) => {
   const salt = randomBytes(16).toString("hex");
@@ -31,19 +46,16 @@ export async function getUsers(): Promise<AdminUser[]> {
     return [];
   }
 
-  const result = await db.query(
-    `SELECT id, name, email, phone, role, "createdAt"
-     FROM "user"
-     ORDER BY "createdAt" DESC`
-  );
+  const users = await getUsersCollection();
+  const result = await users.find({}).sort({ createdAt: -1 }).toArray();
 
-  return result.rows.map((row) => ({
+  return result.map((row) => ({
     id: row.id,
     name: row.name,
     email: row.email,
-    phone: row.phone,
+    phone: row.phone || null,
     role: normalizeRole(row.role),
-    createdAt: row.createdAt.toISOString().split("T")[0],
+    createdAt: (row.createdAt || new Date()).toISOString().split("T")[0],
   }));
 }
 
@@ -54,20 +66,28 @@ export async function createUserAdminAction(formData: FormData) {
   }
 
   const name = String(formData.get("name") || "").trim();
-  const email = String(formData.get("email") || "").trim().toLowerCase();
+  const email = String(formData.get("email") || "")
+    .trim()
+    .toLowerCase();
   const phone = String(formData.get("phone") || "").trim();
   const password = String(formData.get("password") || "").trim();
   const role = normalizeRole(String(formData.get("role") || "admin"));
 
   if (!name || !email || !password) {
-    return { success: false, message: "Name, email, and password are required" };
+    return {
+      success: false,
+      message: "Name, email, and password are required",
+    };
   }
 
   try {
     await createUser({ name, email, phone, password, role });
     return { success: true, message: "User created" };
   } catch (error) {
-    return { success: false, message: error instanceof Error ? error.message : "Failed to create user" };
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : "Failed to create user",
+    };
   }
 }
 
@@ -84,7 +104,11 @@ export async function updateUserRoleAction(formData: FormData) {
     return { success: false, message: "User is required" };
   }
 
-  await db.query(`UPDATE "user" SET role = $1, "updatedAt" = NOW() WHERE id = $2`, [role, userId]);
+  const users = await getUsersCollection();
+  await users.updateOne(
+    { id: userId },
+    { $set: { role, updatedAt: new Date() } },
+  );
   return { success: true, message: "Role updated" };
 }
 
@@ -102,7 +126,11 @@ export async function resetUserPasswordAction(formData: FormData) {
   }
 
   const newHash = hashPassword(newPassword);
-  await db.query(`UPDATE "user" SET password_hash = $1, "updatedAt" = NOW() WHERE id = $2`, [newHash, userId]);
+  const users = await getUsersCollection();
+  await users.updateOne(
+    { id: userId },
+    { $set: { password_hash: newHash, updatedAt: new Date() } },
+  );
   return { success: true, message: "Password reset" };
 }
 
@@ -124,7 +152,8 @@ export async function deleteUserAction(formData: FormData) {
   }
 
   try {
-    await db.query(`DELETE FROM "user" WHERE id = $1`, [userId]);
+    const users = await getUsersCollection();
+    await users.deleteOne({ id: userId });
     return { success: true, message: "User account deleted successfully" };
   } catch {
     return { success: false, message: "Failed to delete user" };

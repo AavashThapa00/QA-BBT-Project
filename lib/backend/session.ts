@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
-import { db } from "@/lib/prisma";
+import { Collection } from "mongodb";
+import { mongoCollections } from "@/lib/mongodb";
 
 const SESSION_COOKIE = "bbt_session";
 
@@ -18,21 +19,28 @@ export async function getApiUser(): Promise<ApiUser | null> {
     return null;
   }
 
-  const result = await db.query<{
+  const sessions =
+    (await mongoCollections.sessions()) as unknown as Collection<{
+      id: string;
+      userId: string;
+      expiresAt: Date;
+    }>;
+  const users = (await mongoCollections.users()) as unknown as Collection<{
     id: string;
     name: string;
     email: string;
     role: string;
-  }>(
-    `SELECT u.id, u.name, u.email, u.role
-     FROM session s
-     JOIN "user" u ON u.id = s."userId"
-     WHERE s.id = $1 AND s."expiresAt" > NOW()
-     LIMIT 1`,
-    [sessionId]
-  );
+  }>;
 
-  const row = result.rows[0];
+  const session = await sessions.findOne({
+    id: sessionId,
+    expiresAt: { $gt: new Date() },
+  });
+  if (!session) {
+    return null;
+  }
+
+  const row = await users.findOne({ id: session.userId });
   if (!row) {
     return null;
   }

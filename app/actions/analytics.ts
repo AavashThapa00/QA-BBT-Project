@@ -1,7 +1,9 @@
 "use server";
 
-import { db } from "@/lib/prisma";
+import { Collection } from "mongodb";
+import { mongoCollections } from "@/lib/mongodb";
 import { Status } from "@/lib/types";
+import { DefectDoc } from "@/lib/mongo-defects";
 
 interface StatusCount {
   status: Status;
@@ -15,17 +17,57 @@ interface ModuleFixTime {
   uncertainCount: number;
 }
 
+const moduleExpr = {
+  $switch: {
+    branches: [
+      {
+        case: { $regexMatch: { input: "$module", regex: /^HSA/i } },
+        then: "HSA",
+      },
+      {
+        case: { $regexMatch: { input: "$module", regex: /^KFQ/i } },
+        then: "KFQ",
+      },
+      {
+        case: { $regexMatch: { input: "$module", regex: /^(GMST|GGMST)/i } },
+        then: "GMST",
+      },
+      {
+        case: { $regexMatch: { input: "$module", regex: /^NMST/i } },
+        then: "NMST",
+      },
+      {
+        case: { $regexMatch: { input: "$module", regex: /^MST/i } },
+        then: "GMST",
+      },
+      {
+        case: { $regexMatch: { input: "$module", regex: /(Innovatetech)/i } },
+        then: "Innovatetech",
+      },
+      {
+        case: { $regexMatch: { input: "$module", regex: /(Alston)/i } },
+        then: "Alston",
+      },
+    ],
+    default: "Other",
+  },
+};
+
+const getDefectsCollection = async () =>
+  (await mongoCollections.defects()) as unknown as Collection<DefectDoc>;
+
 export async function getDefectsByStatus(): Promise<StatusCount[]> {
   try {
-    const result = await db.query(
-      `SELECT status, COUNT(*)::int as count
-       FROM defect
-       GROUP BY status
-       ORDER BY status`
-    );
+    const defects = await getDefectsCollection();
+    const result = await defects
+      .aggregate<{
+        _id: Status;
+        count: number;
+      }>([{ $group: { _id: "$status", count: { $sum: 1 } } }, { $sort: { _id: 1 } }])
+      .toArray();
 
-    return result.rows.map(row => ({
-      status: row.status as Status,
+    return result.map((row) => ({
+      status: row._id as Status,
       count: row.count,
     }));
   } catch (error) {
@@ -36,37 +78,64 @@ export async function getDefectsByStatus(): Promise<StatusCount[]> {
 
 export async function getAverageFixTimeByModule(): Promise<ModuleFixTime[]> {
   try {
-    // Extract main module prefix (HSA, KFQ, GMST, NMST, Innovatetech)
-    const result = await db.query(
-      `SELECT 
-        CASE
-          WHEN module LIKE 'HSA%' THEN 'HSA'
-          WHEN module LIKE 'KFQ%' THEN 'KFQ'
-          WHEN module LIKE 'GMST%' OR module LIKE 'GGMST%' THEN 'GMST'
-          WHEN module LIKE 'NMST%' THEN 'NMST'
-          WHEN module LIKE 'MST%' THEN 'GMST'
-          WHEN module LIKE '%Innovatetech%' OR module LIKE 'Innovatetech%' THEN 'Innovatetech'
-          WHEN module LIKE '%Alston%' THEN 'Alston'
-          ELSE 'Other'
-        END as main_module,
-        COUNT(*) FILTER (WHERE status = 'CLOSED' OR status = 'AS_IT_IS')::int as total_fixed,
-        COUNT(*) FILTER (WHERE (status = 'CLOSED' OR status = 'AS_IT_IS') AND "dateFixed" IS NULL)::int as uncertain_count,
-        AVG(
-          CASE 
-            WHEN "dateFixed" IS NOT NULL AND "dateReported" IS NOT NULL 
-            THEN GREATEST(1, EXTRACT(EPOCH FROM ("dateFixed"::timestamp - "dateReported"::timestamp)) / 86400)
-            ELSE NULL
-          END
-        ) as avg_days
-       FROM defect
-       WHERE status IN ('CLOSED', 'AS_IT_IS')
-       GROUP BY main_module
-       ORDER BY main_module`
-    );
+    const defects = await getDefectsCollection();
+    const result = await defects
+      .aggregate<{
+        _id: string;
+        total_fixed: number;
+        uncertain_count: number;
+        avg_days: number | null;
+      }>([
+        { $match: { status: { $in: ["CLOSED", "AS_IT_IS"] } } },
+        {
+          $project: {
+            main_module: moduleExpr,
+            dateReported: 1,
+            dateFixed: 1,
+          },
+        },
+        {
+          $group: {
+            _id: "$main_module",
+            total_fixed: { $sum: 1 },
+            uncertain_count: {
+              $sum: {
+                $cond: [{ $eq: ["$dateFixed", null] }, 1, 0],
+              },
+            },
+            avg_days: {
+              $avg: {
+                $cond: [
+                  {
+                    $and: [
+                      { $ne: ["$dateReported", null] },
+                      { $ne: ["$dateFixed", null] },
+                    ],
+                  },
+                  {
+                    $max: [
+                      1,
+                      {
+                        $divide: [
+                          { $subtract: ["$dateFixed", "$dateReported"] },
+                          1000 * 60 * 60 * 24,
+                        ],
+                      },
+                    ],
+                  },
+                  null,
+                ],
+              },
+            },
+          },
+        },
+        { $sort: { _id: 1 } },
+      ])
+      .toArray();
 
-    const mappedData = result.rows.map(row => ({
-      module: row.main_module,
-      avgDays: row.avg_days ? parseFloat(parseFloat(row.avg_days).toFixed(1)) : null,
+    const mappedData = result.map((row) => ({
+      module: row._id,
+      avgDays: row.avg_days ? parseFloat(row.avg_days.toFixed(1)) : null,
       totalFixed: row.total_fixed,
       uncertainCount: row.uncertain_count,
     }));
