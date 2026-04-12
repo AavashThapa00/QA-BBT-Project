@@ -1,0 +1,37 @@
+Bug ID,Test Case ID,Date Reported,Module / Component,Summary / Title,Description / Steps to Reproduce,Expected Result,Actual Result,Severity,Priority,Assigned To,Remarks / Notes,Status,Date Fixed ,QC Status by BBT
+,{Issue Doc},,,,,,,,,,,,,
+B001,PR_12,2/25/2026,HSA - Profile>Content Expert,Unable to Edit Email Address in Content Expert Profile,"1. Click on the profile icon and select My Profile.
+2. Verify that the CE can view basic information and that all information is loaded correctly.
+3. Attempt to edit the Full Name and Email Address fields, then click Save Changes.",Email address should also be editable.,"The Full Name can be updated successfully, but the Email Address field is not editable, and displays an error message ""Something went wrong""",Medium,Medium,Devs,Addressed during the 2nd Cycle,Pending,,FALSE
+B002,IVY014,2/25/2026,HSA - Interactive Videos>Testpaper PDF ,Test Paper PDF Download – Formatting Misalignment Issue,"1. Generate Testpaper
+2. Download as PDF","The downloaded PDF should maintain proper formatting, alignment, and layout consistency as displayed in the preview.","When the test paper is downloaded as a PDF, the formatting is misaligned and does not display properly.",Low,Low,Devs,,As it is,,TRUE
+B003,RN029,2/25/2026,HSA - Revision Notes>Zooming,Verify the content after resizing the display size.,"1. Explore revision notes of any subject
+2. Zoom In and Zoom Out","Revision Notes should resize along with the page when zooming, maintaining a consistent layout.","When the user zooms out on the Revision Notes page, the entire page scales accordingly; however, the Revision Notes section does not zoom out and remains at the original size, resulting in an inconsistent and broken layout.",Medium,Medium,Devs,Addressed during the 2nd Cycle,FIxed,,TRUE
+B004,G005,2/25/2026,HSA - Get One Answer a day,Verify if the contents are accordingly or not,"1. Select AS/A Level Accounting
+2. Choose Cost and Management Accounting (AS Level)",Contents should appear correctly without any latex error,"Latex is exposed on A level accounting and on the quotation only ("")",High,High,Devs,Addressed during the 2nd Cycle,FIxed,,TRUE
+B005,TP013,2/26/2026,HSA - IGCSE Competency Evaluator,Start Test Button Disabled After Clicking “Attempt Test” in Competency Evaluator,"1. Go to IGCSE
+2. Click on Testpaper
+3. Select Competency Evaluator
+4. Click on any chapter (e.g.,IGCSE- A.Maths Chapter 2 – Quadratic Functions)
+5. Click on Attempt Test
+6. Observe the Start Test button",The Start Test button should be enabled and allow the user to begin the test.,The Start Test button is disabled and cannot be clicked.,High,High,Devs,IGCSE_Competancy Evaluator.mp4,FIxed,,TRUE
+,,,,,,,,,,,,,,FALSE
+,,,,,,,,,,,,,,FALSE
+,,,,,,,,,,,,,,FALSE
+,,,,,,,,,,,,,,FALSE
+,,,,,,,,,,,,,,FALSE
+,,,,,,,,,,,,,,FALSE
+,,,,,,,,,,,,,,FALSE
+,,,,,,,,,,,,,,FALSE
+,,,,,,,,,,,,,,FALSE
+,,,,,,,,,,,,,,FALSE
+,,,,,,,,,,,,,,FALSE
+,,,,,,,,,,,,,,FALSE
+,,,,,,,,,,,,,,FALSE
+,,,,,,,,,,,,,,FALSE
+,,,,,,,,,,,,,,FALSE
+,,,,,,,,,,,,,,FALSE
+,,,,,,,,,,,,,,FALSE
+,,,,,,,,,,,,,,FALSE
+,,,,,,,,,,,,,,FALSE
+,,,,,,,,,,,,,,FALSE

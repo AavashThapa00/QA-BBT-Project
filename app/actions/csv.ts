@@ -209,6 +209,7 @@ export async function uploadCSV(
           "assigned to",
           "assignedTo",
         ]);
+        const normalizedAssignedTo = assignedTo?.trim() || null;
 
         const statusStr = extractColumnValue(validatedRow, [
           "Status",
@@ -337,7 +338,7 @@ export async function uploadCSV(
           actualResult: actualResult || "N/A",
           severity,
           priority,
-          assignedTo: assignedTo || null,
+          assignedTo: normalizedAssignedTo,
           status,
           dateFixed,
           qcStatusBbt,

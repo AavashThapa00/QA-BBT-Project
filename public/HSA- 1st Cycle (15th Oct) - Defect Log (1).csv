@@ -1,0 +1,191 @@
+Bug ID,Test Case ID,Date Reported,Module / Component,Summary / Title,Description / Steps to Reproduce,Expected Result,Actual Result,Severity,Priority,Assigned To,Remarks / Notes,Status,Date Fixed ,QC Status by BBT,
+BUG-001,TC006,10/15/2025,HSA - Registration,Registration fails to show network error message,"1. Disconnect internet.
+2. Fill valid registration details.
+3. Click on “Sign Up.”",System should show “Network error” or “Unable to connect.”,Page kept buffering with no message shown.,Major,Medium,Frontend,Add proper network failure handling message,FIxed,10/29/2025,TRUE,
+BUG-002,TC007,10/15/2025,HSA - Registration,Missing redirect after successful registration,"1. Go to registration page.
+2. Enter valid name, email, and password.
+3. Click “Sign Up.”
+4. Observe behavior after success message.",System should show success message and redirect to login page.,Success message displayed but no redirection occurred.,Major,Medium,Frontend,Implement redirect after successful registration.,As it is,10/29/2025,TRUE,
+BUG-003,TC008,10/15/2025,HSA - Registration,Navigation inconsistency between login and register buttons,"1. Click on the Login button in the navigation bar.
+2. Click on the “Register for Free” button below the login/register section.",Clicking “Register for Free” should open the Registration Page.,It opens the Login section instead of registration page.,Minor,Medium,Frontend,Fix navigation routing for “Register for Free” button.,FIxed,10/15/2025,TRUE,
+BUG-004,TC018,10/15/2025,HSA - Login,No network error handling on login attempt,"1. Disconnect internet.
+2. Enter valid credentials.
+3. Click “Login.”",System should show “Network error” or “Unable to connect.”,Page kept buffering without any message.,Major,Medium,Frontend,Add network connection detection and display appropriate message.,FIxed,10/29/2025,TRUE,
+BUG-005,-,10/16/2025,HSA - Forgot Password,No forgot Password Button,-,Forgot Password should display in the login page,Forgot Password is not displayed in the login page,Major,Major,Frontend,Forgot password is a necessary feature which is needed asap,FIxed,10/28/2025,TRUE,
+BUG-006,TC026,10/15/2025,HSA - Forgot Password,Reset email link redirects to incorrect page,"1. Open received reset email.
+2. Click on the reset link.",Should redirect to password reset form page.,Redirects to login page instead.,Medium,Major,Frontend,it redirects to app.homeschool.asia if you are still logged into it if you iniate forgot password from homeschool.asia,FIxed,,FALSE,
+BUG-007,TC027,10/15/2025,HSA - Forgot Password,Password reset confirmation not reflected on main site (homeschool.asia),"1. Open reset form.
+2. Enter new password & confirm password.
+3. Click “Reset Password.”","- After password reset success, app.homeschool.asia redirects user to home dashboard (logged in).
+- homeschool.asia should either automatically update the UI or return to login page ready for fresh login.","- app.homeschool.asia resets successfully and logs user in.
+- homeschool.asia still shows “Password reset link is sent to the mail” message and remains on the same login screen even after reload.",High,Major,Frontend,pre condition: you have to be logged out of app.homeschool.asia first to successfully change the password ,FIxed,,FALSE,
+BUG-008,TC028,10/15/2025,HSA - Forgot Password,Expired reset link still functional,"1. Use an older reset link from email.
+2. Open in browser.",Should show “Link expired” or “Invalid token.”,"Link still opens reset form and allows submission.
+",High,Major,Frontend,Unauthorized is shown only if the link has crossed 24 hours,As it is,11/3/2025,TRUE,
+BUG-009,HSA012,10/15/2025,HSA - Dashboard,Learning Hub does not log out when user logs out from main HSA platform.,"1. Log in to the main HSA platform.
+2. Access the Learning Hub through the dashboard.
+3. Log out from the main HSA platform.
+4. Try to open the Learning Hub again.",User should be logged out from the Learning Hub after logging out from the main HSA platform.,"User remains logged in to the Learning Hub even after logging out from the main HSA platform.
+",High,Major,Frontend,"After confirmation, it should be kept that way.",As it is,11/7/2025,TRUE,
+BUG-010,HSA014,10/15/2025,HSA - Dashboard,Verify system behavior on network disconnection.,"1. Open dashboard.
+2. Disconnect internet.
+3. Click “View Reports.”",System should show “Network error” or “Unable to connect.”,"Error alert appeared; ""Something went wrong""
+",Major,Medium,Frontend,,FIxed,11/18/2025,TRUE,
+BUG-011,TC063,10/31/2025,HSA - Tutor Support,“Connect with Tutor” button does not redirect to Academic Support page; stays on the same page.,"1. Click “Connect with Tutor” button below tutor section.
+2. Observe navigation or popup.",Button should redirect to the Academic Support page.,"Remains on the same page instead of redirecting to the Academic Support page.
+",Medium,Medium,Frontend,,FIxed,11/2/2025,TRUE,
+BUG-012,TC064,10/31/2025,HSA - Tutor Support,"Clicking ""Connect with Tutor"" after empty Login should show the Registration form but redirects to the Login form instead.","1. Click on Login option but do not enter any credentials.
+2. Click on ""Connect with Tutor"".","After clicking on ""Connect with Tutor"", it should display Registration form","Login form is displayed.
+",High,Major,Frontend,,FIxed,11/2/2025,TRUE,
+BUG-013,TC033,11/2/2025,HSA - Dashboard,Verify form fields reset after closing and reopening the registration form.,"1. Click on the Register button.
+2. Fill in all the required fields.
+3. Click on the Cross (X) button to close the form.
+4. Click Register again to reopen the form.","The registration form should open blank, with all previous data cleared.","The form opens with all previously entered data still visible.
+",High,Major,Frontend,Frontend...,FIxed,11/7/2025,TRUE,
+BUG-014,TC034,11/3/2025,HSA - Dashboard,Verify behavior when a logged-in user clicks the “Register for Free” banner.,"1. Log in to the platform.
+2. Observe if “Register for Free” banner is still visible.
+3. Click on “Register for Free.”
+4. Fill in the registration form and submit.","Once logged in, “Sign up for Free” banner should not be visible. If clicked, it should redirect to the Learning Hub or show a message like “You are already registered.”","“Sign up for Free” banner still visible even after login.
+When form is submitted, shows error message “Unable to register.”
+",Medium,Medium,Frontend,"After Confirmation, the Sign Up for free banner remains unchanged even after login.",As it is,11/3/2025,TRUE,
+BUG-015,TC075,11/5/2025,"HSA - Learning Hub
+",Verify that IGCSE users see their correct curriculum when they access the platform using free tutor credits,"1. Register on the platform and select IGCSE as curriculum.
+2. Login with the same account.
+3. Click on Access with Free Tutor Credits.",The platform should display IGCSE subjects or options under the selected curriculum.,"The platform displays AS/A Levels dropdown instead of IGCSE.
+",Medium,Medium,Frontend,,FIxed,11/7/2025,TRUE,revist
+BUG-016,TC076,11/5/2025,"HSA - Learning Hub
+",Verify user access to topical videos without authorization errors.,"1. Go to Learning Hub.
+2. Scroll down to ""Topical Videos for every lesson"" section.
+3. Select any lesson.",The video should open or redirect to the respective video page.,Displays error message: “Unauthorized to perform this action.”,High,Major,Devs,"If you have selected the same grade as web, it works. For example, IGCSE on Web------> IGCSE on app",FIxed,,TRUE,
+BUG-017,TC076,11/5/2025,"HSA - Learning Hub
+",Verify correct curriculum (IGCSE) display when exploring package plans.,"1. Go to the Packages section.
+2. Select IGCSE from the curriculum options.
+3. Click on Explore Plan.
+",The package plan page should display IGCSE packages.,The package plan page displays AS/A Levels instead of IGCSE.,Medium,Medium,Devs,,As it is,,TRUE,
+BUG-018,N/A,11/6/2025,HSA - Mock Exams,"Verify that “Sign Up for Free” consistently opens the Registration form, even after visiting the Login form.","1. Click on ""Mock Exams"".
+2. Select any subject there.
+3. Click on any chapter.
+4. Scroll down and click on ""Sign up for Free"" button","The Registration form should open when Sign Up for Free is clicked, regardless of previous navigation.",The Login form opens instead of the Registration form.,Medium,Medium,Frontend,Frontend.....,FIxed,12/7/2025,TRUE,
+BUG-019,HSA030,11/6/2025,HSA - Registration,Verify registration with no internet connection,"1. Disconnect internet.
+2. Fill valid registration details.
+3. Click on “Sign Up”.",System should display “Network error” or “Unable to connect.”,"Showed ""Something went wrong""",Medium,High,Frontend,,FIxed,12/24/2025,TRUE,
+BUG-020,HSA031,11/6/2025,HSA - Registration,Verify system performance when a user attempts to register.,"1. Navigate to the Register page.
+2. Fill in all required fields with valid information.
+3. Click on the Sign Up / Register button.
+4. Observe how long the system takes to respond.",Registration should complete within a reasonable time (2–5 seconds).,Registration takes unusually long to respond / delays significantly.,High,Major,Frontend,,FIxed,12/22/2025,TRUE,
+BUG-021,HSA042,11/6/2025,HSA - Login,Verify system behavior on network failure during login,"1. Disconnect internet.
+2. Enter valid credentials.
+3. Click “Login”.",System should display “Network error” or “Unable to connect.”,Error message did not display clearly.,Major,Medium,Frontend,,FIxed,11/24/2025,TRUE,
+BUG-022,HSA048,11/6/2025,HSA - Forgot Password,Verify reset with invalid email format,"1. Click “Forgot Password.”
+2. Enter invalid email format.
+3. Click “Submit/Reset.”",Error message: “Invalid email format.”,Redirects to Forgot Password page,Medium,High,Frontend,,FIxed,12/4/2025,TRUE,
+BUG-023,HSA049,11/6/2025,HSA - Forgot Password,Verify reset with blank email field,"1. Click “Forgot Password.”
+2. Leave email blank.
+3. Click “Submit/Reset.”",Error message: “Email is required.”,Redirects to Forgot Password page,High,High,Frontend,,FIxed,12/22/2025,TRUE,
+BUG-024,HSA052,11/6/2025,HSA - Forgot Password,Verify the older reset link,"1. Use a previously received reset link after you have already reset your password using the most recent one.
+2. Try accessing it.",System should display “Link expired” or “Request a new link.”,Redirected to the homepage,Low,Medium,Frontend,Unauthorized is shown only if the link has crossed 24 hours,As it is,,TRUE,
+BUG-025,HSA053,11/6/2025,HSA - Forgot Password,Verify system response with no internet connection during reset,"1. Disconnect internet.
+2. Enter valid email.
+3. Click “Submit/Reset.”",System should show “Network error” or “Unable to connect.”,Error message did not display clearly.,High,High,Frontend,,FIxed,11/18/2025,TRUE,
+BUG-026,TC078,11/7/2025,HSA - Revision Notes,"Verify Redirection and functionality of Revison Notes ""Download"" feature","Pre Condition: Select A levels in the app
+
+1. Click on IGCSE Biology 
+2. Click on Chapter 1
+3. Click on 1.01 - Characteristics of Living Organisms
+4. Click on Download",It should redirect to the Revision Notes content page of IGCSE Biology 1.01 - Characteristics of Living Organisms of app.homeschool.asia and should be able to download ,"Redirected to the page of app.homeschool.asia
+Saying ""unauthorised to perform this action""",High,High,Frontend,,FIxed,,TRUE,
+BUG-027,TC079,11/7/2025,HSA - Revision Notes,"Verify Redirection  and functionality of Revison Notes ""Watch Videos"" feature","Pre Condition: Select A levels in the app
+
+1. Click on IGCSE Biology 
+2. CLick on Chapter 2
+3. Click on 2.01 - Cell Structure and Organisation (I)
+4. Click on Watch Videos",It should redirect to the Revision Notes content page of IGCSE Biology 1.01 - Characteristics of Living Organisms of app.homeschool.asia and should be able to watch videos ,"Redirected to the page of app.homeschool.asia
+Saying ""unauthorised to perform this action""",High,High,Devs,"Grade Switch Issue
+
+Works (IF you have selected the same Course in the app)",FIxed,,TRUE,
+BUG-028,N/A,11/20/2025,HSA - Web-to-App Redirection,Intermittent unexpected behavior during web-to-app redirection,"1.This issue has been experienced by multiple users, including myself.
+2. The issue occurs intermittently and is not consistently reproducible.
+3. When attempting to redirect from the web to the mobile app, the page behaves unexpectedly and does not follow the intended redirection flow.
+4. Refer to the attached screen recording for visual reference.",The link should smoothly redirect from the web page to the app without any unexpected behavior.,The page behaves unexpectedly during the redirection attempt. The redirection fails or behaves incorrectly (as seen in the screen recording).,Medium,To be Decided,Devs,BUG ID_028,FIxed,12/2/2025,TRUE,
+BUG-029,N/A,11/21/2025,HSA - App → Revision Notes,Revision Notes content disappears after zooming out,"1.The issue occurs inside the Revision Notes section within any chapter.
+2. The content loads normally at first.
+3. When the user zooms out even once, all the content becomes blank.
+4. Zooming back to normal does NOT restore the content.
+5. User must reload the Revision Notes page to make the content appear again.",The Revision Notes content should remain visible after zooming in or out.,"Content becomes blank after zooming out, and does not return even after restoring normal zoom. Reloading is required.",High,High,Devs,BUG ID_029.webm,FIxed,,TRUE,
+BUG-030,TC084,12/21/2025,HSA - App → Revision Notes,The chapter number and topic number are accordingly synced or not,"1. Click on Revision notes of A levels Biology
+2. Click on Chapter 7 and open the topic
+3. The topic number seems to be 6 instead of 7",The chapter and topic number should be similar inside the content,The chapter numbers outside and the inside content were different were incorrect,Major ,Major,Frontend,,FIxed,12/21/2025,TRUE,
+BUG-031,N/A,12/21/2025,HSA - Web→ Revision Notes,"Frequent topic changes cause the user session to reset, resulting in an unintended logout.","1. Log in to the web platform.
+2. Navigate to Revision Notes.
+3. Select any subject.
+4. Open one lesson and then select a few other lessons within the same subject.",The user should remain logged in while opening and navigating through multiple revision note lessons.,The user is automatically logged out while navigating through the revision notes.,Major ,Major,Devs,,FIxed,,TRUE,
+BUG-032,TC085,12/21/2025,HSA - App → Revision Notes,"There are latex errors in the contents of the revision notes
+(Seems to be in every major subject of IGCSE and A levels)",1. Explore revision notes of A levels ,The content should be visible and readable,Latex codes are being exposed in the contents,Major ,Major,Frontend,Revison Notes QC,FIxed,,TRUE,
+BUG-033,,,,,,,,,,,,,,FALSE,
+BUG-034,,,,,,,,,,,,,,FALSE,
+BUG-035,,,,,,,,,,,,,,FALSE,
+BUG-036,,,,,,,,,,,,,,FALSE,
+BUG-037,,,,,,,,,,,,,,,
+BUG-038,,,,,,,,,,,,,,,
+BUG-039,,,,,,,,,,,,,,,
+BUG-040,,,,,,,,,,,,,,,
+BUG-041,,,,,,,,,,,,,,,
+BUG-042,,,,,,,,,,,,,,,
+BUG-043,,,,,,,,,,,,,,,
+BUG-044,,,,,,,,,,,,,,,
+BUG-045,,,,,,,,,,,,,,,
+BUG-046,,,,,,,,,,,,,,,
+BUG-047,,,,,,,,,,,,,,,
+BUG-048,,,,,,,,,,,,,,,
+BUG-049,,,,,,,,,,,,,,,
+BUG-050,,,,,,,,,,,,,,,
+BUG-051,,,,,,,,,,,,,,,
+BUG-052,,,,,,,,,,,,,,,
+BUG-053,,,,,,,,,,,,,,,
+BUG-054,,,,,,,,,,,,,,,
+BUG-055,,,,,,,,,,,,,,,
+BUG-056,,,,,,,,,,,,,,,
+BUG-057,,,,,,,,,,,,,,,
+BUG-058,,,,,,,,,,,,,,,
+BUG-059,,,,,,,,,,,,,,,
+BUG-060,,,,,,,,,,,,,,,
+BUG-061,,,,,,,,,,,,,,,
+BUG-062,,,,,,,,,,,,,,,
+BUG-063,,,,,,,,,,,,,,,
+BUG-064,,,,,,,,,,,,,,,
+BUG-065,,,,,,,,,,,,,,,
+BUG-066,,,,,,,,,,,,,,,
+BUG-067,,,,,,,,,,,,,,,
+BUG-068,,,,,,,,,,,,,,,
+BUG-069,,,,,,,,,,,,,,,
+BUG-070,,,,,,,,,,,,,,,
+BUG-071,,,,,,,,,,,,,,,
+BUG-072,,,,,,,,,,,,,,,
+BUG-073,,,,,,,,,,,,,,,
+BUG-074,,,,,,,,,,,,,,,
+BUG-075,,,,,,,,,,,,,,,
+BUG-076,,,,,,,,,,,,,,,
+BUG-077,,,,,,,,,,,,,,,
+BUG-078,,,,,,,,,,,,,,,
+BUG-079,,,,,,,,,,,,,,,
+BUG-080,,,,,,,,,,,,,,,
+BUG-081,,,,,,,,,,,,,,,
+BUG-082,,,,,,,,,,,,,,,
+BUG-083,,,,,,,,,,,,,,,
+BUG-084,,,,,,,,,,,,,,,
+BUG-085,,,,,,,,,,,,,,,
+BUG-086,,,,,,,,,,,,,,,
+BUG-087,,,,,,,,,,,,,,,
+BUG-088,,,,,,,,,,,,,,,
+BUG-089,,,,,,,,,,,,,,,
+BUG-090,,,,,,,,,,,,,,,
+BUG-091,,,,,,,,,,,,,,,
+BUG-092,,,,,,,,,,,,,,,
+BUG-093,,,,,,,,,,,,,,,
+BUG-094,,,,,,,,,,,,,,,
+BUG-095,,,,,,,,,,,,,,,
+BUG-096,,,,,,,,,,,,,,,
+BUG-097,,,,,,,,,,,,,,,
+BUG-098,,,,,,,,,,,,,,,
+BUG-099,,,,,,,,,,,,,,,
+BUG-100,,,,,,,,,,,,,,,

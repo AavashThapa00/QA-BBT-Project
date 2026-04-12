@@ -37,10 +37,17 @@ export async function getTeamPerformance(): Promise<TeamMember[]> {
         high_severity_count: number;
         avg_fix_time_days: number | null;
       }>([
-        { $match: { assignedTo: { $exists: true, $ne: "" } } },
+        {
+          $match: {
+            assignedTo: { $type: "string" },
+            $expr: {
+              $gt: [{ $strLenCP: { $trim: { input: "$assignedTo" } } }, 0],
+            },
+          },
+        },
         {
           $group: {
-            _id: "$assignedTo",
+            _id: { $trim: { input: "$assignedTo" } },
             total_defects: { $sum: 1 },
             open_defects: {
               $sum: {
@@ -122,7 +129,12 @@ export async function getTeamDefectsByStatus(
     const hasTeamFilter = assignedTo !== "ALL";
     const query: Record<string, unknown> = { status: { $in: statusFilter } };
     if (hasTeamFilter) {
-      query.assignedTo = assignedTo;
+      query.$expr = {
+        $eq: [
+          { $trim: { input: { $ifNull: ["$assignedTo", ""] } } },
+          assignedTo,
+        ],
+      };
     }
 
     const result = await defects

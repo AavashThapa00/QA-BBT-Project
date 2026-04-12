@@ -1,0 +1,7 @@
+Bug ID,Date Reported,Module / Component,Description ,Expected Result,Actual Result,Severity,Priority,Assigned To,Remarks / Notes,Status,Date Fixed ,QC Status by BBT
+BUG-001,12/15/2025,Banner,Refreshes the page when clicking on it,Should not refresh or redirect to any page,Refreshes the page when clicking on it,Medium,Medium,Frontend,,FIxed,12/15/2025,TRUE
+,,,,,,,,,,,,
+BUG-002,12/15/2025,Form,Submitted a Form,Should display all information provided in the form,"Pending form (Since the email is not confirmed yet, the status is pending for the submitted form)",High ,High,Frontend,,FIxed,12/17/2025,TRUE
+BUG-003,12/15/2025,Form,Country Code and flag,Should display the UK phone number code by default,Nepal Phone number code and flag was displayed,High ,High,Frontend,,FIxed,12/15/2025,TRUE
+,,,,,,,,,,,,
+BUG-004,1/6/2026,Search FIeld,Search for any random thing that doesn't exist inside the platform,"Should display a proper text like ""No result found""",System does not display anything,Medium,Medium,Frontend,,FIxed,1/18/2026,

@@ -15,9 +15,23 @@ export default function CSVUpload({
   onUploadError,
 }: CSVUploadProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const [publicImportLoading, setPublicImportLoading] = useState(false);
+  const [publicCsvFileName, setPublicCsvFileName] = useState("");
   const [result, setResult] = useState<UploadResult | null>(null);
   const [showToast, setShowToast] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const processCsvUpload = async (csvText: string, sourceName: string) => {
+    const uploadResult = await uploadCSV(csvText, sourceName);
+    setResult(uploadResult);
+
+    if (uploadResult.success) {
+      onUploadSuccess?.(uploadResult);
+      setShowToast(true);
+    } else {
+      onUploadError?.(uploadResult.message);
+    }
+  };
 
   const handleFileChange = async (
     event: React.ChangeEvent<HTMLInputElement>,
@@ -36,15 +50,7 @@ export default function CSVUpload({
 
     try {
       const text = await file.text();
-      const uploadResult = await uploadCSV(text, file.name);
-      setResult(uploadResult);
-
-      if (uploadResult.success) {
-        onUploadSuccess?.(uploadResult);
-        setShowToast(true);
-      } else {
-        onUploadError?.(uploadResult.message);
-      }
+      await processCsvUpload(text, file.name);
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error occurred";
@@ -55,6 +61,36 @@ export default function CSVUpload({
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
+    }
+  };
+
+  const handleImportFromPublic = async () => {
+    const trimmedFileName = publicCsvFileName.trim();
+    if (!trimmedFileName || !trimmedFileName.toLowerCase().endsWith(".csv")) {
+      onUploadError?.("Please enter a valid CSV file name from public/");
+      return;
+    }
+
+    try {
+      setPublicImportLoading(true);
+      const relativePath = trimmedFileName.replace(/^\/+/, "");
+      const response = await fetch(`/${encodeURI(relativePath)}`);
+
+      if (!response.ok) {
+        throw new Error(
+          `Could not read public/${relativePath}. Check the file name and location.`,
+        );
+      }
+
+      const csvText = await response.text();
+      await processCsvUpload(csvText, relativePath);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to import CSV";
+      onUploadError?.(errorMessage);
+      setResult(null);
+    } finally {
+      setPublicImportLoading(false);
     }
   };
 
@@ -95,17 +131,48 @@ export default function CSVUpload({
             type="file"
             accept=".csv"
             onChange={handleFileChange}
-            disabled={isLoading}
+            disabled={isLoading || publicImportLoading}
             className="hidden"
           />
         </label>
       </div>
 
-      {isLoading && (
+      <div className="rounded-lg border border-(--border-color) bg-(--surface-soft) p-4">
+        <p className="text-xs font-semibold text-(--heading-color)">
+          Import from public folder
+        </p>
+        <p className="mt-1 text-xs text-(--muted-color)">
+          Enter the CSV file name exactly as stored in public/.
+        </p>
+        <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+          <input
+            type="text"
+            value={publicCsvFileName}
+            onChange={(e) => setPublicCsvFileName(e.target.value)}
+            placeholder="e.g. HSA- 1st Cycle (15th Oct) - Defect Log (1).csv"
+            className="w-full rounded-lg border border-(--border-color) bg-(--surface) px-3 py-2 text-sm text-(--text-color) outline-none transition-all focus:border-(--primary-color) focus:ring-2 focus:ring-(--primary-color)/20"
+            disabled={isLoading || publicImportLoading}
+          />
+          <button
+            type="button"
+            onClick={handleImportFromPublic}
+            disabled={
+              isLoading ||
+              publicImportLoading ||
+              !publicCsvFileName.trim().toLowerCase().endsWith(".csv")
+            }
+            className="rounded-lg bg-(--primary-color) px-4 py-2 text-sm font-semibold text-white transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {publicImportLoading ? "Importing..." : "Import public CSV"}
+          </button>
+        </div>
+      </div>
+
+      {(isLoading || publicImportLoading) && (
         <div className="flex items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 p-4">
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-emerald-200 border-t-(--primary-color)"></div>
           <span className="ml-3 font-medium text-emerald-700">
-            Processing files...
+            Processing CSV...
           </span>
         </div>
       )}

@@ -1,0 +1,64 @@
+Bug ID,Test Case ID,Date Reported,Module / Component,Summary / Title,Description / Steps to Reproduce,Expected Result,Actual Result,Severity,Priority,Assigned To,Remarks / Notes,Status,Date Fixed ,QC Status by BBT
+,KFQ - 2nd Cycle Issue doc,,,,,,,,,,,,,
+B1,AR003,2/26/2026,KFQ - Discover>Around the Kung Fu Arena>Video Challenges,Filter switching causes screen flicker and incorrect challenge display,"1. Click the ""All"" button at the top of the section.
+2. Verify both Video and Quiz-only challenges are visible in the grid.","When switching between Video Challenges and Quiz Challenges filters, the content should update immediately without any screen flickering, and the filtered challenges should be displayed correctly",The screen flickers for a few seconds when clicking on Video Challenges or Quiz Challenges before the filtered content is displayed.,Medium,Medium,Devs,previously reported,Pending,,FALSE
+B2,DB003,2/26/2026,KFQ – Homepage,Panda Logo does not redirect to top of page after scrolling,"1. Scroll down on the homepage.
+2. Click on the Panda Logo.","When the Panda Logo is clicked, the page should automatically scroll back to the top (front page).","When the Panda Logo is clicked after scrolling, the page does not return to the top/front page.",Low,Low,Devs,,Pending,,FALSE
+B3,,2/26/2026,KFQ – Flashcards,Unable to delete Flashcards – Error message related to published video appears,"1. Log in to KFQ.
+2. Navigate to Flashcards section.
+3. Click on Delete for any existing Flashcard.
+4. Confirm by clicking “Yes” on the confirmation popup (“Are you sure you want to delete the challenge?”).",The selected Flashcard should be deleted successfully after confirmation.,"After confirming deletion, an error message appears stating: “Video is already published, cannot update annotation,” and the Flashcard is not deleted.",Medium,Medium,Devs,,Pending,,FALSE
+B4,DJ012,2/27/2026,KFQ - Dojo,Dojos Page Not Reloading from Navigation,"1. Click on the “Dojos” icon in the left sidebar to load the Dojos page.
+2. Wait until the Dojos page is fully loaded.
+3. Click on the “Dojos” icon again to refresh or reopen the main dojo page.","The Dojo page should be refreshed after clicking ""Dojo"" from the navigation bar same as we refresh it from the browser","Search for any dojo that you haven't created and try to click on ""Dojos"" from navigation
+The page does not reload as it does not change but when refreshed rom the broswer itslef the  main dojo page appears",Medium,Medium,Devs,"previously reported
+
+ Dojo.mp4",Pending,,FALSE
+B5,RE009,2/27/2026,KFQ - Registration - Wifi Off,Unclear Error Message Displayed to User,"1. Disconnect internet.
+2. Fill valid registration details.
+3. Click on “Join as Sifu”.","Proper message like ""Network error. Please check your internet connection and try again.
+"" SHould be displayed same as HSA","Improper message: Something Went Wrong"" is shown, which will cause confusion to the user",Low,Low,Devs,previously reported,Pending,,FALSE
+B6,FP009,2/27/2026,KFQ - Forgot Password - Wifi Off,Unclear Error Message Displayed to User,"1. Disconnect internet.
+2. Enter valid email.
+3. Click “Submit/Reset.”","Proper message like ""Network error. Please check your internet connection and try again.
+"" SHould be displayed same as HSA","Improper message: Something Went Wrong"" is shown, which will cause confusion to the user",Low,Low,Devs,previously reported,Pending,,FALSE
+B7,LG007,2/27/2026,KFQ - Login- Wifi off,Unclear Error Message Displayed to User,"1. Disconnect internet.
+2. Enter valid credentials.
+3. Click “Login”.","Proper message like ""Network error. Please check your internet connection and try again.
+"" SHould be displayed same as HSA","Improper message: Something Went Wrong"" is shown, which will cause confusion to the user",Low,Low,Devs,previously reported,Pending,,FALSE
+B8,DB007,2/27/2026,KFQ – Dashboard,Freemium Sifu Guide video displayed on Premium account,"1. Go to the Dashboard page.
+2. Click on the blue “View Sifu Guide” card.",A Premium account user should see the Premium version of the Sifu Guide content.,The system still displays the “Freemium Sifu Guide” video despite the account being Premium.,Medium,Medium,Frontend,,FIxed,,TRUE
+B9,-,2/27/2026,KFQ - Live Host Quiz / View Dojo Details,“View Dojo Details” button not clickable during Live Quiz,"Join and start a Livie Quiz.
+
+While attempting the quiz, click on the “View Dojo Details” button.",The “View Dojo Details” button should be clickable and redirect the user to the Dojo details page.,The “View Dojo Details” button is not clickable and does not respond when clicked.,Medium,Medium,Devs,,Pending,,FALSE
+B10,-,2/27/2026,"KFQ - Mobile View
+KFQ- 2nd Cycle (26th Feb)",,,,,,,Devs,,Pending,,FALSE
+B11,-,2/27/2026,KFQ – Live Host Quiz / Leaderboard,User appears on Leaderboard despite leaving quiz before starting,"Join a Quiz.
+Leave/exit the quiz before clicking “Start” or before answering any questions.
+Complete the quiz session from another account or wait until the quiz ends.
+Check the final Leaderboard.",Users who leave the quiz before starting or attempting any questions should not appear on the final Leaderboard.,The user’s name is displayed on the final Leaderboard even though they exited the quiz before starting.,Low,Low,Devs,,Pending,,FALSE
+B12,-,2/27/2026,KFQ – Live Host Quiz / Leaderboard,Quiz completion message displayed even when user does not attempt any questions,"Enter/Join a Quiz.
+
+Do not click “Start” or do not answer any questions.
+
+Wait until the timer runs out.","If the user does not attempt or start the quiz, the system should not display a “successfully completed” message. Instead, it should indicate that the quiz was not attempted or was left unanswered.","When the timer ends, the system displays a message such as “You have successfully completed the quiz…” even though no questions were attempted.",Low,Low,Devs,,Pending,,FALSE
+B13,-,2/27/2026,KFQ – Live Host Quiz / Dojo Insight Deletion,Blank Leaderboard for students and Room Session error for teacher after deleting Dojo,"Conduct and complete a Quiz in a Dojo session.
+
+After quiz completion, the teacher deletes the Dojo.
+
+Check the student screen.
+
+Check the teacher screen.","After deleting the Dojo, students should either be redirected appropriately or shown a proper messaging. The teacher should not receive any system error message.","On the student screen, a blank Leaderboard page is displayed.
+On the teacher screen, an error message appears stating: “Room Session with id 699d5d2b02157……”",Low,Low,Devs,,Pending,,FALSE
+B14,,,,,,,,,,,,,,FALSE
+B15,,,,,,,,,,,,,,FALSE
+B16,,,,,,,,,,,,,,FALSE
+B17,,,,,,,,,,,,-,,FALSE
+B18,,,,,,,,,,,,,,FALSE
+B19,,,,,,,,,,,,,,FALSE
+B20,,,,,,,,,,,,,,FALSE
+B21,,,,,,,,,,,,,,FALSE
+B22,,,,,,,,,,,,,,FALSE
+B23,,,,,,,,,,,,,,FALSE
+B24,,,,,,,,,,,,,,FALSE
+B25,,,,,,,,,,,,,,FALSE
