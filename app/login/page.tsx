@@ -1,48 +1,52 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useEffect, useMemo, useState } from "react";
+import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
-import {
-  requestLoginCodeAction,
-  verifyLoginCodeAction,
-} from "@/app/actions/auth";
+import { loginAction } from "@/app/actions/auth";
 
-type AuthState = {
+type LoginState = {
   success?: boolean;
   message?: string;
-  challengeId?: string;
-  email?: string;
-  code?: string;
 };
 
 const fieldClassName =
   "w-full rounded-xl border border-(--border-color) bg-(--surface-soft) px-3 py-2.5 text-(--text-color) shadow-sm transition-colors duration-200 placeholder:text-[#9CA3AF] focus:border-(--primary-color) focus:outline-none focus:ring-2 focus:ring-(--primary-color)/20";
 
-function CredentialsSubmitButton() {
+function SignInSubmitButton() {
   const { pending } = useFormStatus();
 
   return (
     <button
       type="submit"
       disabled={pending}
-      className="w-full cursor-pointer rounded-xl bg-(--primary-color) px-4 py-3 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(76,175,80,0.16)] transition-colors duration-200 hover:bg-(--primary-hover-color) disabled:cursor-not-allowed disabled:opacity-60"
+      className="relative w-full cursor-pointer rounded-xl bg-(--primary-color) px-4 py-3 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(76,175,80,0.16)] transition-colors duration-200 hover:bg-(--primary-hover-color) disabled:cursor-not-allowed disabled:opacity-60"
     >
-      {pending ? "Sending code..." : "Send verification code"}
-    </button>
-  );
-}
-
-function VerifySubmitButton() {
-  const { pending } = useFormStatus();
-
-  return (
-    <button
-      type="submit"
-      disabled={pending}
-      className="w-full cursor-pointer rounded-xl bg-(--primary-color) px-4 py-3 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(76,175,80,0.16)] transition-colors duration-200 hover:bg-(--primary-hover-color) disabled:cursor-not-allowed disabled:opacity-60"
-    >
-      {pending ? "Verifying..." : "Verify and sign in"}
+      <span className={pending ? "opacity-0" : "opacity-100"}>Sign in</span>
+      {pending && (
+        <span className="absolute inset-0 flex items-center justify-center gap-2">
+          <svg
+            className="h-4 w-4 animate-spin"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="3"
+              fill="none"
+            />
+            <path
+              className="opacity-90"
+              fill="currentColor"
+              d="M22 12a10 10 0 0 1-10 10v-3a7 7 0 0 0 7-7h3z"
+            />
+          </svg>
+        </span>
+      )}
     </button>
   );
 }
@@ -83,40 +87,10 @@ function GoogleContinueButton() {
 }
 
 export default function LoginPage() {
-  const [step, setStep] = useState<"credentials" | "code">("credentials");
-  const [challengeId, setChallengeId] = useState("");
-  const [loginEmail, setLoginEmail] = useState("");
-  const [devCode, setDevCode] = useState<string | null>(null);
-
-  const [requestState, requestAction] = useActionState<
-    AuthState | null,
-    FormData
-  >(async (_prevState, formData) => requestLoginCodeAction(formData), null);
-
-  const [verifyState, verifyAction] = useActionState<
-    AuthState | null,
-    FormData
-  >(async (_prevState, formData) => verifyLoginCodeAction(formData), null);
-
-  useEffect(() => {
-    if (
-      requestState?.success &&
-      requestState.challengeId &&
-      requestState.email
-    ) {
-      setChallengeId(requestState.challengeId);
-      setLoginEmail(requestState.email);
-      setDevCode(requestState.code || null);
-      setStep("code");
-    }
-  }, [requestState]);
-
-  const maskedEmail = useMemo(() => {
-    if (!loginEmail.includes("@")) return loginEmail;
-    const [name, domain] = loginEmail.split("@");
-    if (name.length <= 2) return `${name[0] || "*"}*@${domain}`;
-    return `${name.slice(0, 2)}${"*".repeat(Math.max(1, name.length - 2))}@${domain}`;
-  }, [loginEmail]);
+  const [state, formAction] = useActionState<LoginState | null, FormData>(
+    async (_prevState, formData) => loginAction(formData),
+    null,
+  );
 
   return (
     <div className="min-h-screen bg-(--page-background) px-6 py-10">
@@ -141,115 +115,50 @@ export default function LoginPage() {
               <span className="h-px flex-1 bg-(--border-color)" />
             </div>
 
-            {step === "credentials" ? (
-              <form action={requestAction} className="space-y-4">
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-(--heading-color)">
-                    Email
-                  </label>
-                  <input
-                    name="email"
-                    type="email"
-                    required
-                    className={fieldClassName}
-                    placeholder="name@company.com"
-                  />
+            <form action={formAction} className="space-y-4">
+              <div>
+                <label className="mb-2 block text-sm font-medium text-(--heading-color)">
+                  Email
+                </label>
+                <input
+                  name="email"
+                  type="email"
+                  required
+                  className={fieldClassName}
+                  placeholder="name@company.com"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-(--heading-color)">
+                  Password
+                </label>
+                <input
+                  name="password"
+                  type="password"
+                  required
+                  className={fieldClassName}
+                  placeholder="••••••••"
+                />
+              </div>
+
+              {state?.message && !state.success && (
+                <div className="rounded-xl border border-[rgba(229,57,53,0.18)] bg-[rgba(229,57,53,0.08)] p-3 text-sm text-(--danger-color)">
+                  {state.message}
                 </div>
+              )}
 
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-(--heading-color)">
-                    Password
-                  </label>
-                  <input
-                    name="password"
-                    type="password"
-                    required
-                    className={fieldClassName}
-                    placeholder="••••••••"
-                  />
-                </div>
-
-                {requestState?.message && !requestState.success && (
-                  <div className="rounded-xl border border-[rgba(229,57,53,0.18)] bg-[rgba(229,57,53,0.08)] p-3 text-sm text-(--danger-color)">
-                    {requestState.message}
-                  </div>
-                )}
-
-                <div className="flex justify-end">
-                  <Link
-                    href="/forgot-password"
-                    className="text-xs font-medium text-(--heading-color) transition-colors hover:text-(--primary-color)"
-                  >
-                    Forgot password?
-                  </Link>
-                </div>
-
-                <CredentialsSubmitButton />
-              </form>
-            ) : (
-              <form action={verifyAction} className="space-y-4">
-                <input type="hidden" name="challengeId" value={challengeId} />
-
-                <div className="rounded-xl border border-[rgba(76,175,80,0.18)] bg-[rgba(165,214,167,0.12)] p-3 text-sm text-(--muted-color)">
-                  We sent a code to{" "}
-                  <span className="font-semibold text-(--heading-color)">
-                    {maskedEmail}
-                  </span>
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-(--heading-color)">
-                    Verification code
-                  </label>
-                  <input
-                    name="code"
-                    type="text"
-                    inputMode="numeric"
-                    pattern="[0-9]{6}"
-                    minLength={6}
-                    maxLength={6}
-                    required
-                    className={`${fieldClassName} text-center tracking-[0.3em]`}
-                    placeholder="123456"
-                  />
-                </div>
-
-                {verifyState?.message && (
-                  <div className="rounded-xl border border-[rgba(229,57,53,0.18)] bg-[rgba(229,57,53,0.08)] p-3 text-sm text-(--danger-color)">
-                    {verifyState.message}
-                  </div>
-                )}
-
-                {requestState?.success && requestState.message && (
-                  <div className="rounded-xl border border-[rgba(76,175,80,0.18)] bg-[rgba(76,175,80,0.08)] p-3 text-sm text-(--heading-color)">
-                    {requestState.message}
-                  </div>
-                )}
-
-                {devCode && (
-                  <div className="rounded-xl border border-[rgba(251,140,0,0.18)] bg-[rgba(251,140,0,0.08)] p-3 text-xs text-(--warning-color)">
-                    Development code:{" "}
-                    <span className="font-semibold text-(--warning-color)">
-                      {devCode}
-                    </span>
-                  </div>
-                )}
-
-                <VerifySubmitButton />
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setStep("credentials");
-                    setChallengeId("");
-                    setDevCode(null);
-                  }}
-                  className="w-full cursor-pointer rounded-xl border border-(--border-color) py-2.5 text-sm font-medium text-(--heading-color) transition-colors hover:border-(--primary-color) hover:bg-[rgba(165,214,167,0.12)]"
+              <div className="flex justify-end">
+                <Link
+                  href="/forgot-password"
+                  className="text-sm font-medium text-(--heading-color) transition-colors hover:text-(--primary-color)"
                 >
-                  Use different credentials
-                </button>
-              </form>
-            )}
+                  Forgot password?
+                </Link>
+              </div>
+
+              <SignInSubmitButton />
+            </form>
           </div>
         </div>
       </div>

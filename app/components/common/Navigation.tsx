@@ -37,7 +37,9 @@ const navItems: NavItem[] = [
 export default function Navigation() {
   const pathname = usePathname();
   const [isAuthed, setIsAuthed] = useState(false);
-  const [authRole, setAuthRole] = useState<"super_admin" | "admin" | null>(null);
+  const [authRole, setAuthRole] = useState<"super_admin" | "admin" | null>(
+    null,
+  );
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
@@ -96,13 +98,13 @@ export default function Navigation() {
     return () => document.removeEventListener("keydown", onKeyDown);
   }, []);
 
-  // Keep auth screens distraction-free.
-  if (pathname === "/login") {
-    return null;
-  }
-
   useEffect(() => {
-    if (!mobileNavOpen) return;
+    if (
+      !mobileNavOpen ||
+      pathname === "/login" ||
+      pathname === "/forgot-password"
+    )
+      return;
 
     const originalOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -112,21 +114,30 @@ export default function Navigation() {
     };
   }, [mobileNavOpen]);
 
+  // Keep auth screens distraction-free.
+  if (pathname === "/login" || pathname === "/forgot-password") {
+    return null;
+  }
+
   return (
     <nav className="sticky top-0 z-50 backdrop-blur-xl bg-slate-950/60 border-b border-slate-800/60 shadow-2xl shadow-slate-950/30">
       <div className="w-full px-2 sm:px-4 lg:px-10 xl:px-12">
         <div className="flex items-center justify-between min-h-16 py-2.5 gap-2 sm:gap-3">
           {/* Logo/Title */}
-          <div className="flex-shrink-0 min-w-0">
+          <div className="shrink-0 min-w-0">
             <Link href="/" className="flex items-center gap-3 group">
-              <div className="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/30 ring-1 ring-white/10 transition-all duration-300 group-hover:scale-105 group-hover:shadow-purple-500/40">
-                <span className="text-white font-black text-sm tracking-wide">BBT</span>
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-linear-to-br from-blue-500 via-purple-500 to-pink-500 shadow-lg shadow-blue-500/30 ring-1 ring-white/10 transition-all duration-300 group-hover:scale-105 group-hover:shadow-purple-500/40 sm:h-10 sm:w-10">
+                <span className="text-white font-black text-sm tracking-wide">
+                  BBT
+                </span>
               </div>
               <div className="hidden sm:block leading-tight">
-                <p className="text-white font-semibold text-sm md:text-base bg-gradient-to-r from-blue-300 to-purple-300 bg-clip-text text-transparent">
+                <p className="text-sm font-semibold text-white md:text-base">
                   Black Box Testing
                 </p>
-                <p className="hidden md:block text-slate-400 text-xs">QA Intelligence Platform</p>
+                <p className="hidden md:block text-slate-400 text-xs">
+                  QA Intelligence Platform
+                </p>
               </div>
             </Link>
           </div>
@@ -144,9 +155,10 @@ export default function Navigation() {
                     href={item.href}
                     className={`
                       flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-300 whitespace-nowrap border
-                      ${isActive
-                        ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white border-blue-500/40 shadow-lg shadow-blue-500/25"
-                        : "text-slate-300 border-transparent hover:bg-slate-800/70 hover:border-slate-700 hover:text-white"
+                      ${
+                        isActive
+                          ? "bg-linear-to-r from-blue-600 to-purple-600 text-white border-blue-500/40 shadow-lg shadow-blue-500/25"
+                          : "text-slate-300 border-transparent hover:bg-slate-800/70 hover:border-slate-700 hover:text-white"
                       }
                     `}
                   >
@@ -211,9 +223,10 @@ export default function Navigation() {
                 href="/login"
                 className={`
                   flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-300 border
-                  ${pathname === "/login"
-                    ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white border-blue-500/40 shadow-lg shadow-blue-500/25"
-                    : "text-slate-300 border-transparent hover:bg-slate-800/70 hover:border-slate-700 hover:text-white"
+                  ${
+                    pathname === "/login"
+                      ? "bg-linear-to-r from-blue-600 to-purple-600 text-white border-blue-500/40 shadow-lg shadow-blue-500/25"
+                      : "text-slate-300 border-transparent hover:bg-slate-800/70 hover:border-slate-700 hover:text-white"
                   }
                 `}
               >
@@ -247,18 +260,27 @@ export default function Navigation() {
               type="button"
               onClick={() => setMobileNavOpen((open) => !open)}
               className="flex items-center justify-center p-2 rounded-xl text-slate-300 border border-transparent hover:bg-slate-800/70 hover:border-slate-700 hover:text-white"
-              aria-label={mobileNavOpen ? "Close navigation menu" : "Open navigation menu"}
+              aria-label={
+                mobileNavOpen ? "Close navigation menu" : "Open navigation menu"
+              }
               aria-expanded={mobileNavOpen}
               aria-controls="mobile-navigation-panel"
             >
-              {mobileNavOpen ? <HiX className="w-5 h-5" /> : <HiMenu className="w-5 h-5" />}
+              {mobileNavOpen ? (
+                <HiX className="w-5 h-5" />
+              ) : (
+                <HiMenu className="w-5 h-5" />
+              )}
             </button>
           </div>
         </div>
       </div>
 
       {mobileNavOpen && (
-        <div className="lg:hidden fixed inset-0 z-40 bg-slate-950/70 backdrop-blur-sm" onClick={() => setMobileNavOpen(false)}>
+        <div
+          className="lg:hidden fixed inset-0 z-40 bg-slate-950/70 backdrop-blur-sm"
+          onClick={() => setMobileNavOpen(false)}
+        >
           <div
             id="mobile-navigation-panel"
             className="absolute right-0 top-0 h-full w-[min(85vw,360px)] bg-slate-900 border-l border-slate-700/70 shadow-2xl p-4 overflow-y-auto"
@@ -288,9 +310,10 @@ export default function Navigation() {
                     onClick={() => setMobileNavOpen(false)}
                     className={`
                       flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium border transition-all duration-200
-                      ${isActive
-                        ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white border-blue-500/40 shadow-lg shadow-blue-500/20"
-                        : "text-slate-200 border-slate-700/60 hover:bg-slate-800/80 hover:border-slate-600"
+                      ${
+                        isActive
+                          ? "bg-linear-to-r from-blue-600 to-purple-600 text-white border-blue-500/40 shadow-lg shadow-blue-500/20"
+                          : "text-slate-200 border-slate-700/60 hover:bg-slate-800/80 hover:border-slate-600"
                       }
                     `}
                   >
@@ -350,4 +373,3 @@ export default function Navigation() {
     </nav>
   );
 }
-
