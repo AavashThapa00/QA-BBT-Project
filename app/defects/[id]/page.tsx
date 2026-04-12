@@ -5,7 +5,13 @@ import { useRouter, useParams } from "next/navigation";
 import { getDefectById } from "@/app/actions/detailsActions";
 import { Defect } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
-import { HiArrowLeft, HiCheckCircle, HiExclamationCircle, HiClock } from "react-icons/hi";
+import {
+  HiArrowLeft,
+  HiCheckCircle,
+  HiExclamationCircle,
+  HiClock,
+} from "react-icons/hi";
+import AppButton from "@/app/components/common/AppButton";
 
 const STATUS_LABELS: Record<string, string> = {
   OPEN: "Open",
@@ -15,19 +21,41 @@ const STATUS_LABELS: Record<string, string> = {
   AS_IT_IS: "As it is",
 };
 
-const SEVERITY_COLORS: Record<string, { bg: string; text: string; label: string }> = {
-  MAJOR: { bg: "bg-red-900", text: "text-red-200", label: "Major" },
-  HIGH: { bg: "bg-orange-900", text: "text-orange-200", label: "High" },
-  MEDIUM: { bg: "bg-yellow-900", text: "text-yellow-200", label: "Medium" },
-  LOW: { bg: "bg-green-900", text: "text-green-200", label: "Low" },
+const SEVERITY_COLORS: Record<
+  string,
+  { bg: string; text: string; label: string }
+> = {
+  MAJOR: { bg: "bg-rose-100", text: "text-rose-700", label: "Major" },
+  HIGH: { bg: "bg-orange-100", text: "text-orange-700", label: "High" },
+  MEDIUM: { bg: "bg-amber-100", text: "text-amber-700", label: "Medium" },
+  LOW: { bg: "bg-emerald-100", text: "text-emerald-700", label: "Low" },
 };
 
-const STATUS_COLORS_MAP: Record<string, { bg: string; text: string; icon: React.ReactNode }> = {
-  OPEN: { bg: "bg-blue-900", text: "text-blue-200", icon: <HiExclamationCircle /> },
-  IN_PROGRESS: { bg: "bg-purple-900", text: "text-purple-200", icon: <HiClock /> },
-  CLOSED: { bg: "bg-green-900", text: "text-green-200", icon: <HiCheckCircle /> },
-  ON_HOLD: { bg: "bg-red-900", text: "text-red-200", icon: <HiClock /> },
-  AS_IT_IS: { bg: "bg-slate-700", text: "text-slate-200", icon: <HiCheckCircle /> },
+const STATUS_COLORS_MAP: Record<
+  string,
+  { bg: string; text: string; icon: React.ReactNode }
+> = {
+  OPEN: {
+    bg: "bg-sky-100",
+    text: "text-sky-700",
+    icon: <HiExclamationCircle />,
+  },
+  IN_PROGRESS: {
+    bg: "bg-indigo-100",
+    text: "text-indigo-700",
+    icon: <HiClock />,
+  },
+  CLOSED: {
+    bg: "bg-emerald-100",
+    text: "text-emerald-700",
+    icon: <HiCheckCircle />,
+  },
+  ON_HOLD: { bg: "bg-rose-100", text: "text-rose-700", icon: <HiClock /> },
+  AS_IT_IS: {
+    bg: "bg-slate-100",
+    text: "text-slate-700",
+    icon: <HiCheckCircle />,
+  },
 };
 
 export default function DefectDetailPage() {
@@ -61,10 +89,10 @@ export default function DefectDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+      <div className="flex min-h-screen items-center justify-center bg-(--page-background)">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-2 border-slate-700 border-t-blue-500 mx-auto mb-4"></div>
-          <p className="text-slate-400">Loading defect details...</p>
+          <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-2 border-emerald-200 border-t-(--primary-color)"></div>
+          <p className="text-(--muted-color)">Loading defect details...</p>
         </div>
       </div>
     );
@@ -72,23 +100,21 @@ export default function DefectDetailPage() {
 
   if (error || !defect) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 overflow-hidden relative">
-        <div className="fixed inset-0 opacity-30 -z-10">
-          <div className="absolute top-20 left-1/4 w-80 h-80 bg-blue-600 rounded-full mix-blend-multiply filter blur-3xl animate-blob"></div>
-          <div className="absolute top-1/2 right-1/3 w-80 h-80 bg-indigo-600 rounded-full mix-blend-multiply filter blur-3xl animate-blob" style={{ animationDelay: '2s' }}></div>
-          <div className="absolute bottom-20 left-1/2 w-80 h-80 bg-cyan-600 rounded-full mix-blend-multiply filter blur-3xl animate-blob" style={{ animationDelay: '4s' }}></div>
-        </div>
-        <div className="w-full px-4 sm:px-6 lg:px-10 xl:px-12 py-8">
-          <button
+      <div className="min-h-screen bg-(--page-background)">
+        <div className="w-full px-4 py-8 sm:px-6 lg:px-10 xl:px-12">
+          <AppButton
             onClick={() => router.back()}
-            className="mb-6 flex items-center gap-2 px-4 py-2 text-blue-400 hover:text-cyan-300 transition-colors"
+            variant="secondary"
+            className="mb-6"
           >
             <HiArrowLeft className="w-5 h-5" />
             Back
-          </button>
-          <div className="backdrop-blur-xl bg-slate-900/50 rounded-2xl border border-slate-800/50 p-8 text-center shadow-2xl">
-            <HiExclamationCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
-            <p className="text-slate-300 text-lg">{error || "Defect not found"}</p>
+          </AppButton>
+          <div className="rounded-2xl border border-(--border-color) bg-(--surface) p-8 text-center shadow-sm">
+            <HiExclamationCircle className="mx-auto mb-4 h-12 w-12 text-rose-500" />
+            <p className="text-lg text-(--text-color)">
+              {error || "Defect not found"}
+            </p>
           </div>
         </div>
       </div>
@@ -96,145 +122,191 @@ export default function DefectDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 overflow-hidden relative">
-      <div className="fixed inset-0 opacity-30 -z-10">
-        <div className="absolute top-20 left-1/4 w-80 h-80 bg-blue-600 rounded-full mix-blend-multiply filter blur-3xl animate-blob"></div>
-        <div className="absolute top-1/2 right-1/3 w-80 h-80 bg-indigo-600 rounded-full mix-blend-multiply filter blur-3xl animate-blob" style={{ animationDelay: '2s' }}></div>
-        <div className="absolute bottom-20 left-1/2 w-80 h-80 bg-cyan-600 rounded-full mix-blend-multiply filter blur-3xl animate-blob" style={{ animationDelay: '4s' }}></div>
-      </div>
-
+    <div className="min-h-screen bg-(--page-background)">
       {/* Header */}
-      <div className="backdrop-blur-xl bg-slate-900/50 shadow-sm border-b border-slate-800/50 sticky top-0 z-40">
-        <div className="w-full px-4 sm:px-6 lg:px-10 xl:px-12 py-6">
-          <button
+      <div className="sticky top-0 z-40 border-b border-(--border-color) bg-(--surface) shadow-sm">
+        <div className="w-full px-4 py-6 sm:px-6 lg:px-10 xl:px-12">
+          <AppButton
             onClick={() => router.back()}
-            className="mb-4 flex items-center gap-2 px-4 py-2 text-blue-400 hover:text-cyan-300 transition-all duration-300 rounded-lg hover:bg-blue-500/10 group"
+            variant="secondary"
+            className="group mb-4"
           >
             <HiArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
             Back to Defects
-          </button>
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">Defect Details</h1>
-          <p className="text-slate-400 mt-2">
-            {defect.testCaseId ? `Test Case ID: ${defect.testCaseId}` : `ID: ${defect.id}`}
+          </AppButton>
+          <h1 className="text-2xl font-bold text-(--heading-color) sm:text-3xl lg:text-4xl">
+            Defect Details
+          </h1>
+          <p className="mt-2 text-(--muted-color)">
+            {defect.testCaseId
+              ? `Test Case ID: ${defect.testCaseId}`
+              : `ID: ${defect.id}`}
           </p>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="w-full px-4 sm:px-6 lg:px-10 xl:px-12 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="w-full px-4 py-8 sm:px-6 lg:px-10 xl:px-12">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           {/* Main Details */}
           <div className="lg:col-span-2 space-y-6">
             {/* Status & Severity */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="backdrop-blur-xl bg-slate-900/50 rounded-2xl border border-slate-800/50 p-6 shadow-2xl hover:shadow-blue-500/10 transition-all duration-300">
-                <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-3">Status</h3>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="rounded-2xl border border-(--border-color) bg-(--surface) p-6 shadow-sm transition-all duration-300 hover:border-emerald-200">
+                <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-(--muted-color)">
+                  Status
+                </h3>
                 <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-lg ${STATUS_COLORS_MAP[defect.status].bg}`}>
+                  <div
+                    className={`p-2 rounded-lg ${STATUS_COLORS_MAP[defect.status].bg}`}
+                  >
                     <div className={STATUS_COLORS_MAP[defect.status].text}>
                       {STATUS_COLORS_MAP[defect.status].icon}
                     </div>
                   </div>
                   <div>
-                    <p className="text-white font-semibold text-lg">
+                    <p className="text-lg font-semibold text-(--text-color)">
                       {STATUS_LABELS[defect.status] || defect.status}
                     </p>
                   </div>
                 </div>
               </div>
 
-              <div className="backdrop-blur-xl bg-slate-900/50 rounded-2xl border border-slate-800/50 p-6 shadow-2xl hover:shadow-blue-500/10 transition-all duration-300">
-                <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-3">Severity</h3>
+              <div className="rounded-2xl border border-(--border-color) bg-(--surface) p-6 shadow-sm transition-all duration-300 hover:border-emerald-200">
+                <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-(--muted-color)">
+                  Severity
+                </h3>
                 <div className="flex items-center gap-3">
-                  <div className={`px-3 py-1 rounded-full ${SEVERITY_COLORS[defect.severity]?.bg} ${SEVERITY_COLORS[defect.severity]?.text}`}>
-                    <p className="font-semibold text-sm">{SEVERITY_COLORS[defect.severity]?.label || defect.severity}</p>
+                  <div
+                    className={`px-3 py-1 rounded-full ${SEVERITY_COLORS[defect.severity]?.bg} ${SEVERITY_COLORS[defect.severity]?.text}`}
+                  >
+                    <p className="font-semibold text-sm">
+                      {SEVERITY_COLORS[defect.severity]?.label ||
+                        defect.severity}
+                    </p>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Basic Information */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="backdrop-blur-xl bg-slate-900/50 rounded-2xl border border-slate-800/50 p-6 shadow-2xl hover:shadow-blue-500/10 transition-all duration-300">
-                <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-2">Module</h3>
-                <p className="text-white text-lg font-medium">{defect.module}</p>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="rounded-2xl border border-(--border-color) bg-(--surface) p-6 shadow-sm transition-all duration-300 hover:border-emerald-200">
+                <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-(--muted-color)">
+                  Module
+                </h3>
+                <p className="text-lg font-medium text-(--text-color)">
+                  {defect.module}
+                </p>
               </div>
 
-              <div className="backdrop-blur-xl bg-slate-900/50 rounded-2xl border border-slate-800/50 p-6 shadow-2xl hover:shadow-blue-500/10 transition-all duration-300">
-                <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-2">Priority</h3>
-                <p className="text-white text-lg font-medium">{defect.priority}</p>
+              <div className="rounded-2xl border border-(--border-color) bg-(--surface) p-6 shadow-sm transition-all duration-300 hover:border-emerald-200">
+                <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-(--muted-color)">
+                  Priority
+                </h3>
+                <p className="text-lg font-medium text-(--text-color)">
+                  {defect.priority}
+                </p>
               </div>
             </div>
 
             {/* Dates */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="backdrop-blur-xl bg-slate-900/50 rounded-2xl border border-slate-800/50 p-6 shadow-2xl hover:shadow-blue-500/10 transition-all duration-300">
-                <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-2">Date Reported</h3>
-                <p className="text-white text-lg font-medium">
-                  {defect.dateReported ? formatDate(defect.dateReported) : "N/A"}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="rounded-2xl border border-(--border-color) bg-(--surface) p-6 shadow-sm transition-all duration-300 hover:border-emerald-200">
+                <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-(--muted-color)">
+                  Date Reported
+                </h3>
+                <p className="text-lg font-medium text-(--text-color)">
+                  {defect.dateReported
+                    ? formatDate(defect.dateReported)
+                    : "N/A"}
                 </p>
               </div>
 
-              <div className="backdrop-blur-xl bg-slate-900/50 rounded-2xl border border-slate-800/50 p-6 shadow-2xl hover:shadow-blue-500/10 transition-all duration-300">
-                <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-2">Date Fixed</h3>
-                <p className="text-white text-lg font-medium">
-                  {defect.dateFixed ? formatDate(defect.dateFixed) : "Not yet fixed"}
+              <div className="rounded-2xl border border-(--border-color) bg-(--surface) p-6 shadow-sm transition-all duration-300 hover:border-emerald-200">
+                <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-(--muted-color)">
+                  Date Fixed
+                </h3>
+                <p className="text-lg font-medium text-(--text-color)">
+                  {defect.dateFixed
+                    ? formatDate(defect.dateFixed)
+                    : "Not yet fixed"}
                 </p>
               </div>
             </div>
 
             {/* Expected Result */}
-            <div className="bg-slate-900 rounded-lg border border-slate-800 p-6">
-              <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-3">Expected Result</h3>
-              <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
-                <p className="text-slate-200 leading-relaxed whitespace-pre-wrap">
+            <div className="rounded-lg border border-(--border-color) bg-(--surface) p-6 shadow-sm">
+              <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-(--muted-color)">
+                Expected Result
+              </h3>
+              <div className="rounded-lg border border-emerald-100 bg-emerald-50/30 p-4">
+                <p className="whitespace-pre-wrap leading-relaxed text-(--text-color)">
                   {defect.expectedResult || "No expected result specified"}
                 </p>
               </div>
             </div>
 
             {/* Actual Result */}
-            <div className="bg-slate-900 rounded-lg border border-slate-800 p-6">
-              <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-3">Actual Result</h3>
-              <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
-                <p className="text-slate-200 leading-relaxed whitespace-pre-wrap">
+            <div className="rounded-lg border border-(--border-color) bg-(--surface) p-6 shadow-sm">
+              <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-(--muted-color)">
+                Actual Result
+              </h3>
+              <div className="rounded-lg border border-rose-100 bg-rose-50/30 p-4">
+                <p className="whitespace-pre-wrap leading-relaxed text-(--text-color)">
                   {defect.actualResult || "No actual result specified"}
                 </p>
               </div>
             </div>
 
             {defect.descriptionSteps && (
-              <div className="bg-slate-900 rounded-lg border border-slate-800 p-6">
-                <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-3">Description / Steps to Reproduce</h3>
-                <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
-                  <p className="text-slate-200 leading-relaxed whitespace-pre-wrap">{defect.descriptionSteps}</p>
+              <div className="rounded-lg border border-(--border-color) bg-(--surface) p-6 shadow-sm">
+                <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-(--muted-color)">
+                  Description / Steps to Reproduce
+                </h3>
+                <div className="rounded-lg border border-(--border-color) bg-(--surface-soft) p-4">
+                  <p className="whitespace-pre-wrap leading-relaxed text-(--text-color)">
+                    {defect.descriptionSteps}
+                  </p>
                 </div>
               </div>
             )}
 
             {defect.testScenario && (
-              <div className="bg-slate-900 rounded-lg border border-slate-800 p-6">
-                <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-3">Test Scenario</h3>
-                <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
-                  <p className="text-slate-200 leading-relaxed whitespace-pre-wrap">{defect.testScenario}</p>
+              <div className="rounded-lg border border-(--border-color) bg-(--surface) p-6 shadow-sm">
+                <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-(--muted-color)">
+                  Test Scenario
+                </h3>
+                <div className="rounded-lg border border-(--border-color) bg-(--surface-soft) p-4">
+                  <p className="whitespace-pre-wrap leading-relaxed text-(--text-color)">
+                    {defect.testScenario}
+                  </p>
                 </div>
               </div>
             )}
 
             {defect.testSteps && (
-              <div className="bg-slate-900 rounded-lg border border-slate-800 p-6">
-                <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-3">Test Steps</h3>
-                <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
-                  <p className="text-slate-200 leading-relaxed whitespace-pre-wrap">{defect.testSteps}</p>
+              <div className="rounded-lg border border-(--border-color) bg-(--surface) p-6 shadow-sm">
+                <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-(--muted-color)">
+                  Test Steps
+                </h3>
+                <div className="rounded-lg border border-(--border-color) bg-(--surface-soft) p-4">
+                  <p className="whitespace-pre-wrap leading-relaxed text-(--text-color)">
+                    {defect.testSteps}
+                  </p>
                 </div>
               </div>
             )}
 
             {defect.remarks && (
-              <div className="bg-slate-900 rounded-lg border border-slate-800 p-6">
-                <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-3">Remarks / Notes</h3>
-                <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
-                  <p className="text-slate-200 leading-relaxed whitespace-pre-wrap">{defect.remarks}</p>
+              <div className="rounded-lg border border-(--border-color) bg-(--surface) p-6 shadow-sm">
+                <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-(--muted-color)">
+                  Remarks / Notes
+                </h3>
+                <div className="rounded-lg border border-(--border-color) bg-(--surface-soft) p-4">
+                  <p className="whitespace-pre-wrap leading-relaxed text-(--text-color)">
+                    {defect.remarks}
+                  </p>
                 </div>
               </div>
             )}
@@ -242,62 +314,96 @@ export default function DefectDetailPage() {
 
           {/* Right Sidebar - Summary */}
           <div>
-            <div className="backdrop-blur-xl bg-slate-900/50 rounded-2xl border border-slate-800/50 p-6 sticky top-24 shadow-2xl hover:shadow-blue-500/10 transition-all duration-300">
-              <h2 className="text-lg font-semibold text-white mb-6">Summary</h2>
+            <div className="sticky top-24 rounded-2xl border border-(--border-color) bg-(--surface) p-6 shadow-sm transition-all duration-300 hover:border-emerald-200">
+              <h2 className="mb-6 text-lg font-semibold text-(--heading-color)">
+                Summary
+              </h2>
 
               <div className="space-y-4">
                 {defect.testCaseId && (
                   <div>
-                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Test Case ID</p>
-                    <p className="text-slate-300 font-mono text-sm">{defect.testCaseId}</p>
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-(--muted-color)">
+                      Test Case ID
+                    </p>
+                    <p className="font-mono text-sm text-(--text-color)">
+                      {defect.testCaseId}
+                    </p>
                   </div>
                 )}
 
                 <div>
-                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">{defect.testCaseId ? "Internal ID" : "ID"}</p>
-                  <p className="text-slate-300 font-mono text-sm break-all">{defect.id}</p>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-(--muted-color)">
+                    {defect.testCaseId ? "Internal ID" : "ID"}
+                  </p>
+                  <p className="wrap-break-word font-mono text-sm text-(--text-color)">
+                    {defect.id}
+                  </p>
                 </div>
 
                 <div>
-                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Status</p>
-                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${STATUS_COLORS_MAP[defect.status].bg} ${STATUS_COLORS_MAP[defect.status].text}`}>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-(--muted-color)">
+                    Status
+                  </p>
+                  <span
+                    className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${STATUS_COLORS_MAP[defect.status].bg} ${STATUS_COLORS_MAP[defect.status].text}`}
+                  >
                     {STATUS_LABELS[defect.status] || defect.status}
                   </span>
                 </div>
 
                 <div>
-                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Severity</p>
-                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${SEVERITY_COLORS[defect.severity]?.bg} ${SEVERITY_COLORS[defect.severity]?.text}`}>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-(--muted-color)">
+                    Severity
+                  </p>
+                  <span
+                    className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${SEVERITY_COLORS[defect.severity]?.bg} ${SEVERITY_COLORS[defect.severity]?.text}`}
+                  >
                     {SEVERITY_COLORS[defect.severity]?.label || defect.severity}
                   </span>
                 </div>
 
                 <div>
-                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Module</p>
-                  <p className="text-slate-300">{defect.module}</p>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-(--muted-color)">
+                    Module
+                  </p>
+                  <p className="text-(--text-color)">{defect.module}</p>
                 </div>
 
                 <div>
-                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Test Type</p>
-                  <p className="text-slate-300">{defect.testType === "cycle" ? "Cycle Test" : "Smoke Test"}</p>
-                </div>
-
-                <div>
-                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Priority</p>
-                  <p className="text-slate-300">{defect.priority}</p>
-                </div>
-
-                <div className="pt-4 border-t border-slate-700">
-                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Reported</p>
-                  <p className="text-slate-300 text-sm">
-                    {defect.dateReported ? formatDate(defect.dateReported) : "Unknown"}
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-(--muted-color)">
+                    Test Type
+                  </p>
+                  <p className="text-(--text-color)">
+                    {defect.testType === "cycle" ? "Cycle Test" : "Smoke Test"}
                   </p>
                 </div>
 
                 <div>
-                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Fixed</p>
-                  <p className="text-slate-300 text-sm">
-                    {defect.dateFixed ? formatDate(defect.dateFixed) : "Not yet fixed"}
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-(--muted-color)">
+                    Priority
+                  </p>
+                  <p className="text-(--text-color)">{defect.priority}</p>
+                </div>
+
+                <div className="border-t border-(--border-color) pt-4">
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-(--muted-color)">
+                    Reported
+                  </p>
+                  <p className="text-sm text-(--text-color)">
+                    {defect.dateReported
+                      ? formatDate(defect.dateReported)
+                      : "Unknown"}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-(--muted-color)">
+                    Fixed
+                  </p>
+                  <p className="text-sm text-(--text-color)">
+                    {defect.dateFixed
+                      ? formatDate(defect.dateFixed)
+                      : "Not yet fixed"}
                   </p>
                 </div>
               </div>
