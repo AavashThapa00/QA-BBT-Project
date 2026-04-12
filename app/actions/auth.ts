@@ -119,7 +119,7 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
       id: row.id,
       name: row.name,
       email: row.email,
-      phone: row.phone,
+      phone: row.phone ?? null,
       role: normalizeRole(row.role),
     };
   } catch (error) {
@@ -146,6 +146,10 @@ export async function loginAction(formData: FormData) {
   );
 
   if (!row) {
+    return { success: false, message: "Invalid email or password" };
+  }
+
+  if (!row.password_hash) {
     return { success: false, message: "Invalid email or password" };
   }
 
@@ -191,6 +195,10 @@ export async function requestLoginCodeAction(formData: FormData) {
     );
 
     if (!row) {
+      return { success: false, message: "Invalid email or password" };
+    }
+
+    if (!row.password_hash) {
       return { success: false, message: "Invalid email or password" };
     }
 

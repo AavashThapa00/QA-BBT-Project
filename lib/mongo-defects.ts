@@ -1,4 +1,4 @@
-import { Filter, Sort } from "mongodb";
+import { Filter, ObjectId, Sort } from "mongodb";
 import { Defect, DefectFilters } from "@/lib/types";
 
 export type DefectDoc = Omit<
@@ -23,7 +23,7 @@ export type DefectDoc = Omit<
   assignedTo?: string | null;
   sourceFile?: string | null;
   uploadedBy?: string | null;
-  _id?: unknown;
+  _id?: ObjectId;
 };
 
 export function escapeRegex(value: string): string {

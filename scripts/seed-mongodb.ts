@@ -134,10 +134,10 @@ async function main() {
     }
 
     const cycleSeedName = "April 2026 Regression Cycle";
-    let cycle = await testCycles.findOne(
-      { name: cycleSeedName },
-      { projection: { _id: 0, id: 1, name: 1 } },
-    );
+    let cycle: { id: string; name: string } | null = await testCycles.findOne<{
+      id: string;
+      name: string;
+    }>({ name: cycleSeedName }, { projection: { _id: 0, id: 1, name: 1 } });
 
     if (!cycle) {
       const cycleId = randomUUID();
