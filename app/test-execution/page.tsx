@@ -1076,7 +1076,7 @@ export default function TestCaseExecutionPage() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-(--page-background) p-8">
         <div className="text-center">
-          <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-2 border-emerald-200 border-t-(--primary-color)"></div>
+          <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full "></div>
           <p className="text-(--muted-color)">Loading test cycles...</p>
         </div>
       </div>

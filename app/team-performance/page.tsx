@@ -104,7 +104,7 @@ export default function TeamPerformancePage() {
     return (
       <div className="min-h-screen bg-(--page-background) p-8">
         <div className="flex items-center justify-center h-96">
-          <div className="h-12 w-12 animate-spin rounded-full border-2 border-emerald-200 border-t-(--primary-color)"></div>
+          <div className="h-12 w-12 animate-spin rounded-full"></div>
         </div>
       </div>
     );
