@@ -132,7 +132,15 @@ function collectNonEmpty(cells: string[], indices: number[]): string[] {
 function isLikelyTestCaseId(value: string): boolean {
   const id = value.trim().toLowerCase();
   if (!id) return false;
-  if (["does not repete", "does not repeat", "repeat", "module", "component"].includes(id)) {
+  if (
+    [
+      "does not repete",
+      "does not repeat",
+      "repeat",
+      "module",
+      "component",
+    ].includes(id)
+  ) {
     return false;
   }
   return /[a-z0-9]/i.test(id);
@@ -155,18 +163,25 @@ export function parseTestCaseCSV(csvContent: string): ParsedTestCase[] {
 
   // Find column indices with flexible matching
   const idIdx = headers.findIndex(
-    (h) => h.includes("test case id") || h === "id" || h.includes("tc id")
+    (h) => h.includes("test case id") || h === "id" || h.includes("tc id"),
   );
-  const titleIdx = headers.findIndex((h) => h.includes("use case") || h.includes("scenario") || h.includes("description"));
+  const titleIdx = headers.findIndex(
+    (h) =>
+      h.includes("use case") ||
+      h.includes("scenario") ||
+      h.includes("description"),
+  );
   const stepIndices = headers
     .map((h, idx) => ({ h, idx }))
     .filter(({ h }) => h.includes("step"))
     .map(({ idx }) => idx);
-  const resultIdx = headers.findIndex((h) => h.includes("result") || h.includes("expected"));
+  const resultIdx = headers.findIndex(
+    (h) => h.includes("result") || h.includes("expected"),
+  );
 
   if (idIdx === -1 || titleIdx === -1 || stepIndices.length === 0) {
     throw new Error(
-      `File headers not recognized. Found: ${headers.join(" | ")}. Required columns: Test Case ID, Use Case/Scenario, Steps`
+      `File headers not recognized. Found: ${headers.join(" | ")}. Required columns: Test Case ID, Use Case/Scenario, Steps`,
     );
   }
 
@@ -186,7 +201,9 @@ export function parseTestCaseCSV(csvContent: string): ParsedTestCase[] {
   };
 
   const getContinuationStep = (cells: string[]): string => {
-    const ignored = new Set<number>([idIdx, titleIdx, resultIdx, ...stepIndices].filter((idx) => idx >= 0));
+    const ignored = new Set<number>(
+      [idIdx, titleIdx, resultIdx, ...stepIndices].filter((idx) => idx >= 0),
+    );
     const candidates = cells
       .map((value, idx) => ({ idx, value: value.trim() }))
       .filter(({ idx, value }) => !ignored.has(idx) && Boolean(value));
@@ -235,7 +252,9 @@ export function parseTestCaseCSV(csvContent: string): ParsedTestCase[] {
 
     const continuationStep = rawSteps || getContinuationStep(cells);
     if (continuationStep) {
-      current.steps = current.steps ? `${current.steps}\n${continuationStep}` : continuationStep;
+      current.steps = current.steps
+        ? `${current.steps}\n${continuationStep}`
+        : continuationStep;
     }
 
     if (!current.title && rawTitle) {
@@ -256,7 +275,8 @@ export function parseTestCaseCSV(csvContent: string): ParsedTestCase[] {
       const fallbackId = (cells[idIdx] || "").trim();
       const fallbackTitle = (cells[titleIdx] || "").trim();
       const fallbackSteps = getStepTextFromRow(cells);
-      const fallbackResult = resultIdx >= 0 ? (cells[resultIdx] || "").trim() : "";
+      const fallbackResult =
+        resultIdx >= 0 ? (cells[resultIdx] || "").trim() : "";
 
       if (!fallbackId || !isLikelyTestCaseId(fallbackId)) continue;
 
@@ -274,7 +294,7 @@ export function parseTestCaseCSV(csvContent: string): ParsedTestCase[] {
 
 export async function importTestCasesForCycle(
   cycleId: string,
-  testCases: ParsedTestCase[]
+  testCases: ParsedTestCase[],
 ): Promise<{ imported: number; failed: number; errors: string[] }> {
   const errors: string[] = [];
   let imported = 0;
@@ -287,13 +307,15 @@ export async function importTestCasesForCycle(
     try {
       if (!tc.testCaseId || !tc.title || !tc.steps) {
         failed++;
-        errors.push(`Skipped ${tc.testCaseId || "unknown"}: Missing required fields`);
+        errors.push(
+          `Skipped ${tc.testCaseId || "unknown"}: Missing required fields`,
+        );
         continue;
       }
 
       const existing = await collection.findOne(
         { testCaseId: tc.testCaseId, cycleId },
-        { projection: { _id: 0, id: 1 } }
+        { projection: { _id: 0, id: 1 } },
       );
 
       if (existing) {
@@ -315,7 +337,9 @@ export async function importTestCasesForCycle(
       imported++;
     } catch (error) {
       failed++;
-      errors.push(`Failed to import ${tc.testCaseId}: ${error instanceof Error ? error.message : "Unknown error"}`);
+      errors.push(
+        `Failed to import ${tc.testCaseId}: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
     }
   }
 
@@ -328,7 +352,7 @@ export async function getOrCreateTestCycle(cycleName: string): Promise<string> {
 
   const existing = await collection.findOne(
     { name: cycleName },
-    { projection: { _id: 0, id: 1 } }
+    { projection: { _id: 0, id: 1 } },
   );
 
   if (existing) {
@@ -348,7 +372,7 @@ export async function getOrCreateTestCycle(cycleName: string): Promise<string> {
   } catch {
     const raced = await collection.findOne(
       { name: cycleName },
-      { projection: { _id: 0, id: 1 } }
+      { projection: { _id: 0, id: 1 } },
     );
     if (raced) return raced.id;
     throw new Error("Failed to create test cycle");
