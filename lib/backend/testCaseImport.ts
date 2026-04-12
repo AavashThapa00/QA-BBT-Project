@@ -1,6 +1,52 @@
-import { db } from "@/lib/prisma";
 import { randomUUID } from "crypto";
-import { ensureTestCaseSchema } from "@/lib/backend/testCaseSchema";
+import { Collection } from "mongodb";
+import { mongoCollections } from "@/lib/mongodb";
+
+type TestCycleDoc = {
+  id: string;
+  name: string;
+  description?: string | null;
+  createdAt: Date;
+  updatedAt?: Date;
+};
+
+type TestCaseDoc = {
+  id: string;
+  testCaseId: string;
+  title: string;
+  steps: string;
+  expectedResult?: string | null;
+  cycleId: string;
+  createdAt: Date;
+};
+
+let schemaReady = false;
+
+const getTestCyclesCollection = async () =>
+  (await mongoCollections.testCycles()) as unknown as Collection<TestCycleDoc>;
+const getTestCasesCollection = async () =>
+  (await mongoCollections.testCases()) as unknown as Collection<TestCaseDoc>;
+
+async function ensureTestCaseSchema() {
+  if (schemaReady) {
+    return;
+  }
+
+  const [testCycles, testCases] = await Promise.all([
+    getTestCyclesCollection(),
+    getTestCasesCollection(),
+  ]);
+
+  await Promise.all([
+    testCycles.createIndex({ id: 1 }, { unique: true }),
+    testCycles.createIndex({ name: 1 }, { unique: true }),
+    testCycles.createIndex({ createdAt: -1 }),
+    testCases.createIndex({ id: 1 }, { unique: true }),
+    testCases.createIndex({ cycleId: 1, testCaseId: 1 }, { unique: true }),
+  ]);
+
+  schemaReady = true;
+}
 
 export interface ParsedTestCase {
   testCaseId: string;
@@ -234,50 +280,43 @@ export async function importTestCasesForCycle(
   let imported = 0;
   let failed = 0;
 
-  try {
-    await ensureTestCaseSchema();
+  await ensureTestCaseSchema();
+  const collection = await getTestCasesCollection();
 
-    await db.query("BEGIN");
-
-    for (const tc of testCases) {
-      try {
-        if (!tc.testCaseId || !tc.title || !tc.steps) {
-          failed++;
-          errors.push(`Skipped ${tc.testCaseId || "unknown"}: Missing required fields`);
-          continue;
-        }
-
-        const id = randomUUID();
-
-        // Check for duplicates
-        const existing = await db.query(
-          `SELECT id FROM test_case WHERE "testCaseId" = $1 AND "cycleId" = $2`,
-          [tc.testCaseId, cycleId]
-        );
-
-        if (existing.rows.length > 0) {
-          failed++;
-          errors.push(`Skipped ${tc.testCaseId}: Already exists for this cycle`);
-          continue;
-        }
-
-        await db.query(
-          `INSERT INTO test_case (id, "testCaseId", title, steps, "expectedResult", "cycleId", "createdAt")
-           VALUES ($1, $2, $3, $4, $5, $6, NOW())`,
-          [id, tc.testCaseId, tc.title, tc.steps, tc.expectedResult, cycleId]
-        );
-
-        imported++;
-      } catch (error) {
+  for (const tc of testCases) {
+    try {
+      if (!tc.testCaseId || !tc.title || !tc.steps) {
         failed++;
-        errors.push(`Failed to import ${tc.testCaseId}: ${error instanceof Error ? error.message : "Unknown error"}`);
+        errors.push(`Skipped ${tc.testCaseId || "unknown"}: Missing required fields`);
+        continue;
       }
-    }
 
-    await db.query("COMMIT");
-  } catch (error) {
-    await db.query("ROLLBACK").catch(() => undefined);
-    throw error;
+      const existing = await collection.findOne(
+        { testCaseId: tc.testCaseId, cycleId },
+        { projection: { _id: 0, id: 1 } }
+      );
+
+      if (existing) {
+        failed++;
+        errors.push(`Skipped ${tc.testCaseId}: Already exists for this cycle`);
+        continue;
+      }
+
+      await collection.insertOne({
+        id: randomUUID(),
+        testCaseId: tc.testCaseId,
+        title: tc.title,
+        steps: tc.steps,
+        expectedResult: tc.expectedResult || null,
+        cycleId,
+        createdAt: new Date(),
+      });
+
+      imported++;
+    } catch (error) {
+      failed++;
+      errors.push(`Failed to import ${tc.testCaseId}: ${error instanceof Error ? error.message : "Unknown error"}`);
+    }
   }
 
   return { imported, failed, errors };
@@ -285,21 +324,33 @@ export async function importTestCasesForCycle(
 
 export async function getOrCreateTestCycle(cycleName: string): Promise<string> {
   await ensureTestCaseSchema();
+  const collection = await getTestCyclesCollection();
 
-  // Check if cycle exists
-  const existing = await db.query(`SELECT id FROM test_cycle WHERE name = $1`, [cycleName]);
-
-  if (existing.rows.length > 0) {
-    return existing.rows[0].id;
-  }
-
-  // Create new cycle
-  const id = randomUUID();
-  await db.query(
-    `INSERT INTO test_cycle (id, name, description, "createdAt", "updatedAt")
-     VALUES ($1, $2, $3, NOW(), NOW())`,
-    [id, cycleName, `Test cycle for ${cycleName}`]
+  const existing = await collection.findOne(
+    { name: cycleName },
+    { projection: { _id: 0, id: 1 } }
   );
 
-  return id;
+  if (existing) {
+    return existing.id;
+  }
+
+  const id = randomUUID();
+  try {
+    await collection.insertOne({
+      id,
+      name: cycleName,
+      description: `Test cycle for ${cycleName}`,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    return id;
+  } catch {
+    const raced = await collection.findOne(
+      { name: cycleName },
+      { projection: { _id: 0, id: 1 } }
+    );
+    if (raced) return raced.id;
+    throw new Error("Failed to create test cycle");
+  }
 }

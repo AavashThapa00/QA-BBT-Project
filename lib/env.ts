@@ -1,5 +1,4 @@
 const env = {
-  DATABASE_URL: process.env.DATABASE_URL || "",
   MONGODB_URI: process.env.MONGODB_URI || "",
   MONGODB_DB_NAME: process.env.MONGODB_DB_NAME || "sheet-webapp",
   APP_BASE_URL: process.env.APP_BASE_URL || "http://localhost:3000",
@@ -13,10 +12,8 @@ const env = {
   SMTP_FROM: process.env.SMTP_FROM || "",
 };
 
-if (!env.DATABASE_URL && !env.MONGODB_URI) {
-  throw new Error(
-    "Missing database configuration. Set DATABASE_URL or MONGODB_URI.",
-  );
+if (!env.MONGODB_URI) {
+  throw new Error("Missing database configuration. Set MONGODB_URI.");
 }
 
 export default env;
