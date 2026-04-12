@@ -170,7 +170,7 @@ export default function AnalyticsPage() {
     return (
       <div className="min-h-screen bg-(--page-background) p-8">
         <div className="flex h-96 items-center justify-center">
-          <div className="h-12 w-12 animate-spin rounded-full border-2 border-emerald-200 border-t-(--primary-color)"></div>
+          <div className="h-12 w-12 animate-spin rounded-full"></div>
         </div>
       </div>
     );
