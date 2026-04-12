@@ -1,18 +1,115 @@
 import { randomUUID } from "crypto";
-import { db } from "@/lib/prisma";
-import { ensureTestCaseSchema } from "@/lib/backend/testCaseSchema";
+import { Collection } from "mongodb";
+import { mongoCollections } from "@/lib/mongodb";
+
+type TestCycleDoc = {
+  id: string;
+  name: string;
+  description?: string | null;
+  createdAt: Date;
+  updatedAt?: Date;
+};
+
+type TestCaseDoc = {
+  id: string;
+  testCaseId: string;
+  title: string;
+  steps: string;
+  expectedResult?: string | null;
+  cycleId: string;
+  createdAt: Date;
+};
+
+type TestExecutionDoc = {
+  id: string;
+  cycleId: string;
+  testCaseId: string;
+  status: "NOT_RUN" | "PASS" | "FAIL";
+  remarks?: string | null;
+  severity?: "MAJOR" | "HIGH" | "MEDIUM" | "LOW" | null;
+  executedBy?: string | null;
+  executedOn?: Date | null;
+  createdAt?: Date;
+  updatedAt?: Date;
+};
+
+type TestCycleRunDoc = {
+  id: string;
+  cycleId: string;
+  name: string;
+  data: unknown;
+  createdBy?: string | null;
+  createdAt: Date;
+};
+
+type DefectDoc = {
+  id: string;
+  testCaseId?: string | null;
+  module: string;
+  summary?: string | null;
+  expectedResult?: string | null;
+  actualResult?: string | null;
+  severity: string;
+  priority: string;
+  status: string;
+  dateReported?: Date | null;
+  dateFixed?: Date | null;
+  qcStatusBbt?: string | null;
+  createdAt?: Date;
+};
+
+const getTestCyclesCollection = async () =>
+  (await mongoCollections.testCycles()) as unknown as Collection<TestCycleDoc>;
+const getTestCasesCollection = async () =>
+  (await mongoCollections.testCases()) as unknown as Collection<TestCaseDoc>;
+const getTestExecutionsCollection = async () =>
+  (await mongoCollections.testExecutions()) as unknown as Collection<TestExecutionDoc>;
+const getTestCycleRunsCollection = async () =>
+  (await mongoCollections.testCycleRuns()) as unknown as Collection<TestCycleRunDoc>;
+const getDefectsCollection = async () =>
+  (await mongoCollections.defects()) as unknown as Collection<DefectDoc>;
+
+let initialized = false;
+
+async function ensureTestCaseCollections() {
+  if (initialized) return;
+
+  const [testCycles, testCases, testExecutions, testCycleRuns] =
+    await Promise.all([
+      getTestCyclesCollection(),
+      getTestCasesCollection(),
+      getTestExecutionsCollection(),
+      getTestCycleRunsCollection(),
+    ]);
+
+  await Promise.all([
+    testCycles.createIndex({ id: 1 }, { unique: true }),
+    testCycles.createIndex({ createdAt: -1 }),
+    testCases.createIndex({ id: 1 }, { unique: true }),
+    testCases.createIndex({ cycleId: 1, testCaseId: 1 }, { unique: true }),
+    testExecutions.createIndex({ id: 1 }, { unique: true }),
+    testExecutions.createIndex({ cycleId: 1, testCaseId: 1 }, { unique: true }),
+    testCycleRuns.createIndex({ id: 1 }, { unique: true }),
+    testCycleRuns.createIndex({ cycleId: 1, createdAt: -1 }),
+  ]);
+
+  initialized = true;
+}
 
 export async function getTestCyclesForApi() {
   try {
-    await ensureTestCaseSchema();
+    await ensureTestCaseCollections();
+    const testCycles = await getTestCyclesCollection();
 
-    const result = await db.query(
-      `SELECT id, name, description, "createdAt"
-       FROM test_cycle
-       ORDER BY "createdAt" DESC`
-    );
-
-    return result.rows;
+    return await testCycles
+      .find(
+        {},
+        {
+          projection: { _id: 0, id: 1, name: 1, description: 1, createdAt: 1 },
+        },
+      )
+      .sort({ createdAt: -1 })
+      .toArray();
   } catch (error) {
     console.error("[API] Failed to fetch test cycles", error);
     throw error;
@@ -21,17 +118,27 @@ export async function getTestCyclesForApi() {
 
 export async function getTestCasesForCycleForApi(cycleId: string) {
   try {
-    await ensureTestCaseSchema();
+    await ensureTestCaseCollections();
+    const testCases = await getTestCasesCollection();
 
-    const result = await db.query(
-      `SELECT id, "testCaseId", title, steps, "expectedResult", "cycleId", "createdAt"
-       FROM test_case
-       WHERE "cycleId" = $1
-       ORDER BY "testCaseId" ASC`,
-      [cycleId]
-    );
-
-    return result.rows;
+    return await testCases
+      .find(
+        { cycleId },
+        {
+          projection: {
+            _id: 0,
+            id: 1,
+            testCaseId: 1,
+            title: 1,
+            steps: 1,
+            expectedResult: 1,
+            cycleId: 1,
+            createdAt: 1,
+          },
+        },
+      )
+      .sort({ testCaseId: 1 })
+      .toArray();
   } catch (error) {
     console.error("[API] Failed to fetch test cases for cycle", error);
     throw error;
@@ -40,19 +147,66 @@ export async function getTestCasesForCycleForApi(cycleId: string) {
 
 export async function getTestExecutionsForCycleForApi(cycleId: string) {
   try {
-    await ensureTestCaseSchema();
+    await ensureTestCaseCollections();
 
-    const result = await db.query(
-      `SELECT te.id, te."cycleId", te."testCaseId", te.status, te.remarks, te.severity, te."executedOn",
-              tc."testCaseId", tc.title, tc.steps, tc."expectedResult"
-       FROM test_execution te
-       JOIN test_case tc ON tc.id = te."testCaseId"
-       WHERE te."cycleId" = $1
-       ORDER BY tc."testCaseId" ASC`,
-      [cycleId]
-    );
+    const [testExecutions, testCases] = await Promise.all([
+      getTestExecutionsCollection(),
+      getTestCasesCollection(),
+    ]);
 
-    return result.rows;
+    const [executionRows, testCaseRows] = await Promise.all([
+      testExecutions
+        .find(
+          { cycleId },
+          {
+            projection: {
+              _id: 0,
+              id: 1,
+              cycleId: 1,
+              testCaseId: 1,
+              status: 1,
+              remarks: 1,
+              severity: 1,
+              executedOn: 1,
+            },
+          },
+        )
+        .toArray(),
+      testCases
+        .find(
+          { cycleId },
+          {
+            projection: {
+              _id: 0,
+              id: 1,
+              testCaseId: 1,
+              title: 1,
+              steps: 1,
+              expectedResult: 1,
+            },
+          },
+        )
+        .toArray(),
+    ]);
+
+    const testCaseMap = new Map(testCaseRows.map((row) => [row.id, row]));
+
+    return executionRows
+      .map((execution) => {
+        const testCase = testCaseMap.get(execution.testCaseId);
+        return {
+          ...execution,
+          businessTestCaseId: testCase?.testCaseId ?? null,
+          title: testCase?.title ?? "",
+          steps: testCase?.steps ?? "",
+          expectedResult: testCase?.expectedResult ?? "",
+        };
+      })
+      .sort((a, b) =>
+        String(a.businessTestCaseId ?? "").localeCompare(
+          String(b.businessTestCaseId ?? ""),
+        ),
+      );
   } catch (error) {
     console.error("[API] Failed to fetch test executions", error);
     throw error;
@@ -68,60 +222,39 @@ export interface SaveTestExecutionPayload {
   executedBy?: string | null;
 }
 
-export async function saveTestExecutionForApi(payload: SaveTestExecutionPayload) {
+export async function saveTestExecutionForApi(
+  payload: SaveTestExecutionPayload,
+) {
   try {
-    await ensureTestCaseSchema();
+    await ensureTestCaseCollections();
+    const testExecutions = await getTestExecutionsCollection();
 
-    const id = randomUUID();
-
-    await db.query(`BEGIN`);
-
-    // Check if execution already exists
-    const existingResult = await db.query(
-      `SELECT id FROM test_execution WHERE "cycleId" = $1 AND "testCaseId" = $2`,
-      [payload.cycleId, payload.testCaseId]
+    await testExecutions.updateOne(
+      { cycleId: payload.cycleId, testCaseId: payload.testCaseId },
+      {
+        $set: {
+          status: payload.status,
+          remarks: payload.remarks ?? null,
+          severity: payload.severity ?? null,
+          executedBy: payload.executedBy ?? null,
+          executedOn: new Date(),
+          updatedAt: new Date(),
+        },
+        $setOnInsert: {
+          id: randomUUID(),
+          cycleId: payload.cycleId,
+          testCaseId: payload.testCaseId,
+          createdAt: new Date(),
+        },
+      },
+      { upsert: true },
     );
-
-    if (existingResult.rows.length > 0) {
-      // Update existing execution
-      await db.query(
-        `UPDATE test_execution
-         SET status = $1, remarks = $2, severity = $3, "executedOn" = NOW(), "executedBy" = $4
-         WHERE "cycleId" = $5 AND "testCaseId" = $6`,
-        [
-          payload.status,
-          payload.remarks ?? null,
-          payload.severity ?? null,
-          payload.executedBy ?? null,
-          payload.cycleId,
-          payload.testCaseId,
-        ]
-      );
-    } else {
-      // Insert new execution
-      await db.query(
-        `INSERT INTO test_execution (id, "cycleId", "testCaseId", status, remarks, severity, "executedBy", "executedOn")
-         VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())`,
-        [
-          id,
-          payload.cycleId,
-          payload.testCaseId,
-          payload.status,
-          payload.remarks ?? null,
-          payload.severity ?? null,
-          payload.executedBy ?? null,
-        ]
-      );
-    }
-
-    await db.query(`COMMIT`);
 
     return {
       success: true,
       message: "Test execution saved successfully",
     };
   } catch (error) {
-    await db.query(`ROLLBACK`).catch(() => undefined);
     console.error("[API] Failed to save test execution", error);
     throw error;
   }
@@ -138,24 +271,28 @@ export interface CreateTestCaseDefectPayload {
 }
 
 async function getTestCaseContext(testCaseRowId: string, cycleId: string) {
-  const contextResult = await db.query(
-    `SELECT tc."testCaseId" AS "businessTestCaseId", tc.title, tc."expectedResult", c.name AS "cycleName"
-     FROM test_case tc
-     JOIN test_cycle c ON c.id = tc."cycleId"
-     WHERE tc.id = $1 AND tc."cycleId" = $2
-     LIMIT 1`,
-    [testCaseRowId, cycleId]
-  );
+  const [testCases, testCycles] = await Promise.all([
+    getTestCasesCollection(),
+    getTestCyclesCollection(),
+  ]);
 
-  if (contextResult.rows.length === 0) {
+  const [testCase, cycle] = await Promise.all([
+    testCases.findOne(
+      { id: testCaseRowId, cycleId },
+      { projection: { _id: 0, testCaseId: 1, title: 1, expectedResult: 1 } },
+    ),
+    testCycles.findOne({ id: cycleId }, { projection: { _id: 0, name: 1 } }),
+  ]);
+
+  if (!testCase || !cycle) {
     throw new Error("Test case context not found for defect logging");
   }
 
-  return contextResult.rows[0] as {
-    businessTestCaseId: string;
-    title: string;
-    expectedResult: string | null;
-    cycleName: string;
+  return {
+    businessTestCaseId: testCase.testCaseId,
+    title: testCase.title,
+    expectedResult: testCase.expectedResult ?? null,
+    cycleName: cycle.name,
   };
 }
 
@@ -163,21 +300,34 @@ function getExecutionModule(cycleName: string) {
   return `Test Execution - ${cycleName}`;
 }
 
-export async function closeResolvedTestCaseDefectsForApi(payload: { testCaseId: string; cycleId: string }) {
+export async function closeResolvedTestCaseDefectsForApi(payload: {
+  testCaseId: string;
+  cycleId: string;
+}) {
   try {
-    await ensureTestCaseSchema();
+    await ensureTestCaseCollections();
+    const defects = await getDefectsCollection();
 
-    const context = await getTestCaseContext(payload.testCaseId, payload.cycleId);
+    const context = await getTestCaseContext(
+      payload.testCaseId,
+      payload.cycleId,
+    );
     const moduleName = getExecutionModule(context.cycleName);
-    const today = new Date().toISOString().split("T")[0];
+    const today = new Date();
 
-    await db.query(
-      `UPDATE defect
-       SET status = 'CLOSED', "qcStatusBbt" = 'PASSED', "dateFixed" = $1
-       WHERE "testCaseId" = $2
-         AND module = $3
-         AND status IN ('OPEN', 'IN_PROGRESS', 'ON_HOLD')`,
-      [today, context.businessTestCaseId, moduleName]
+    await defects.updateMany(
+      {
+        testCaseId: context.businessTestCaseId,
+        module: moduleName,
+        status: { $in: ["OPEN", "IN_PROGRESS", "ON_HOLD"] },
+      },
+      {
+        $set: {
+          status: "CLOSED",
+          qcStatusBbt: "PASSED",
+          dateFixed: today,
+        },
+      },
     );
 
     return { success: true };
@@ -187,87 +337,70 @@ export async function closeResolvedTestCaseDefectsForApi(payload: { testCaseId: 
   }
 }
 
-export async function createTestCaseDefectForApi(payload: CreateTestCaseDefectPayload) {
+export async function createTestCaseDefectForApi(
+  payload: CreateTestCaseDefectPayload,
+) {
   try {
-    await ensureTestCaseSchema();
+    await ensureTestCaseCollections();
+    const defects = await getDefectsCollection();
 
-    const context = await getTestCaseContext(payload.testCaseId, payload.cycleId);
+    const context = await getTestCaseContext(
+      payload.testCaseId,
+      payload.cycleId,
+    );
     const moduleName = getExecutionModule(context.cycleName);
-    const today = new Date().toISOString().split("T")[0];
+    const today = new Date();
 
-    const existingOpenDefect = await db.query(
-      `SELECT id
-       FROM defect
-       WHERE "testCaseId" = $1
-         AND module = $2
-         AND status IN ('OPEN', 'IN_PROGRESS', 'ON_HOLD')
-       ORDER BY "createdAt" DESC
-       LIMIT 1`,
-      [context.businessTestCaseId, moduleName]
+    const existingOpenDefect = await defects.findOne(
+      {
+        testCaseId: context.businessTestCaseId,
+        module: moduleName,
+        status: { $in: ["OPEN", "IN_PROGRESS", "ON_HOLD"] },
+      },
+      { sort: { createdAt: -1 }, projection: { _id: 0, id: 1 } },
     );
 
-    if (existingOpenDefect.rows.length > 0) {
-      const defectId = existingOpenDefect.rows[0].id;
-      const result = await db.query(
-        `UPDATE defect
-         SET summary = $1,
-             "actualResult" = $2,
-             severity = $3,
-             priority = $4,
-             status = 'OPEN',
-             "qcStatusBbt" = 'FAILED',
-             "dateReported" = $5
-         WHERE id = $6
-         RETURNING *`,
-        [
-          payload.title,
-          payload.description,
-          payload.severity,
-          payload.priority,
-          today,
-          defectId,
-        ]
+    if (existingOpenDefect) {
+      await defects.updateOne(
+        { id: existingOpenDefect.id },
+        {
+          $set: {
+            summary: payload.title,
+            actualResult: payload.description,
+            severity: payload.severity,
+            priority: payload.priority,
+            status: "OPEN",
+            qcStatusBbt: "FAILED",
+            dateReported: today,
+          },
+        },
       );
 
-      return result.rows[0];
+      return await defects.findOne(
+        { id: existingOpenDefect.id },
+        { projection: { _id: 0 } },
+      );
     }
 
     const id = randomUUID();
 
-    const result = await db.query(
-      `INSERT INTO defect (
-        id,
-        "testCaseId",
-        "dateReported",
-        module,
-        summary,
-        "expectedResult",
-        "actualResult",
-        severity,
-        priority,
-        status,
-        "qcStatusBbt",
-        "createdAt"
-      ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW()
-      )
-      RETURNING *`,
-      [
-        id,
-        context.businessTestCaseId,
-        today,
-        moduleName,
-        payload.title,
-        payload.expectedResult || context.expectedResult || "",
-        payload.description,
-        payload.severity,
-        payload.priority,
-        "OPEN",
-        "PENDING",
-      ]
-    );
+    const newDefect: DefectDoc = {
+      id,
+      testCaseId: context.businessTestCaseId,
+      dateReported: today,
+      module: moduleName,
+      summary: payload.title,
+      expectedResult: payload.expectedResult || context.expectedResult || "",
+      actualResult: payload.description,
+      severity: payload.severity,
+      priority: payload.priority,
+      status: "OPEN",
+      qcStatusBbt: "PENDING",
+      createdAt: new Date(),
+    };
 
-    return result.rows[0];
+    await defects.insertOne(newDefect);
+    return newDefect;
   } catch (error) {
     console.error("[API] Failed to create defect from test case", error);
     throw error;
@@ -281,73 +414,150 @@ export interface CreateTestCycleRunPayload {
 }
 
 export async function listTestCycleRunsForApi(cycleId: string) {
-  await ensureTestCaseSchema();
+  await ensureTestCaseCollections();
+  const testCycleRuns = await getTestCycleRunsCollection();
 
-  const result = await db.query(
-    `SELECT id, "cycleId", name, "createdBy", "createdAt"
-     FROM test_cycle_run
-     WHERE "cycleId" = $1
-     ORDER BY "createdAt" DESC`,
-    [cycleId]
-  );
-
-  return result.rows;
+  return await testCycleRuns
+    .find(
+      { cycleId },
+      {
+        projection: {
+          _id: 0,
+          id: 1,
+          cycleId: 1,
+          name: 1,
+          createdBy: 1,
+          createdAt: 1,
+        },
+      },
+    )
+    .sort({ createdAt: -1 })
+    .toArray();
 }
 
 export async function getTestCycleRunForApi(cycleId: string, runId: string) {
-  await ensureTestCaseSchema();
+  await ensureTestCaseCollections();
+  const testCycleRuns = await getTestCycleRunsCollection();
 
-  const result = await db.query(
-    `SELECT id, "cycleId", name, data, "createdBy", "createdAt"
-     FROM test_cycle_run
-     WHERE id = $1 AND "cycleId" = $2
-     LIMIT 1`,
-    [runId, cycleId]
+  return await testCycleRuns.findOne(
+    { id: runId, cycleId },
+    {
+      projection: {
+        _id: 0,
+        id: 1,
+        cycleId: 1,
+        name: 1,
+        data: 1,
+        createdBy: 1,
+        createdAt: 1,
+      },
+    },
   );
-
-  return result.rows[0] ?? null;
 }
 
-export async function createTestCycleRunForApi(payload: CreateTestCycleRunPayload) {
-  await ensureTestCaseSchema();
+export async function createTestCycleRunForApi(
+  payload: CreateTestCycleRunPayload,
+) {
+  await ensureTestCaseCollections();
 
-  const cycleResult = await db.query(
-    `SELECT id, name FROM test_cycle WHERE id = $1 LIMIT 1`,
-    [payload.cycleId]
+  const [testCycles, testCases, testExecutions, defects, testCycleRuns] =
+    await Promise.all([
+      getTestCyclesCollection(),
+      getTestCasesCollection(),
+      getTestExecutionsCollection(),
+      getDefectsCollection(),
+      getTestCycleRunsCollection(),
+    ]);
+
+  const cycle = await testCycles.findOne(
+    { id: payload.cycleId },
+    { projection: { _id: 0, id: 1, name: 1 } },
   );
 
-  if (cycleResult.rows.length === 0) {
+  if (!cycle) {
     throw new Error("Test cycle not found");
   }
 
-  const cycle = cycleResult.rows[0] as { id: string; name: string };
+  const [testCaseRows, executionRows, failedIssueRows] = await Promise.all([
+    testCases
+      .find(
+        { cycleId: payload.cycleId },
+        {
+          projection: {
+            _id: 0,
+            id: 1,
+            testCaseId: 1,
+            title: 1,
+            steps: 1,
+            expectedResult: 1,
+          },
+        },
+      )
+      .sort({ testCaseId: 1 })
+      .toArray(),
+    testExecutions
+      .find(
+        { cycleId: payload.cycleId },
+        {
+          projection: {
+            _id: 0,
+            testCaseId: 1,
+            status: 1,
+            remarks: 1,
+            severity: 1,
+            executedOn: 1,
+          },
+        },
+      )
+      .toArray(),
+    defects
+      .find(
+        { module: getExecutionModule(cycle.name), testCaseId: { $ne: null } },
+        {
+          projection: {
+            _id: 0,
+            id: 1,
+            testCaseId: 1,
+            module: 1,
+            summary: 1,
+            expectedResult: 1,
+            actualResult: 1,
+            severity: 1,
+            priority: 1,
+            status: 1,
+            dateReported: 1,
+            dateFixed: 1,
+            createdAt: 1,
+          },
+        },
+      )
+      .sort({ dateReported: -1, createdAt: -1 })
+      .toArray(),
+  ]);
 
-  const executionResult = await db.query(
-    `SELECT tc."testCaseId", tc.title, tc.steps, tc."expectedResult",
-            te.status, te.remarks, te.severity, te."executedOn"
-     FROM test_case tc
-     LEFT JOIN test_execution te
-       ON te."testCaseId" = tc.id AND te."cycleId" = tc."cycleId"
-     WHERE tc."cycleId" = $1
-     ORDER BY tc."testCaseId" ASC`,
-    [payload.cycleId]
+  const executionMap = new Map(
+    executionRows.map((row) => [row.testCaseId, row]),
   );
-
-  const failedIssueResult = await db.query(
-    `SELECT id, "testCaseId", module, summary, "expectedResult", "actualResult",
-            severity, priority, status, "dateReported", "dateFixed"
-     FROM defect
-     WHERE module = $1
-       AND "testCaseId" IS NOT NULL
-     ORDER BY "dateReported" DESC NULLS LAST, "createdAt" DESC`,
-    [getExecutionModule(cycle.name)]
-  );
+  const mergedExecutions = testCaseRows.map((testCase) => {
+    const execution = executionMap.get(testCase.id);
+    return {
+      testCaseId: testCase.testCaseId,
+      title: testCase.title,
+      steps: testCase.steps,
+      expectedResult: testCase.expectedResult || "",
+      status: execution?.status ?? "NOT_RUN",
+      remarks: execution?.remarks ?? null,
+      severity: execution?.severity ?? null,
+      executedOn: execution?.executedOn ?? null,
+    };
+  });
 
   const summary = {
-    total: executionResult.rows.length,
-    pass: executionResult.rows.filter((r) => r.status === "PASS").length,
-    fail: executionResult.rows.filter((r) => r.status === "FAIL").length,
-    notRun: executionResult.rows.filter((r) => !r.status || r.status === "NOT_RUN").length,
+    total: mergedExecutions.length,
+    pass: mergedExecutions.filter((r) => r.status === "PASS").length,
+    fail: mergedExecutions.filter((r) => r.status === "FAIL").length,
+    notRun: mergedExecutions.filter((r) => !r.status || r.status === "NOT_RUN")
+      .length,
   };
 
   const snapshot = {
@@ -356,31 +566,38 @@ export async function createTestCycleRunForApi(payload: CreateTestCycleRunPayloa
       name: cycle.name,
     },
     summary,
-    executions: executionResult.rows,
-    failedIssues: failedIssueResult.rows,
+    executions: mergedExecutions,
+    failedIssues: failedIssueRows,
   };
 
   const id = randomUUID();
-  const result = await db.query(
-    `INSERT INTO test_cycle_run (id, "cycleId", name, data, "createdBy", "createdAt")
-     VALUES ($1, $2, $3, $4::jsonb, $5, NOW())
-     RETURNING id, "cycleId", name, "createdBy", "createdAt"`,
-    [id, payload.cycleId, payload.name, JSON.stringify(snapshot), payload.createdBy ?? null]
-  );
+  const doc: TestCycleRunDoc = {
+    id,
+    cycleId: payload.cycleId,
+    name: payload.name,
+    data: snapshot,
+    createdBy: payload.createdBy ?? null,
+    createdAt: new Date(),
+  };
 
-  return result.rows[0];
+  await testCycleRuns.insertOne(doc);
+  return {
+    id: doc.id,
+    cycleId: doc.cycleId,
+    name: doc.name,
+    createdBy: doc.createdBy,
+    createdAt: doc.createdAt,
+  };
 }
 
 export async function deleteTestCycleRunForApi(cycleId: string, runId: string) {
   try {
-    await ensureTestCaseSchema();
+    await ensureTestCaseCollections();
+    const testCycleRuns = await getTestCycleRunsCollection();
 
-    const result = await db.query(
-      `DELETE FROM test_cycle_run WHERE id = $1 AND "cycleId" = $2 RETURNING id`,
-      [runId, cycleId]
-    );
+    const result = await testCycleRuns.deleteOne({ id: runId, cycleId });
 
-    if (result.rowCount === 0) {
+    if (!result.deletedCount) {
       throw new Error("Run not found");
     }
 

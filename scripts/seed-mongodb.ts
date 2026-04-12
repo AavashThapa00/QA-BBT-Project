@@ -28,6 +28,10 @@ async function main() {
     const users = db.collection("users");
     const sessions = db.collection("sessions");
     const defects = db.collection("defects");
+    const testCycles = db.collection("test_cycles");
+    const testCases = db.collection("test_cases");
+    const testExecutions = db.collection("test_executions");
+    const testCycleRuns = db.collection("test_cycle_runs");
 
     await Promise.all([
       defects.createIndex({ id: 1 }, { unique: true }),
@@ -40,6 +44,17 @@ async function main() {
       sessions.createIndex({ id: 1 }, { unique: true }),
       sessions.createIndex({ userId: 1 }),
       sessions.createIndex({ expiresAt: 1 }),
+      testCycles.createIndex({ id: 1 }, { unique: true }),
+      testCycles.createIndex({ createdAt: -1 }),
+      testCases.createIndex({ id: 1 }, { unique: true }),
+      testCases.createIndex({ cycleId: 1, testCaseId: 1 }, { unique: true }),
+      testExecutions.createIndex({ id: 1 }, { unique: true }),
+      testExecutions.createIndex(
+        { cycleId: 1, testCaseId: 1 },
+        { unique: true },
+      ),
+      testCycleRuns.createIndex({ id: 1 }, { unique: true }),
+      testCycleRuns.createIndex({ cycleId: 1, createdAt: -1 }),
     ]);
 
     const adminEmail = "ssarthakxd@gmail.com";
@@ -118,6 +133,91 @@ async function main() {
       await defects.insertMany(docs);
     }
 
+    const cycleSeedName = "April 2026 Regression Cycle";
+    let cycle = await testCycles.findOne(
+      { name: cycleSeedName },
+      { projection: { _id: 0, id: 1, name: 1 } },
+    );
+
+    if (!cycle) {
+      const cycleId = randomUUID();
+      await testCycles.insertOne({
+        id: cycleId,
+        name: cycleSeedName,
+        description: "Seeded cycle for API validation",
+        createdAt: now,
+        updatedAt: now,
+      });
+      cycle = { id: cycleId, name: cycleSeedName };
+    }
+
+    const existingCycleCaseCount = await testCases.countDocuments({
+      cycleId: cycle.id,
+    });
+    if (existingCycleCaseCount < 6) {
+      const seededTestCases = Array.from({ length: 8 }).map((_, i) => {
+        const tcNumber = 2001 + i;
+        return {
+          id: randomUUID(),
+          testCaseId: `TC-${tcNumber}`,
+          title: `Seeded test case ${tcNumber}`,
+          steps: `1. Open module ${i + 1}\n2. Perform action ${i + 1}\n3. Validate output`,
+          expectedResult: `Feature ${i + 1} behaves as expected`,
+          cycleId: cycle.id,
+          createdAt: now,
+        };
+      });
+
+      await testCases.insertMany(seededTestCases);
+
+      const seededExecutions = seededTestCases.slice(0, 6).map((tc, i) => ({
+        id: randomUUID(),
+        cycleId: cycle.id,
+        testCaseId: tc.id,
+        status: (i % 3 === 0 ? "FAIL" : i % 2 === 0 ? "PASS" : "NOT_RUN") as
+          | "FAIL"
+          | "PASS"
+          | "NOT_RUN",
+        remarks: i % 3 === 0 ? `Seed failure for ${tc.testCaseId}` : "",
+        severity: i % 3 === 0 ? "HIGH" : null,
+        executedBy: admin.id,
+        executedOn: new Date(now.getTime() - i * 60 * 60 * 1000),
+        createdAt: now,
+        updatedAt: now,
+      }));
+
+      await testExecutions.insertMany(seededExecutions);
+
+      const executionModule = `Test Execution - ${cycle.name}`;
+      const openFailureCases = seededTestCases.filter((_, i) => i % 3 === 0);
+
+      const existingExecutionDefects = await defects.countDocuments({
+        module: executionModule,
+      });
+      if (existingExecutionDefects === 0) {
+        await defects.insertMany(
+          openFailureCases.map((tc, i) => ({
+            id: randomUUID(),
+            testCaseId: tc.testCaseId,
+            dateReported: new Date(now.getTime() - i * 24 * 60 * 60 * 1000),
+            module: executionModule,
+            summary: `Execution issue in ${tc.testCaseId}`,
+            expectedResult: tc.expectedResult,
+            actualResult: `Observed mismatch in seeded flow for ${tc.testCaseId}`,
+            severity: i % 2 === 0 ? "HIGH" : "MEDIUM",
+            priority: i % 2 === 0 ? "P1" : "P2",
+            assignedTo: "QA Team",
+            status: "OPEN",
+            dateFixed: null,
+            qcStatusBbt: "FAILED",
+            sourceFile: "seed-test-execution",
+            uploadedBy: "seed-script",
+            createdAt: now,
+          })),
+        );
+      }
+    }
+
     const sessionId = randomUUID();
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
     await sessions.insertOne({
@@ -131,6 +231,7 @@ async function main() {
     console.log(`Admin email: ${adminEmail}`);
     console.log(`Admin password: ${adminPassword}`);
     console.log(`Session cookie: bbt_session=${sessionId}`);
+    console.log(`Seeded test cycle: ${cycleSeedName}`);
     console.log("\nUse this for authenticated curl requests:");
     console.log(`-H 'Cookie: bbt_session=${sessionId}'`);
   } finally {
