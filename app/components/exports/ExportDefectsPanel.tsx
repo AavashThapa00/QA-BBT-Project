@@ -4,7 +4,11 @@ import React, { useState } from "react";
 import { HiDownload, HiX } from "react-icons/hi";
 import { exportAllDefects } from "@/app/actions/defects";
 import { DefectFilters } from "@/lib/types";
-import { enrichDefectsWithCalculations, exportToCSV, formatDateForInput } from "@/lib/utils";
+import {
+  enrichDefectsWithCalculations,
+  exportToCSV,
+  formatDateForInput,
+} from "@/lib/utils";
 
 interface ExportDefectsPanelProps {
   isOpen: boolean;
@@ -19,10 +23,10 @@ export default function ExportDefectsPanel({
 }: ExportDefectsPanelProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [dateFrom, setDateFrom] = useState<string>(
-    currentFilters.dateFrom ? formatDateForInput(currentFilters.dateFrom) : ""
+    currentFilters.dateFrom ? formatDateForInput(currentFilters.dateFrom) : "",
   );
   const [dateTo, setDateTo] = useState<string>(
-    currentFilters.dateTo ? formatDateForInput(currentFilters.dateTo) : ""
+    currentFilters.dateTo ? formatDateForInput(currentFilters.dateTo) : "",
   );
   const [error, setError] = useState<string | null>(null);
 
@@ -85,7 +89,8 @@ export default function ExportDefectsPanel({
       // Close modal after success
       onClose();
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to export defects";
+      const message =
+        err instanceof Error ? err.message : "Failed to export defects";
       setError(message);
     } finally {
       setIsLoading(false);
@@ -95,99 +100,104 @@ export default function ExportDefectsPanel({
   return (
     <>
       {/* Modal with Page Blur Effect */}
-      <div className={`fixed inset-0 z-50 transition-opacity duration-300 ${
-        isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
-      }`}>
+      <div
+        className={`fixed inset-0 z-50 transition-opacity duration-300 ${
+          isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+        }`}
+      >
         {/* Blurred Background Overlay */}
-        <div 
+        <div
           className="absolute inset-0 bg-black/40 backdrop-blur-sm"
           onClick={onClose}
         />
-        
+
         {/* Modal Dialog */}
         <div className="absolute inset-0 flex items-center justify-center p-4">
-          <div className={`bg-slate-900 rounded-lg shadow-lg max-w-md w-full transform transition-all duration-400 border border-slate-800 ${
-            isOpen ? "scale-100 opacity-100" : "scale-95 opacity-0"
-          }`}>
+          <div
+            className={`w-full max-w-md transform rounded-2xl border border-(--border-color) bg-(--surface) shadow-[0_24px_60px_rgba(27,94,32,0.2)] transition-all duration-400 ${
+              isOpen ? "scale-100 opacity-100" : "scale-95 opacity-0"
+            }`}
+          >
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-slate-700">
+            <div className="flex items-center justify-between border-b border-(--border-color) p-6">
               <div className="flex items-center gap-2">
-                <HiDownload className="w-5 h-5 text-blue-400" />
-                <h2 className="text-lg font-semibold text-white">
+                <HiDownload className="w-5 h-5 text-(--primary-color)" />
+                <h2 className="text-lg font-semibold text-(--heading-color)">
                   Export All Defects
                 </h2>
               </div>
               <button
                 onClick={onClose}
-                className="p-1 hover:bg-slate-800 rounded-lg transition-colors"
+                className="rounded-lg p-1 transition-colors hover:bg-emerald-50"
                 aria-label="Close"
               >
-                <HiX className="w-5 h-5 text-slate-400" />
+                <HiX className="w-5 h-5 text-(--muted-color)" />
               </button>
             </div>
 
             {/* Content */}
             <div className="p-6 space-y-4">
-              <p className="text-sm text-slate-300">
-                Filter by date range to export all defects matching your criteria.
+              <p className="text-sm text-(--muted-color)">
+                Filter by date range to export all defects matching your
+                criteria.
               </p>
 
               <div className="space-y-4">
                 {/* From Date */}
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                  <label className="mb-2 block text-sm font-medium text-(--text-color)">
                     From Date (Optional)
                   </label>
                   <input
                     type="date"
                     value={dateFrom}
                     onChange={(e) => setDateFrom(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-700 rounded-lg text-white bg-slate-800 focus:ring-2 focus:ring-rose-500 focus:border-transparent placeholder-slate-500"
+                    className="w-full rounded-lg border border-(--border-color) bg-(--surface-soft) px-3 py-2 text-(--text-color) placeholder-(--muted-color) focus:border-transparent focus:ring-2 focus:ring-(--primary-color)"
                   />
                 </div>
 
                 {/* To Date */}
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                  <label className="mb-2 block text-sm font-medium text-(--text-color)">
                     To Date (Optional)
                   </label>
                   <input
                     type="date"
                     value={dateTo}
                     onChange={(e) => setDateTo(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-700 rounded-lg text-white bg-slate-800 focus:ring-2 focus:ring-rose-500 focus:border-transparent placeholder-slate-500"
+                    className="w-full rounded-lg border border-(--border-color) bg-(--surface-soft) px-3 py-2 text-(--text-color) placeholder-(--muted-color) focus:border-transparent focus:ring-2 focus:ring-(--primary-color)"
                   />
                 </div>
 
                 {/* Error Message */}
                 {error && (
-                  <div className="p-3 bg-red-900/30 border border-red-800 rounded-lg">
-                    <p className="text-sm text-red-300">{error}</p>
+                  <div className="rounded-lg border border-rose-200 bg-rose-50 p-3">
+                    <p className="text-sm text-rose-700">{error}</p>
                   </div>
                 )}
 
                 {/* Info */}
-                <div className="p-3 bg-blue-900/30 border border-blue-800 rounded-lg">
-                  <p className="text-sm text-blue-300">
-                    💡 All active filters will be included in the export.
+                <div className="rounded-lg border border-emerald-100 bg-emerald-50 p-3">
+                  <p className="text-sm text-emerald-700">
+                    All active filters will be included in the export.
                   </p>
                 </div>
               </div>
             </div>
 
             {/* Footer */}
-            <div className="flex gap-3 p-6 border-t border-slate-700">
+            <div className="flex gap-3 border-t border-(--border-color) p-6">
               <button
                 onClick={onClose}
                 disabled={isLoading}
-                className="flex-1 px-4 py-2 border border-slate-700 text-slate-300 font-medium rounded-lg hover:bg-slate-700 disabled:opacity-50 transition-colors"
+                className="flex-1 rounded-lg border border-(--border-color) px-4 py-2 font-medium text-(--muted-color) transition-colors hover:bg-emerald-50 hover:text-(--heading-color) disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
                 onClick={handleExport}
                 disabled={isLoading}
-                className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+                className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-(--primary-color) px-4 py-2 font-medium text-white transition-colors hover:bg-(--primary-hover-color) disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isLoading ? (
                   <>

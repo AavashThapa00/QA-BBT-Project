@@ -4,10 +4,19 @@ import React, { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import ExportDefectsPanel from "@/app/components/exports/ExportDefectsPanel";
-import { HiDownload, HiClipboardList, HiChartBar, HiExclamationCircle } from "react-icons/hi";
+import {
+  HiDownload,
+  HiClipboardList,
+  HiChartBar,
+  HiExclamationCircle,
+} from "react-icons/hi";
 import MetricsCard from "@/app/components/dashboard/MetricsCard";
 import FilterPanel from "@/app/components/filters/FilterPanel";
-import { SkeletonCard, SkeletonChart, SkeletonTable } from "@/app/components/common/SkeletonLoader";
+import {
+  SkeletonCard,
+  SkeletonChart,
+  SkeletonTable,
+} from "@/app/components/common/SkeletonLoader";
 import {
   getDefectMetrics,
   getDefectsByModule,
@@ -16,26 +25,33 @@ import {
   getDefects,
   getAverageResolutionTime,
 } from "@/app/actions/defects";
-import { DefectFilters, DashboardMetrics, DefectByModule, DefectBySeverity, DefectTrend, Defect } from "@/lib/types";
+import {
+  DefectFilters,
+  DashboardMetrics,
+  DefectByModule,
+  DefectBySeverity,
+  DefectTrend,
+  Defect,
+} from "@/lib/types";
 
 const DefectsByModuleChart = dynamic(
   () => import("@/app/components/dashboard/DefectsByModuleChart"),
-  { ssr: false, loading: () => <SkeletonChart /> }
+  { ssr: false, loading: () => <SkeletonChart /> },
 );
 
 const DefectsBySeverityChart = dynamic(
   () => import("@/app/components/dashboard/DefectsBySeverityChart"),
-  { ssr: false, loading: () => <SkeletonChart /> }
+  { ssr: false, loading: () => <SkeletonChart /> },
 );
 
 const DefectsTrendChart = dynamic(
   () => import("@/app/components/dashboard/DefectsTrendChart"),
-  { ssr: false, loading: () => <SkeletonChart /> }
+  { ssr: false, loading: () => <SkeletonChart /> },
 );
 
 const DefectsTable = dynamic(
   () => import("@/app/components/table/DefectsTable"),
-  { ssr: false, loading: () => <SkeletonTable /> }
+  { ssr: false, loading: () => <SkeletonTable /> },
 );
 
 interface DashboardState {
@@ -101,22 +117,18 @@ export default function Home() {
       setState((prev) => ({ ...prev, isLoading: true }));
 
       try {
-        const [
-          metricsData,
-          trendData,
-          defectsResponse,
-          avgResolutionTime,
-        ] = await Promise.all([
-          getDefectMetrics(filters),
-          getDefectsTrend(filters, "day"),
-          getDefects(filters, {
-            page: pageNum,
-            pageSize: 10,
-            sortBy: state.sortBy,
-            sortOrder: state.sortOrder,
-          }),
-          getAverageResolutionTime(filters),
-        ]);
+        const [metricsData, trendData, defectsResponse, avgResolutionTime] =
+          await Promise.all([
+            getDefectMetrics(filters),
+            getDefectsTrend(filters, "day"),
+            getDefects(filters, {
+              page: pageNum,
+              pageSize: 10,
+              sortBy: state.sortBy,
+              sortOrder: state.sortOrder,
+            }),
+            getAverageResolutionTime(filters),
+          ]);
 
         setState((prev) => ({
           ...prev,
@@ -133,7 +145,7 @@ export default function Home() {
         setState((prev) => ({ ...prev, isLoading: false }));
       }
     },
-    [filters, state.sortBy, state.sortOrder]
+    [filters, state.sortBy, state.sortOrder],
   );
 
   useEffect(() => {
@@ -149,7 +161,7 @@ export default function Home() {
     async (
       pageNum = 1,
       sortBy: "date" | "severity" | "status" = state.sortBy || "date",
-      sortOrder: "asc" | "desc" = state.sortOrder || "desc"
+      sortOrder: "asc" | "desc" = state.sortOrder || "desc",
     ) => {
       setTableLoading(true);
       try {
@@ -172,7 +184,7 @@ export default function Home() {
         setTableLoading(false);
       }
     },
-    [filters, state.sortBy, state.sortOrder]
+    [filters, state.sortBy, state.sortOrder],
   );
 
   const handlePageChange = (newPage: number) => {
@@ -182,7 +194,7 @@ export default function Home() {
 
   const handleSortChange = (
     sortBy: "date" | "severity" | "status",
-    sortOrder: "asc" | "desc"
+    sortOrder: "asc" | "desc",
   ) => {
     setState((prev) => ({ ...prev, sortBy, sortOrder, currentPage: 1 }));
     // Refresh only the table using the requested sort, avoiding stale state reads
@@ -195,47 +207,45 @@ export default function Home() {
 
   const scrollToDefectsTable = () => {
     setTimeout(() => {
-      defectsTableRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      defectsTableRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
     }, 100);
   };
 
-  const handleMetricClick = (filterType: 'all' | 'open' | 'closed' | 'critical') => {
-    if (filterType === 'all') {
+  const handleMetricClick = (
+    filterType: "all" | "open" | "closed" | "critical",
+  ) => {
+    if (filterType === "all") {
       // Navigate to all-defects page
-      router.push('/all-defects');
+      router.push("/all-defects");
       return;
     }
-    
+
     let newFilters: DefectFilters = {};
-    
+
     switch (filterType) {
-      case 'open':
+      case "open":
         // Show all open defects: Open, In Progress, On Hold (Pending)
-        newFilters = { status: ['OPEN', 'IN_PROGRESS', 'ON_HOLD'] };
+        newFilters = { status: ["OPEN", "IN_PROGRESS", "ON_HOLD"] };
         break;
-      case 'closed':
+      case "closed":
         // Show closed defects: Fixed (Closed) and As it is
-        newFilters = { status: ['CLOSED', 'AS_IT_IS'] };
+        newFilters = { status: ["CLOSED", "AS_IT_IS"] };
         break;
-      case 'critical':
+      case "critical":
         // Show only major severity defects (regardless of status)
-        newFilters = { severity: ['MAJOR'] };
+        newFilters = { severity: ["MAJOR"] };
         break;
     }
-    
+
     setFilters(newFilters);
     scrollToDefectsTable();
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
-      {/* Animated Background */}
-      <div className="fixed inset-0 opacity-40 -z-10">
-        <div className="absolute top-10 left-1/4 w-80 h-80 bg-blue-600 rounded-full mix-blend-multiply filter blur-3xl animate-blob"></div>
-        <div className="absolute top-1/2 right-1/3 w-80 h-80 bg-purple-600 rounded-full mix-blend-multiply filter blur-3xl animate-blob" style={{ animationDelay: '2s' }}></div>
-        <div className="absolute bottom-10 left-1/2 w-80 h-80 bg-pink-600 rounded-full mix-blend-multiply filter blur-3xl animate-blob" style={{ animationDelay: '4s' }}></div>
-      </div>
-
+    <div className="min-h-screen bg-(--page-background)">
       {/* Export Panel Modal */}
       <ExportDefectsPanel
         isOpen={isExportPanelOpen}
@@ -244,14 +254,16 @@ export default function Home() {
       />
 
       {/* Main Content */}
-      <div className={`relative w-full px-4 sm:px-6 lg:px-10 xl:px-12 py-8 space-y-8 transition-all duration-200 ${
-        isExportPanelOpen ? "blur-sm opacity-50 pointer-events-none" : ""
-      }`}>
-        <div className="animate-in fade-in-up duration-500">
-          <h1 className="text-4xl md:text-5xl font-bold leading-[1.15] pb-1 bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+      <div
+        className={`relative w-full space-y-8 px-4 py-8 transition-all duration-200 sm:px-6 lg:px-10 xl:px-12 ${
+          isExportPanelOpen ? "blur-sm opacity-50 pointer-events-none" : ""
+        }`}
+      >
+        <div className="animate-in fade-in-up rounded-3xl border border-(--border-color) bg-[rgba(255,255,255,0.9)] px-6 py-6 shadow-[0_16px_40px_rgba(27,94,32,0.07)] duration-500">
+          <h1 className="pb-1 text-4xl font-bold leading-[1.15] text-(--heading-color) md:text-5xl">
             Defect Intelligence Dashboard
           </h1>
-          <p className="text-slate-400 mt-2 text-sm md:text-base">
+          <p className="mt-2 text-sm text-(--muted-color) md:text-base">
             Live visibility across modules, priorities, and trend movement.
           </p>
         </div>
@@ -272,35 +284,35 @@ export default function Home() {
           </div>
         ) : state.metrics ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <MetricsCard 
-              title="Total Defects" 
-              value={state.metrics.totalDefects} 
-              icon={<HiChartBar />} 
-              onClick={() => handleMetricClick('all')}
+            <MetricsCard
+              title="Total Defects"
+              value={state.metrics.totalDefects}
+              icon={<HiChartBar />}
+              onClick={() => handleMetricClick("all")}
             />
-            <MetricsCard 
-              title="Open Defects" 
-              value={state.metrics.openDefects} 
-              icon={<HiExclamationCircle />} 
-              onClick={() => handleMetricClick('open')}
+            <MetricsCard
+              title="Open Defects"
+              value={state.metrics.openDefects}
+              icon={<HiExclamationCircle />}
+              onClick={() => handleMetricClick("open")}
             />
-            <MetricsCard 
-              title="Closed Defects" 
-              value={state.metrics.closedDefects} 
-              icon={<HiClipboardList />} 
-              onClick={() => handleMetricClick('closed')}
+            <MetricsCard
+              title="Closed Defects"
+              value={state.metrics.closedDefects}
+              icon={<HiClipboardList />}
+              onClick={() => handleMetricClick("closed")}
             />
-            <MetricsCard 
-              title="Critical Priority Issues" 
-              value={state.metrics.highSeverityCount} 
-              icon={<HiExclamationCircle />} 
-              onClick={() => handleMetricClick('critical')}
+            <MetricsCard
+              title="Critical Priority Issues"
+              value={state.metrics.highSeverityCount}
+              icon={<HiExclamationCircle />}
+              onClick={() => handleMetricClick("critical")}
             />
           </div>
         ) : null}
 
         {/* Charts Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           {state.isLoading ? (
             <>
               <SkeletonChart />
@@ -315,7 +327,7 @@ export default function Home() {
         </div>
 
         {/* Trend Chart */}
-        <div>
+        <div className="rounded-3xl border border-(--border-color) bg-[rgba(255,255,255,0.88)] p-4 shadow-[0_10px_28px_rgba(27,94,32,0.06)] sm:p-5">
           {state.isLoading ? (
             <SkeletonChart />
           ) : (
@@ -327,30 +339,35 @@ export default function Home() {
         {state.isLoading ? (
           <SkeletonCard />
         ) : state.averageResolutionTime > 0 ? (
-          <div className="backdrop-blur-xl bg-slate-900/50 rounded-2xl border border-slate-800/50 shadow-2xl p-6 hover:shadow-blue-500/10 transition-all duration-300">
-            <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-3">
+          <div className="rounded-2xl border border-(--border-color) bg-(--surface) p-6 shadow-[0_12px_32px_rgba(27,94,32,0.08)] transition-all duration-300 hover:shadow-[0_16px_36px_rgba(27,94,32,0.12)]">
+            <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-(--muted-color)">
               Average Resolution Time
             </h3>
-            <p className="text-5xl font-bold text-white">
+            <p className="text-5xl font-bold text-(--heading-color)">
               {state.averageResolutionTime}
             </p>
-            <p className="text-slate-400 text-sm mt-2">days to resolve defects</p>
+            <p className="mt-2 text-sm text-(--muted-color)">
+              days to resolve defects
+            </p>
           </div>
         ) : null}
 
         {/* Data Table */}
-        <div ref={defectsTableRef}>
+        <div
+          ref={defectsTableRef}
+          className="rounded-3xl border border-(--border-color) bg-(--surface) p-4 shadow-[0_12px_30px_rgba(27,94,32,0.07)] sm:p-5"
+        >
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-              <HiClipboardList className="w-5 h-5 text-blue-400" />
+            <h2 className="flex items-center gap-2 text-lg font-semibold text-(--heading-color)">
+              <HiClipboardList className="h-5 w-5 text-(--primary-color)" />
               Defects List
             </h2>
             <button
               onClick={handleExportCSV}
               disabled={state.isLoading}
-              className="px-4 py-2 bg-green-600 text-white font-medium text-sm rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md transition-all flex items-center gap-2"
+              className="flex items-center gap-2 rounded-lg bg-(--primary-color) px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:bg-(--primary-hover-color) hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <HiDownload className="w-4 h-4" />
+              <HiDownload className="h-4 w-4" />
               <span>Export All</span>
             </button>
           </div>

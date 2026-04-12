@@ -14,29 +14,32 @@ interface DefectsTableProps {
   onPageChange: (page: number) => void;
   sortBy?: "date" | "severity" | "status";
   sortOrder?: "asc" | "desc";
-  onSortChange?: (sortBy: "date" | "severity" | "status", order: "asc" | "desc") => void;
+  onSortChange?: (
+    sortBy: "date" | "severity" | "status",
+    order: "asc" | "desc",
+  ) => void;
 }
 
 const SEVERITY_COLORS: Record<Severity, string> = {
-  MAJOR: "bg-red-900 text-red-200",
-  HIGH: "bg-orange-900 text-orange-200",
-  MEDIUM: "bg-yellow-900 text-yellow-200",
-  LOW: "bg-green-900 text-green-200",
+  MAJOR: "bg-rose-100 text-rose-700 ring-1 ring-rose-200",
+  HIGH: "bg-orange-100 text-orange-700 ring-1 ring-orange-200",
+  MEDIUM: "bg-amber-100 text-amber-700 ring-1 ring-amber-200",
+  LOW: "bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200",
 };
 
 const PRIORITY_COLORS: Record<string, string> = {
-  Low: "bg-green-900 text-green-200",
-  Medium: "bg-yellow-900 text-yellow-200",
-  High: "bg-orange-900 text-orange-200",
-  Major: "bg-red-900 text-red-200",
+  Low: "bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200",
+  Medium: "bg-amber-100 text-amber-700 ring-1 ring-amber-200",
+  High: "bg-orange-100 text-orange-700 ring-1 ring-orange-200",
+  Major: "bg-rose-100 text-rose-700 ring-1 ring-rose-200",
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  OPEN: "bg-blue-900 text-blue-200",
-  IN_PROGRESS: "bg-purple-900 text-purple-200",
-  CLOSED: "bg-green-900 text-green-200",
-  ON_HOLD: "bg-red-900 text-red-200",
-  AS_IT_IS: "bg-slate-700 text-slate-200",
+  OPEN: "bg-sky-100 text-sky-700 ring-1 ring-sky-200",
+  IN_PROGRESS: "bg-indigo-100 text-indigo-700 ring-1 ring-indigo-200",
+  CLOSED: "bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200",
+  ON_HOLD: "bg-rose-100 text-rose-700 ring-1 ring-rose-200",
+  AS_IT_IS: "bg-slate-100 text-slate-700 ring-1 ring-slate-200",
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -66,7 +69,7 @@ function SortButton({
   return (
     <button
       onClick={() => onClick(column, nextOrder)}
-      className="flex items-center gap-2 hover:text-blue-300 font-semibold hover:bg-slate-700 px-2 py-1 rounded transition-colors uppercase tracking-wide text-white"
+      className="flex items-center gap-2 rounded px-2 py-1 font-semibold uppercase tracking-wide text-(--heading-color) transition-colors hover:bg-emerald-50 hover:text-(--primary-color)"
     >
       {label}
       {isActive && (
@@ -99,19 +102,22 @@ function FilterDropdown({
     <div className="relative inline-block">
       <button
         onMouseEnter={onOpen}
-        className="flex items-center gap-1 hover:text-blue-300 font-semibold hover:bg-slate-700 px-2 py-1 rounded transition-colors uppercase tracking-wide text-white"
+        className="flex items-center gap-1 rounded px-2 py-1 font-semibold uppercase tracking-wide text-(--heading-color) transition-colors hover:bg-emerald-50 hover:text-(--primary-color)"
       >
         {label}
         <HiChevronDown className="w-4 h-4" />
       </button>
       {isOpen && (
         <div
-          className="absolute top-full left-0 mt-1 bg-slate-800 border border-slate-700 rounded-lg shadow-lg z-10 min-w-max p-2"
+          className="absolute top-full left-0 z-10 mt-1 min-w-max rounded-lg border border-(--border-color) bg-(--surface) p-2 shadow-lg"
           onMouseLeave={onClose}
         >
           <div className="space-y-2">
             {options.map((option) => (
-              <label key={option.value} className="flex items-center gap-2 cursor-pointer hover:bg-slate-700 px-2 py-1 rounded">
+              <label
+                key={option.value}
+                className="flex cursor-pointer items-center gap-2 rounded px-2 py-1 hover:bg-emerald-50"
+              >
                 <input
                   type="checkbox"
                   checked={selectedValues.includes(option.value)}
@@ -119,12 +125,16 @@ function FilterDropdown({
                     if (e.target.checked) {
                       onChange([...selectedValues, option.value]);
                     } else {
-                      onChange(selectedValues.filter((v) => v !== option.value));
+                      onChange(
+                        selectedValues.filter((v) => v !== option.value),
+                      );
                     }
                   }}
-                  className="rounded border-slate-600 text-blue-500 focus:ring-blue-500 cursor-pointer bg-slate-700"
+                  className="cursor-pointer rounded border-emerald-300 bg-white text-(--primary-color) focus:ring-(--primary-color)"
                 />
-                <span className="text-sm text-slate-200">{option.label}</span>
+                <span className="text-sm text-(--text-color)">
+                  {option.label}
+                </span>
               </label>
             ))}
           </div>
@@ -153,30 +163,37 @@ export default function DefectsTable({
 
   // Filter defects based on selected criteria
   const filteredDefects = defects.filter((defect) => {
-    const moduleMatch = moduleFilter.length === 0 || moduleFilter.some(m => defect.module.includes(m));
-    const severityMatch = severityFilter.length === 0 || severityFilter.includes(defect.severity);
-    const priorityMatch = priorityFilter.length === 0 || priorityFilter.includes(defect.priority);
-    
+    const moduleMatch =
+      moduleFilter.length === 0 ||
+      moduleFilter.some((m) => defect.module.includes(m));
+    const severityMatch =
+      severityFilter.length === 0 || severityFilter.includes(defect.severity);
+    const priorityMatch =
+      priorityFilter.length === 0 || priorityFilter.includes(defect.priority);
+
     // Map user-friendly status labels to enum values
     const statusValueMap: Record<string, string[]> = {
-      "Pending": ["OPEN", "IN_PROGRESS"],
-      "Fixed": ["CLOSED"],
+      Pending: ["OPEN", "IN_PROGRESS"],
+      Fixed: ["CLOSED"],
       "As it is": ["AS_IT_IS"],
-      "Hold": ["ON_HOLD"]
+      Hold: ["ON_HOLD"],
     };
-    const mappedStatusFilter = statusFilter.flatMap((s) => statusValueMap[s] || [s]);
-    const statusMatch = statusFilter.length === 0 || mappedStatusFilter.includes(defect.status);
-    
+    const mappedStatusFilter = statusFilter.flatMap(
+      (s) => statusValueMap[s] || [s],
+    );
+    const statusMatch =
+      statusFilter.length === 0 || mappedStatusFilter.includes(defect.status);
+
     return moduleMatch && severityMatch && priorityMatch && statusMatch;
   });
 
   return (
-    <div className="bg-slate-900 rounded-lg border border-slate-800 overflow-hidden shadow-sm">
+    <div className="overflow-hidden rounded-2xl border border-(--border-color) bg-(--surface) shadow-[0_10px_26px_rgba(27,94,32,0.08)]">
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-slate-700">
-          <thead className="bg-slate-800 border-b border-slate-700">
+        <table className="min-w-full divide-y divide-(--border-color)">
+          <thead className="border-b border-(--border-color) bg-(--surface-soft)">
             <tr>
-              <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">
+              <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-(--heading-color)">
                 <SortButton
                   column="date"
                   label="Date Reported"
@@ -185,7 +202,7 @@ export default function DefectsTable({
                   onClick={onSortChange || (() => {})}
                 />
               </th>
-              <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
+              <th className="px-6 py-4 text-left text-xs font-semibold text-(--heading-color) uppercase tracking-wider">
                 <FilterDropdown
                   label="Module"
                   options={[
@@ -201,7 +218,7 @@ export default function DefectsTable({
                   onClose={() => setOpenDropdown(null)}
                 />
               </th>
-              <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
+              <th className="px-6 py-4 text-left text-xs font-semibold text-(--heading-color) uppercase tracking-wider">
                 <FilterDropdown
                   label="Severity"
                   options={[
@@ -217,7 +234,7 @@ export default function DefectsTable({
                   onClose={() => setOpenDropdown(null)}
                 />
               </th>
-              <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">
+              <th className="px-6 py-4 text-left text-xs font-semibold text-(--heading-color) uppercase tracking-wider">
                 <FilterDropdown
                   label="Priority"
                   options={[
@@ -233,7 +250,7 @@ export default function DefectsTable({
                   onClose={() => setOpenDropdown(null)}
                 />
               </th>
-              <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">
+              <th className="px-6 py-4 text-left text-xs font-semibold text-(--heading-color) uppercase tracking-wider">
                 <FilterDropdown
                   label="Status"
                   options={[
@@ -249,18 +266,20 @@ export default function DefectsTable({
                   onClose={() => setOpenDropdown(null)}
                 />
               </th>
-              <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">
+              <th className="px-6 py-4 text-left text-xs font-semibold text-(--heading-color) uppercase tracking-wider">
                 Date Fixed
               </th>
             </tr>
           </thead>
-          <tbody className="bg-slate-900 divide-y divide-slate-800">
+          <tbody className="divide-y divide-(--border-color) bg-(--surface)">
             {isLoading ? (
               <tr>
                 <td colSpan={6} className="px-6 py-8 text-center">
                   <div className="flex items-center justify-center gap-3">
-                    <div className="animate-spin rounded-full h-6 w-6 border-2 border-slate-300 border-t-blue-500"></div>
-                    <span className="text-slate-600 font-medium">Loading data...</span>
+                    <div className="h-6 w-6 animate-spin rounded-full border-2 border-emerald-200 border-t-(--primary-color)"></div>
+                    <span className="font-medium text-(--muted-color)">
+                      Loading data...
+                    </span>
                   </div>
                 </td>
               </tr>
@@ -268,57 +287,70 @@ export default function DefectsTable({
               <tr>
                 <td
                   colSpan={6}
-                  className="px-6 py-12 text-center text-slate-500"
+                  className="px-6 py-12 text-center text-(--muted-color)"
                 >
                   <div className="flex flex-col items-center gap-2">
-                    <HiInbox className="text-2xl text-slate-500" />
-                    <p className="font-medium text-slate-300">No defects found</p>
-                    <p className="text-xs text-slate-500">Try adjusting your filters</p>
+                    <HiInbox className="text-2xl text-(--muted-color)" />
+                    <p className="font-medium text-(--heading-color)">
+                      No defects found
+                    </p>
+                    <p className="text-xs text-(--muted-color)">
+                      Try adjusting your filters
+                    </p>
                   </div>
                 </td>
               </tr>
             ) : (
               filteredDefects.map((defect) => (
-                <tr 
-                  key={defect.id} 
+                <tr
+                  key={defect.id}
                   onClick={() => router.push(`/defects/${defect.id}`)}
-                  className="hover:bg-slate-700 transition-colors cursor-pointer"
+                  className="cursor-pointer transition-colors hover:bg-emerald-50/70"
                 >
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-white font-medium">
-                    {defect.dateReported ? formatDate(defect.dateReported) : "N/A"}
+                  <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-(--heading-color)">
+                    {defect.dateReported
+                      ? formatDate(defect.dateReported)
+                      : "N/A"}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-300">
-                    <span className="px-3 py-1.5 bg-slate-700 rounded-lg text-xs font-medium">{defect.module}</span>
+                  <td className="whitespace-nowrap px-6 py-4 text-sm text-(--text-color)">
+                    <span className="rounded-lg bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-800 ring-1 ring-emerald-100">
+                      {defect.module}
+                    </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="whitespace-nowrap px-6 py-4">
                     <span
-                      className={`inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold uppercase ${
+                      className={`inline-flex items-center rounded-lg px-3 py-1.5 text-xs font-semibold uppercase ${
                         SEVERITY_COLORS[defect.severity]
                       }`}
                     >
                       {defect.severity}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="whitespace-nowrap px-6 py-4">
                     <span
-                      className={`inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold uppercase ${
-                        PRIORITY_COLORS[defect.priority] || "bg-slate-700 text-slate-200"
+                      className={`inline-flex items-center rounded-lg px-3 py-1.5 text-xs font-semibold uppercase ${
+                        PRIORITY_COLORS[defect.priority] ||
+                        "bg-slate-100 text-slate-700 ring-1 ring-slate-200"
                       }`}
                     >
                       {defect.priority}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="whitespace-nowrap px-6 py-4">
                     <span
-                      className={`inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold ${
+                      className={`inline-flex items-center rounded-lg px-3 py-1.5 text-xs font-semibold ${
                         STATUS_COLORS[defect.status]
                       }`}
                     >
                       {STATUS_LABELS[defect.status] ?? defect.status}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-300">
-                    {defect.dateFixed ? formatDate(defect.dateFixed) : <span className="text-slate-500">—</span>}
+                  <td className="whitespace-nowrap px-6 py-4 text-sm text-(--text-color)">
+                    {defect.dateFixed ? (
+                      formatDate(defect.dateFixed)
+                    ) : (
+                      <span className="text-(--muted-color)">-</span>
+                    )}
                   </td>
                 </tr>
               ))
@@ -328,22 +360,27 @@ export default function DefectsTable({
       </div>
 
       {/* Pagination */}
-      <div className="bg-slate-800 px-6 py-4 border-t border-slate-700 flex items-center justify-between">
-        <div className="text-sm text-slate-300 font-medium">
-          Page <span className="font-bold text-white">{currentPage}</span> of <span className="font-bold text-white">{totalPages}</span>
+      <div className="flex items-center justify-between border-t border-(--border-color) bg-(--surface-soft) px-6 py-4">
+        <div className="text-sm font-medium text-(--muted-color)">
+          Page{" "}
+          <span className="font-bold text-(--heading-color)">
+            {currentPage}
+          </span>{" "}
+          of{" "}
+          <span className="font-bold text-(--heading-color)">{totalPages}</span>
         </div>
         <div className="flex gap-2">
           <button
             onClick={() => onPageChange(currentPage - 1)}
             disabled={currentPage === 1 || isLoading}
-            className="px-4 py-2.5 border border-slate-700 rounded-lg text-sm font-semibold text-slate-300 hover:bg-slate-700 hover:border-slate-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="rounded-lg border border-(--border-color) px-4 py-2.5 text-sm font-semibold text-(--heading-color) transition-colors hover:border-(--primary-color) hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50"
           >
             ← Previous
           </button>
           <button
             onClick={() => onPageChange(currentPage + 1)}
             disabled={currentPage === totalPages || isLoading}
-            className="px-4 py-2.5 border border-slate-700 rounded-lg text-sm font-semibold text-slate-300 hover:bg-slate-700 hover:border-slate-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="rounded-lg border border-(--border-color) px-4 py-2.5 text-sm font-semibold text-(--heading-color) transition-colors hover:border-(--primary-color) hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50"
           >
             Next →
           </button>

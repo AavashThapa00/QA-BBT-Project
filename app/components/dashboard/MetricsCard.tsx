@@ -18,19 +18,25 @@ export default function MetricsCard({
   onClick,
 }: MetricsCardProps) {
   return (
-    <div 
-      className={`bg-slate-900 rounded-lg border border-slate-800 shadow-sm p-6 hover:border-slate-700 transition-colors ${onClick ? 'cursor-pointer hover:shadow-lg hover:border-blue-600' : ''} ${className}`}
+    <div
+      className={`rounded-2xl border border-(--border-color) bg-(--surface) p-6 shadow-[0_10px_26px_rgba(27,94,32,0.08)] transition-all ${onClick ? "cursor-pointer hover:-translate-y-0.5 hover:border-(--primary-color) hover:shadow-[0_14px_30px_rgba(27,94,32,0.14)]" : ""} ${className}`}
       onClick={onClick}
     >
       <div className="flex items-start justify-between">
         <div className="flex-1">
-          <p className="text-slate-300 text-xs font-semibold uppercase tracking-wide">{title}</p>
-          <p className="mt-3 text-4xl font-bold text-white">{value}</p>
-          <div className="mt-4 h-1 w-12 bg-blue-600 rounded-full"></div>
+          <p className="text-(--muted-color) text-xs font-semibold uppercase tracking-wide">
+            {title}
+          </p>
+          <p className="mt-3 text-4xl font-bold text-(--heading-color)">
+            {value}
+          </p>
+          <div className="mt-4 h-1 w-12 rounded-full bg-(--primary-color)"></div>
         </div>
         {icon && (
-          <div className="ml-4 p-3 bg-slate-800 text-blue-400 rounded-lg">
-            {React.isValidElement(icon) ? React.cloneElement(icon as any, { className: 'w-6 h-6' }) : icon}
+          <div className="ml-4 rounded-xl border border-emerald-100 bg-emerald-50 p-3 text-(--primary-color)">
+            {React.isValidElement(icon)
+              ? React.cloneElement(icon as any, { className: "w-6 h-6" })
+              : icon}
           </div>
         )}
       </div>

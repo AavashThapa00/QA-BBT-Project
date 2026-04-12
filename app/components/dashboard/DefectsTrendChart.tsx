@@ -34,24 +34,29 @@ export default function DefectsTrendChart({
       : 0;
 
   return (
-    <div className="backdrop-blur-xl bg-slate-900/50 rounded-2xl border border-slate-800/50 shadow-2xl p-8 hover:shadow-cyan-500/10 transition-all duration-300">
+    <div className="rounded-2xl border border-(--border-color) bg-(--surface) p-8 shadow-[0_10px_24px_rgba(27,94,32,0.08)] transition-all duration-300 hover:shadow-[0_14px_30px_rgba(27,94,32,0.12)]">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h3 className="text-lg font-semibold text-white mb-2 flex items-center gap-2">
-            <HiTrendingUp className="w-5 h-5 text-cyan-400" />
+          <h3 className="text-lg font-semibold text-(--heading-color) mb-2 flex items-center gap-2">
+            <HiTrendingUp className="w-5 h-5 text-(--primary-color)" />
             {title}
           </h3>
-          <p className="text-xs text-slate-400">Historical trends of defect reports</p>
+          <p className="text-xs text-(--muted-color)">
+            Historical trends of defect reports
+          </p>
         </div>
         <div className="text-right">
-          <p className="text-xs text-slate-400">Latest Delta</p>
-          <p className={`text-lg font-bold ${trendSummary >= 0 ? "text-amber-300" : "text-emerald-300"}`}>
-            {trendSummary >= 0 ? "+" : ""}{trendSummary}
+          <p className="text-xs text-(--muted-color)">Latest Delta</p>
+          <p
+            className={`text-lg font-bold ${trendSummary >= 0 ? "text-amber-700" : "text-emerald-700"}`}
+          >
+            {trendSummary >= 0 ? "+" : ""}
+            {trendSummary}
           </p>
         </div>
       </div>
       {data.length === 0 ? (
-        <div className="flex items-center justify-center h-64 text-slate-400">
+        <div className="flex items-center justify-center h-64 text-(--muted-color)">
           <div className="text-center">
             <HiInbox className="text-3xl mb-2 block mx-auto" />
             <div>No data available</div>
@@ -65,29 +70,29 @@ export default function DefectsTrendChart({
           >
             <defs>
               <linearGradient id="trendAreaFill" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#22d3ee" stopOpacity={0.35} />
-                <stop offset="100%" stopColor="#22d3ee" stopOpacity={0.03} />
+                <stop offset="0%" stopColor="#66BB6A" stopOpacity={0.28} />
+                <stop offset="100%" stopColor="#66BB6A" stopOpacity={0.03} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+            <CartesianGrid strokeDasharray="3 3" stroke="#E5EDE6" />
             <XAxis
               dataKey="date"
-              tick={{ fontSize: 12, fill: "#cbd5e1" }}
-              axisLine={{ stroke: "#475569" }}
+              tick={{ fontSize: 12, fill: "#6B7A6D" }}
+              axisLine={{ stroke: "#D7E1D8" }}
               interval={Math.max(0, Math.floor(data.length / 10) - 1)}
             />
-            <YAxis 
-              tick={{ fontSize: 12, fill: "#cbd5e1" }}
-              axisLine={{ stroke: "#475569" }}
+            <YAxis
+              tick={{ fontSize: 12, fill: "#6B7A6D" }}
+              axisLine={{ stroke: "#D7E1D8" }}
             />
-            <Tooltip 
+            <Tooltip
               contentStyle={{
-                backgroundColor: "rgba(15, 23, 42, 0.95)",
-                border: "1px solid rgba(71, 85, 105, 0.8)",
+                backgroundColor: "rgba(255, 255, 255, 0.97)",
+                border: "1px solid #D7E1D8",
                 borderRadius: "12px",
-                boxShadow: "0 10px 24px -4px rgba(0, 0, 0, 0.35)",
+                boxShadow: "0 10px 24px -4px rgba(27, 94, 32, 0.15)",
               }}
-              labelStyle={{ color: "#f1f5f9", fontWeight: 600 }}
+              labelStyle={{ color: "#1B5E20", fontWeight: 600 }}
             />
             <Legend wrapperStyle={{ paddingTop: "20px" }} iconType="circle" />
             <Area
@@ -100,10 +105,15 @@ export default function DefectsTrendChart({
             <Line
               type="monotone"
               dataKey="count"
-              stroke="#22d3ee"
+              stroke="#2E7D32"
               strokeWidth={3.5}
               dot={{ r: 0 }}
-              activeDot={{ r: 5, fill: "#22d3ee", stroke: "#0f172a", strokeWidth: 2 }}
+              activeDot={{
+                r: 5,
+                fill: "#2E7D32",
+                stroke: "#FFFFFF",
+                strokeWidth: 2,
+              }}
               name="Defects"
               isAnimationActive={false}
             />

@@ -35,7 +35,8 @@ export default function FilterPanel({
   const applyFilters = () => {
     const filters: DefectFilters = {};
 
-    if (searchInput && searchInput.length >= 3) filters.searchTerm = searchInput;
+    if (searchInput && searchInput.length >= 3)
+      filters.searchTerm = searchInput;
     if (dateFrom) filters.dateFrom = new Date(dateFrom);
     if (dateTo) filters.dateTo = new Date(dateTo);
     if (severities.length > 0) filters.severity = severities as Severity[];
@@ -54,7 +55,7 @@ export default function FilterPanel({
     setSeverities((prev) =>
       prev.includes(Severity)
         ? prev.filter((s) => s !== Severity)
-        : [...prev, Severity]
+        : [...prev, Severity],
     );
   };
 
@@ -62,7 +63,7 @@ export default function FilterPanel({
     setModules((prev) =>
       prev.includes(module)
         ? prev.filter((m) => m !== module)
-        : [...prev, module]
+        : [...prev, module],
     );
   };
 
@@ -70,7 +71,7 @@ export default function FilterPanel({
     setStatuses((prev) =>
       prev.includes(status)
         ? prev.filter((s) => s !== status)
-        : [...prev, status]
+        : [...prev, status],
     );
   };
 
@@ -85,16 +86,21 @@ export default function FilterPanel({
   };
 
   return (
-    <div className="bg-slate-900 rounded-lg border border-slate-800 shadow-sm p-6 sm:p-8">
+    <div className="rounded-3xl border border-(--border-color) bg-(--surface) p-6 shadow-[0_10px_28px_rgba(27,94,32,0.08)] sm:p-8">
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-          <HiFilter className="w-5 h-5 text-blue-400" />
+        <h3 className="text-lg font-semibold text-(--heading-color) flex items-center gap-2">
+          <HiFilter className="w-5 h-5 text-(--primary-color)" />
           Filter Results
         </h3>
-        {((searchInput && searchInput.length >= 3) || dateFrom || dateTo || severities.length > 0 || modules.length > 0 || statuses.length > 0) && (
+        {((searchInput && searchInput.length >= 3) ||
+          dateFrom ||
+          dateTo ||
+          severities.length > 0 ||
+          modules.length > 0 ||
+          statuses.length > 0) && (
           <button
             onClick={clearFilters}
-            className="text-xs font-semibold text-slate-400 hover:text-slate-300 hover:bg-slate-800 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-2"
+            className="text-xs font-semibold text-(--muted-color) hover:text-(--heading-color) hover:bg-emerald-50 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-2"
           >
             <HiX className="w-4 h-4" />
             <span>Clear All</span>
@@ -106,7 +112,7 @@ export default function FilterPanel({
       <div className="mb-6">
         <div className="relative flex gap-2">
           <div className="relative flex-1">
-            <HiSearch className="absolute left-3 top-3.5 w-5 h-5 text-slate-500 pointer-events-none" />
+            <HiSearch className="absolute left-3 top-3.5 w-5 h-5 text-(--muted-color) pointer-events-none" />
             <input
               type="text"
               placeholder="Search issue, module"
@@ -114,12 +120,12 @@ export default function FilterPanel({
               onChange={(e) => setSearchInput(e.target.value)}
               onKeyPress={handleSearchKeyPress}
               disabled={isLoading}
-              className="w-full pl-10 pr-10 py-2.5 border border-slate-700 rounded-lg text-sm text-white bg-slate-800 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed hover:border-slate-600 transition-colors"
+              className="w-full pl-10 pr-10 py-2.5 border border-(--border-color) rounded-lg text-sm text-(--text-color) bg-(--surface-soft) placeholder-(--muted-color) focus:outline-none focus:ring-2 focus:ring-(--primary-color) focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed hover:border-(--primary-color) transition-colors"
             />
-            {(searchInput && searchInput.length >= 3) && (
+            {searchInput && searchInput.length >= 3 && (
               <button
                 onClick={handleClearSearch}
-                className="absolute right-3 top-3.5 text-slate-500 hover:text-slate-300 transition-colors"
+                className="absolute right-3 top-3.5 text-(--muted-color) hover:text-(--heading-color) transition-colors"
                 title="Clear search"
               >
                 <HiX className="w-5 h-5" />
@@ -129,7 +135,7 @@ export default function FilterPanel({
           <button
             onClick={applyFilters}
             disabled={isLoading}
-            className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2 whitespace-nowrap"
+            className="px-4 py-2.5 bg-(--primary-color) hover:bg-(--primary-hover-color) text-white font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2 whitespace-nowrap"
           >
             <HiSearch className="w-4 h-4" />
             <span>Search</span>
@@ -140,7 +146,7 @@ export default function FilterPanel({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* Date Range */}
         <div>
-          <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wide mb-2">
+          <label className="block text-xs font-semibold text-(--muted-color) uppercase tracking-wide mb-2">
             Date From
           </label>
           <input
@@ -148,12 +154,12 @@ export default function FilterPanel({
             value={dateFrom}
             onChange={(e) => setDateFrom(e.target.value)}
             disabled={isLoading}
-            className="w-full px-3 py-2.5 border border-slate-700 rounded-lg text-sm text-white bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed hover:border-slate-600 transition-colors"
+            className="w-full px-3 py-2.5 border border-(--border-color) rounded-lg text-sm text-(--text-color) bg-(--surface-soft) focus:outline-none focus:ring-2 focus:ring-(--primary-color) focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed hover:border-(--primary-color) transition-colors"
           />
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wide mb-2">
+          <label className="block text-xs font-semibold text-(--muted-color) uppercase tracking-wide mb-2">
             Date To
           </label>
           <input
@@ -161,13 +167,13 @@ export default function FilterPanel({
             value={dateTo}
             onChange={(e) => setDateTo(e.target.value)}
             disabled={isLoading}
-            className="w-full px-3 py-2.5 border border-slate-700 rounded-lg text-sm text-white bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed hover:border-slate-600 transition-colors"
+            className="w-full px-3 py-2.5 border border-(--border-color) rounded-lg text-sm text-(--text-color) bg-(--surface-soft) focus:outline-none focus:ring-2 focus:ring-(--primary-color) focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed hover:border-(--primary-color) transition-colors"
           />
         </div>
 
         {/* Priority Filter */}
         <div>
-          <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wide mb-3">
+          <label className="block text-xs font-semibold text-(--muted-color) uppercase tracking-wide mb-3">
             Priority
           </label>
           <div className="space-y-2.5">
@@ -181,9 +187,11 @@ export default function FilterPanel({
                   checked={severities.includes(Severity as string)}
                   onChange={() => handleSeverityToggle(Severity as string)}
                   disabled={isLoading}
-                  className="rounded border-slate-600 text-blue-500 focus:ring-blue-500 disabled:opacity-50 cursor-pointer bg-slate-700"
+                  className="rounded border-emerald-300 text-(--primary-color) focus:ring-(--primary-color) disabled:opacity-50 cursor-pointer bg-white"
                 />
-                <span className="text-slate-300 group-hover:text-white font-medium">{Severity as string}</span>
+                <span className="text-(--text-color) group-hover:text-(--heading-color) font-medium">
+                  {Severity as string}
+                </span>
               </label>
             ))}
           </div>
@@ -191,7 +199,7 @@ export default function FilterPanel({
 
         {/* Status Filter */}
         <div>
-          <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wide mb-3">
+          <label className="block text-xs font-semibold text-(--muted-color) uppercase tracking-wide mb-3">
             Status
           </label>
           <div className="space-y-2.5">
@@ -210,9 +218,11 @@ export default function FilterPanel({
                   checked={statuses.includes(status.value)}
                   onChange={() => handleStatusToggle(status.value)}
                   disabled={isLoading}
-                  className="rounded border-slate-600 text-blue-500 focus:ring-blue-500 disabled:opacity-50 cursor-pointer bg-slate-700"
+                  className="rounded border-emerald-300 text-(--primary-color) focus:ring-(--primary-color) disabled:opacity-50 cursor-pointer bg-white"
                 />
-                <span className="text-slate-300 group-hover:text-white font-medium">{status.label}</span>
+                <span className="text-(--text-color) group-hover:text-(--heading-color) font-medium">
+                  {status.label}
+                </span>
               </label>
             ))}
           </div>
@@ -221,24 +231,26 @@ export default function FilterPanel({
 
       {/* Modules */}
       {availableModules.length > 0 && (
-        <div className="mt-8 pt-8 border-t border-slate-700">
-          <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wide mb-4">
+        <div className="mt-8 pt-8 border-t border-(--border-color)">
+          <label className="block text-xs font-semibold text-(--muted-color) uppercase tracking-wide mb-4">
             Modules ({modules.length} selected)
           </label>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
             {availableModules.map((module) => (
               <label
                 key={module}
-                className="flex items-center gap-3 px-3 py-2 rounded-lg border border-slate-700 bg-slate-800/50 cursor-pointer hover:border-blue-500 hover:bg-slate-700 transition-colors group"
+                className="flex items-center gap-3 px-3 py-2 rounded-lg border border-(--border-color) bg-(--surface-soft) cursor-pointer hover:border-(--primary-color) hover:bg-emerald-50 transition-colors group"
               >
                 <input
                   type="checkbox"
                   checked={modules.includes(module)}
                   onChange={() => handleModuleToggle(module)}
                   disabled={isLoading}
-                  className="rounded border-slate-600 text-blue-500 focus:ring-blue-500 disabled:opacity-50 cursor-pointer bg-slate-700"
+                  className="rounded border-emerald-300 text-(--primary-color) focus:ring-(--primary-color) disabled:opacity-50 cursor-pointer bg-white"
                 />
-                <span className="text-sm text-slate-300 group-hover:text-white font-medium truncate">{module}</span>
+                <span className="text-sm text-(--text-color) group-hover:text-(--heading-color) font-medium truncate">
+                  {module}
+                </span>
               </label>
             ))}
           </div>
@@ -246,17 +258,17 @@ export default function FilterPanel({
       )}
 
       {/* Apply Filters Button */}
-      <div className="mt-8 pt-6 border-t border-slate-700 flex gap-3 justify-end">
+      <div className="mt-8 pt-6 border-t border-(--border-color) flex gap-3 justify-end">
         <button
           onClick={clearFilters}
-          className="px-6 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-medium rounded-lg transition-colors border border-slate-700 hover:border-slate-600"
+          className="px-6 py-2.5 bg-(--surface-soft) hover:bg-emerald-50 text-(--muted-color) hover:text-(--heading-color) font-medium rounded-lg transition-colors border border-(--border-color) hover:border-(--primary-color)"
         >
           Reset
         </button>
         <button
           onClick={applyFilters}
           disabled={isLoading}
-          className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="px-6 py-2.5 bg-(--primary-color) hover:bg-(--primary-hover-color) text-white font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           Apply Filters
         </button>
@@ -264,4 +276,3 @@ export default function FilterPanel({
     </div>
   );
 }
-
