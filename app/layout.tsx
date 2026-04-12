@@ -19,6 +19,8 @@ const appDescription =
   "IssueFixu is a modern QA defect tracking and analytics platform that helps teams log issues, monitor trends, and ship better software faster.";
 const appUrl = process.env.APP_BASE_URL || "http://localhost:3000";
 const ogImage = "/ogImage.png";
+const ogImageUrl = new URL(ogImage, appUrl).toString();
+const faviconUrl = "/favicon.ico?v=20260412";
 
 export const metadata: Metadata = {
   metadataBase: new URL(appUrl),
@@ -61,9 +63,11 @@ export const metadata: Metadata = {
     description: appDescription,
     images: [
       {
-        url: ogImage,
+        url: ogImageUrl,
+        secureUrl: ogImageUrl,
         width: 1200,
         height: 630,
+        type: "image/png",
         alt: `${appName} social preview image`,
       },
     ],
@@ -72,11 +76,12 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: `${appName} | QA Defect Tracking & Analytics Platform`,
     description: appDescription,
-    images: [ogImage],
+    images: [ogImageUrl],
   },
   icons: {
-    icon: "/favicon.ico",
-    apple: "/favicon.ico",
+    icon: faviconUrl,
+    shortcut: faviconUrl,
+    apple: faviconUrl,
   },
   category: "technology",
 };
