@@ -12,7 +12,7 @@ function SubmitButton() {
     <button
       type="submit"
       disabled={pending}
-      className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-3 rounded-lg transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
+      className="w-full cursor-pointer rounded-xl bg-(--primary-color) px-4 py-3 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(76,175,80,0.16)] transition-colors duration-200 hover:bg-(--primary-hover-color) disabled:cursor-not-allowed disabled:opacity-60"
     >
       {pending ? "Resetting..." : "Reset Password"}
     </button>
@@ -24,68 +24,92 @@ function ResetPasswordContent() {
   const token = searchParams.get("token") || "";
 
   const [state, formAction] = useActionState(
-    async (_prevState: { message?: string; success?: boolean } | null, formData: FormData) => {
+    async (
+      _prevState: { message?: string; success?: boolean } | null,
+      formData: FormData,
+    ) => {
       return resetPasswordWithTokenAction(formData);
     },
-    null
+    null,
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center p-6 overflow-hidden relative">
-      <div className="w-full max-w-md backdrop-blur-xl bg-slate-900/50 border border-slate-800/50 rounded-2xl p-8 shadow-2xl animate-in fade-in zoom-in duration-500">
-        <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">Reset Password</h1>
-        <p className="text-slate-300 mt-2 text-sm">Set a new password for your account.</p>
+    <div className="min-h-screen bg-(--page-background) px-6 py-10">
+      <div className="mx-auto flex min-h-[calc(100vh-5rem)] w-full max-w-md items-center justify-center">
+        <div className="w-full overflow-hidden rounded-4xl border border-(--border-color) bg-[rgba(255,255,255,0.96)] shadow-[0_22px_60px_rgba(27,94,32,0.08)]">
+          <div className="h-1 bg-(--primary-color)" />
+          <div className="px-8 py-7">
+            <h1 className="text-3xl font-semibold tracking-tight text-(--heading-color)">
+              Reset password
+            </h1>
+            <p className="mt-2 text-sm leading-6 text-(--muted-color)">
+              Set a new password for your account.
+            </p>
 
-        {!token ? (
-          <div className="mt-6 rounded-lg p-3 border border-red-700/50 bg-red-900/20 text-red-300 text-sm">
-            Invalid reset link. Please request a new one.
-          </div>
-        ) : (
-          <form action={formAction} className="mt-6 space-y-4">
-            <input type="hidden" name="token" value={token} />
-
-            <div>
-              <label className="block text-sm text-slate-300 mb-2">New Password</label>
-              <input
-                name="password"
-                type="password"
-                minLength={8}
-                required
-                className="w-full bg-slate-800/50 border border-slate-700/50 text-white rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm text-slate-300 mb-2">Confirm Password</label>
-              <input
-                name="confirmPassword"
-                type="password"
-                minLength={8}
-                required
-                className="w-full bg-slate-800/50 border border-slate-700/50 text-white rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-
-            {state?.message && (
-              <div className={`text-sm rounded-lg p-3 border ${state.success ? "text-emerald-300 bg-emerald-900/20 border-emerald-700/50" : "text-red-300 bg-red-900/20 border-red-700/50"}`}>
-                {state.message}
+            {!token ? (
+              <div className="mt-6 rounded-xl border border-[rgba(229,57,53,0.18)] bg-[rgba(229,57,53,0.08)] p-3 text-sm text-(--danger-color)">
+                Invalid reset link. Please request a new one.
               </div>
+            ) : (
+              <form action={formAction} className="mt-6 space-y-4">
+                <input type="hidden" name="token" value={token} />
+
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-(--heading-color)">
+                    New password
+                  </label>
+                  <input
+                    name="password"
+                    type="password"
+                    minLength={8}
+                    required
+                    className="w-full rounded-xl border border-(--border-color) bg-(--surface-soft) px-3 py-2.5 text-(--text-color) shadow-sm transition-colors duration-200 focus:border-(--primary-color) focus:outline-none focus:ring-2 focus:ring-(--primary-color)/20"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-(--heading-color)">
+                    Confirm password
+                  </label>
+                  <input
+                    name="confirmPassword"
+                    type="password"
+                    minLength={8}
+                    required
+                    className="w-full rounded-xl border border-(--border-color) bg-(--surface-soft) px-3 py-2.5 text-(--text-color) shadow-sm transition-colors duration-200 focus:border-(--primary-color) focus:outline-none focus:ring-2 focus:ring-(--primary-color)/20"
+                  />
+                </div>
+
+                {state?.message && (
+                  <div
+                    className={`rounded-xl border p-3 text-sm ${state.success ? "border-[rgba(76,175,80,0.18)] bg-[rgba(76,175,80,0.08)] text-(--heading-color)" : "border-[rgba(229,57,53,0.18)] bg-[rgba(229,57,53,0.08)] text-(--danger-color)"}`}
+                  >
+                    {state.message}
+                  </div>
+                )}
+
+                {state?.success && (
+                  <Link
+                    href="/login"
+                    className="block text-center text-sm font-medium text-(--heading-color) underline decoration-(--primary-color)/40 underline-offset-4 transition-colors hover:text-(--primary-color)"
+                  >
+                    Go to sign in
+                  </Link>
+                )}
+
+                <SubmitButton />
+              </form>
             )}
 
-            {state?.success && (
-              <Link href="/login" className="block text-center text-sm text-blue-300 hover:text-blue-200 underline">
-                Go to Sign In
+            <div className="mt-5 text-center">
+              <Link
+                href="/login"
+                className="text-sm font-medium text-(--heading-color) transition-colors hover:text-(--primary-color)"
+              >
+                Back to sign in
               </Link>
-            )}
-
-            <SubmitButton />
-          </form>
-        )}
-
-        <div className="text-center mt-4">
-          <Link href="/login" className="text-xs text-slate-300 hover:text-white transition-colors">
-            Back to Sign In
-          </Link>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -96,8 +120,8 @@ export default function ResetPasswordPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center p-6">
-          <div className="animate-spin rounded-full h-10 w-10 border-2 border-slate-700 border-t-blue-500"></div>
+        <div className="flex min-h-screen items-center justify-center bg-(--page-background) p-6">
+          <div className="h-10 w-10 animate-spin rounded-full border-2 border-emerald-200 border-t-(--primary-color)"></div>
         </div>
       }
     >
