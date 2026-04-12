@@ -2,17 +2,46 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { HiArrowLeft, HiCheckCircle, HiClock, HiExclamationCircle, HiTrash } from "react-icons/hi";
+import {
+  HiArrowLeft,
+  HiCheckCircle,
+  HiClock,
+  HiExclamationCircle,
+  HiTrash,
+} from "react-icons/hi";
+import AppButton from "@/app/components/common/AppButton";
 import { Defect } from "@/lib/types";
-import { deleteDefectById, getAllDefectsSorted } from "@/app/actions/detailsActions";
+import {
+  deleteDefectById,
+  getAllDefectsSorted,
+} from "@/app/actions/detailsActions";
 import { formatDate } from "@/lib/utils";
 
-const STATUS_COLORS: Record<string, { bg: string; text: string; icon: React.ReactNode }> = {
-  OPEN: { bg: "bg-blue-900", text: "text-blue-200", icon: <HiExclamationCircle /> },
-  IN_PROGRESS: { bg: "bg-purple-900", text: "text-purple-200", icon: <HiClock /> },
-  CLOSED: { bg: "bg-green-900", text: "text-green-200", icon: <HiCheckCircle /> },
-  ON_HOLD: { bg: "bg-red-900", text: "text-red-200", icon: <HiClock /> },
-  AS_IT_IS: { bg: "bg-slate-700", text: "text-slate-200", icon: <HiCheckCircle /> },
+const STATUS_COLORS: Record<
+  string,
+  { bg: string; text: string; icon: React.ReactNode }
+> = {
+  OPEN: {
+    bg: "bg-sky-100",
+    text: "text-sky-700",
+    icon: <HiExclamationCircle />,
+  },
+  IN_PROGRESS: {
+    bg: "bg-indigo-100",
+    text: "text-indigo-700",
+    icon: <HiClock />,
+  },
+  CLOSED: {
+    bg: "bg-emerald-100",
+    text: "text-emerald-700",
+    icon: <HiCheckCircle />,
+  },
+  ON_HOLD: { bg: "bg-rose-100", text: "text-rose-700", icon: <HiClock /> },
+  AS_IT_IS: {
+    bg: "bg-slate-100",
+    text: "text-slate-700",
+    icon: <HiCheckCircle />,
+  },
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -41,8 +70,8 @@ export default function AllDefectsPage() {
     if (selectedModule === "ALL") {
       setFilteredDefects(defects);
     } else {
-      const filtered = defects.filter((defect) => 
-        defect.module.toLowerCase().includes(selectedModule.toLowerCase())
+      const filtered = defects.filter((defect) =>
+        defect.module.toLowerCase().includes(selectedModule.toLowerCase()),
       );
       setFilteredDefects(filtered);
     }
@@ -62,7 +91,9 @@ export default function AllDefectsPage() {
   };
 
   const handleDeleteIssue = async (id: string) => {
-    const confirmed = window.confirm("Remove this issue from the issue sheet? This action cannot be undone.");
+    const confirmed = window.confirm(
+      "Remove this issue from the issue sheet? This action cannot be undone.",
+    );
     if (!confirmed) return;
 
     try {
@@ -84,29 +115,27 @@ export default function AllDefectsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 overflow-hidden relative">
-      {/* Animated Background */}
-      <div className="fixed inset-0 opacity-30 -z-10">
-        <div className="absolute top-20 left-1/4 w-80 h-80 bg-blue-600 rounded-full mix-blend-multiply filter blur-3xl animate-blob"></div>
-        <div className="absolute top-1/2 right-1/3 w-80 h-80 bg-purple-600 rounded-full mix-blend-multiply filter blur-3xl animate-blob" style={{ animationDelay: '2s' }}></div>
-        <div className="absolute bottom-20 left-1/2 w-80 h-80 bg-pink-600 rounded-full mix-blend-multiply filter blur-3xl animate-blob" style={{ animationDelay: '4s' }}></div>
-      </div>
-
+    <div className="min-h-screen bg-(--page-background)">
       {/* Header */}
-      <div className="backdrop-blur-lg bg-slate-900/50 border-b border-slate-800/50 shadow-lg sticky top-0 z-10">
-        <div className="w-full px-4 sm:px-6 lg:px-10 xl:px-12 py-4">
+      <div className="sticky top-0 z-10 border-b border-emerald-100 bg-(--surface) shadow-sm">
+        <div className="w-full px-4 py-4 sm:px-6 lg:px-10 xl:px-12">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <button
+              <AppButton
                 onClick={() => router.push("/")}
-                className="p-2 hover:bg-slate-800 rounded-lg transition-colors"
+                variant="secondary"
+                size="icon"
+                aria-label="Back to dashboard"
               >
-                <HiArrowLeft className="w-5 h-5 text-slate-400" />
-              </button>
+                <HiArrowLeft className="h-5 w-5" />
+              </AppButton>
               <div>
-                <h1 className="text-xl font-semibold text-white">All Defects</h1>
-                <p className="text-sm text-slate-400">
-                  {filteredDefects.length} defect{filteredDefects.length !== 1 ? "s" : ""}
+                <h1 className="text-xl font-semibold text-(--heading-color)">
+                  All Defects
+                </h1>
+                <p className="text-sm text-(--muted-color)">
+                  {filteredDefects.length} defect
+                  {filteredDefects.length !== 1 ? "s" : ""}
                   {selectedModule !== "ALL" && ` in ${selectedModule}`}
                 </p>
               </div>
@@ -115,17 +144,17 @@ export default function AllDefectsPage() {
         </div>
       </div>
 
-      <div className="w-full px-4 sm:px-6 lg:px-10 xl:px-12 py-8">
+      <div className="w-full px-4 py-6 sm:px-6 lg:px-10 xl:px-12">
         {/* Module Navigation */}
         <div className="mb-6 flex gap-2 overflow-x-auto pb-2">
           {MODULES.map((module) => (
             <button
               key={module}
               onClick={() => setSelectedModule(module)}
-              className={`px-4 py-2 rounded-lg font-medium text-sm whitespace-nowrap transition-all ${
+              className={`whitespace-nowrap rounded-lg border px-4 py-2 text-sm font-medium transition-all ${
                 selectedModule === module
-                  ? "bg-blue-600 text-white shadow-md"
-                  : "bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white"
+                  ? "border-(--primary-color) bg-(--primary-color) text-white"
+                  : "border-(--border-color) bg-(--surface-soft) text-(--muted-color) hover:border-(--primary-color) hover:bg-emerald-50 hover:text-(--heading-color)"
               }`}
             >
               {module}
@@ -136,38 +165,39 @@ export default function AllDefectsPage() {
         {/* Defects List */}
         {isLoading ? (
           <div className="flex items-center justify-center py-20">
-            <div className="animate-spin rounded-full h-12 w-12 border-2 border-slate-700 border-t-blue-500"></div>
+            <div className="h-12 w-12 animate-spin rounded-full border-2 border-emerald-200 border-t-(--primary-color)"></div>
           </div>
         ) : filteredDefects.length === 0 ? (
           <div className="text-center py-20">
-            <p className="text-slate-400">No defects found</p>
+            <p className="text-(--muted-color)">No defects found</p>
           </div>
         ) : (
           <div className="space-y-4">
             {filteredDefects.map((defect) => (
               <div
                 key={defect.id}
-                className="bg-slate-900 rounded-lg border border-slate-800 p-6 hover:border-slate-700 transition-colors cursor-pointer"
+                className="cursor-pointer rounded-lg border border-(--border-color) bg-(--surface) p-6 transition-colors hover:border-emerald-200 hover:bg-emerald-50/20"
                 onClick={() => router.push(`/defects/${defect.id}`)}
               >
                 <div className="flex items-center justify-end mb-2">
-                  <button
+                  <AppButton
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleDeleteIssue(defect.id);
                     }}
                     disabled={deletingId === defect.id}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-900/40 hover:bg-red-900/60 disabled:bg-slate-700 text-red-200 disabled:text-slate-400 text-xs font-semibold transition-colors"
+                    variant="dangerSoft"
+                    size="sm"
                   >
                     <HiTrash className="w-4 h-4" />
                     {deletingId === defect.id ? "Removing..." : "Remove"}
-                  </button>
+                  </AppButton>
                 </div>
 
                 {/* Summary/Title Header */}
                 {defect.summary && (
-                  <h2 className="text-lg font-semibold text-white mb-4 leading-relaxed">
+                  <h2 className="mb-4 text-lg font-semibold leading-relaxed text-(--text-color)">
                     {defect.summary}
                   </h2>
                 )}
@@ -175,10 +205,10 @@ export default function AllDefectsPage() {
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
-                      <span className="text-xs font-mono text-slate-500">
+                      <span className="text-xs font-mono text-(--muted-color)">
                         {defect.testCaseId || defect.id.substring(0, 8)}
                       </span>
-                      <span className="px-2 py-1 bg-slate-800 rounded text-xs text-slate-300">
+                      <span className="rounded border border-emerald-200 bg-emerald-50 px-2 py-1 text-xs text-emerald-700">
                         {defect.module}
                       </span>
                       <span
@@ -191,7 +221,7 @@ export default function AllDefectsPage() {
                       </span>
                     </div>
                     {defect.dateReported && (
-                      <p className="text-xs text-slate-500">
+                      <p className="text-xs text-(--muted-color)">
                         Reported: {formatDate(defect.dateReported)}
                       </p>
                     )}
@@ -201,30 +231,45 @@ export default function AllDefectsPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Expected Result */}
                   <div>
-                    <h3 className="text-sm font-semibold text-green-400 mb-2">
+                    <h3 className="mb-2 text-sm font-semibold text-emerald-700">
                       ✓ Expected Result
                     </h3>
-                    <p className="text-sm text-slate-300 leading-relaxed">
+                    <p className="text-sm leading-relaxed text-(--text-color)">
                       {defect.expectedResult}
                     </p>
                   </div>
 
                   {/* Actual Result */}
                   <div>
-                    <h3 className="text-sm font-semibold text-red-400 mb-2">
+                    <h3 className="mb-2 text-sm font-semibold text-rose-700">
                       ✗ Actual Result
                     </h3>
-                    <p className="text-sm text-slate-300 leading-relaxed">
+                    <p className="text-sm leading-relaxed text-(--text-color)">
                       {defect.actualResult}
                     </p>
                   </div>
                 </div>
 
-                <div className="mt-4 pt-4 border-t border-slate-800 flex items-center gap-4 text-xs text-slate-500">
-                  <span>Severity: <span className="text-slate-300 font-medium">{defect.severity}</span></span>
-                  <span>Priority: <span className="text-slate-300 font-medium">{defect.priority}</span></span>
+                <div className="mt-4 flex items-center gap-4 border-t border-(--border-color) pt-4 text-xs text-(--muted-color)">
+                  <span>
+                    Severity:{" "}
+                    <span className="font-medium text-(--text-color)">
+                      {defect.severity}
+                    </span>
+                  </span>
+                  <span>
+                    Priority:{" "}
+                    <span className="font-medium text-(--text-color)">
+                      {defect.priority}
+                    </span>
+                  </span>
                   {defect.dateFixed && (
-                    <span>Fixed: <span className="text-slate-300">{formatDate(defect.dateFixed)}</span></span>
+                    <span>
+                      Fixed:{" "}
+                      <span className="text-(--text-color)">
+                        {formatDate(defect.dateFixed)}
+                      </span>
+                    </span>
                   )}
                 </div>
               </div>
