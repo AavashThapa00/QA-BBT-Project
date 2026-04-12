@@ -255,136 +255,157 @@ export default function Home() {
 
       {/* Main Content */}
       <div
-        className={`relative w-full space-y-8 px-4 py-8 transition-all duration-200 sm:px-6 lg:px-10 xl:px-12 ${
+        className={`relative w-full space-y-6 px-4 py-6 transition-all duration-200 sm:px-6 lg:px-8 xl:px-10 ${
           isExportPanelOpen ? "blur-sm opacity-50 pointer-events-none" : ""
         }`}
       >
-        <div className="animate-in fade-in-up rounded-3xl border border-(--border-color) bg-[rgba(255,255,255,0.9)] px-6 py-6 shadow-[0_16px_40px_rgba(27,94,32,0.07)] duration-500">
-          <h1 className="pb-1 text-4xl font-bold leading-[1.15] text-(--heading-color) md:text-5xl">
-            Defect Intelligence Dashboard
-          </h1>
-          <p className="mt-2 text-sm text-(--muted-color) md:text-base">
-            Live visibility across modules, priorities, and trend movement.
-          </p>
-        </div>
-
-        {/* Filters */}
-        <FilterPanel
-          onFiltersChange={setFilters}
-          availableModules={state.availableModules}
-          isLoading={state.isLoading || !moduleSeverityLoaded}
-        />
-
-        {/* Metrics Grid */}
-        {state.isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {[...Array(4)].map((_, i) => (
-              <SkeletonCard key={i} />
-            ))}
-          </div>
-        ) : state.metrics ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <MetricsCard
-              title="Total Defects"
-              value={state.metrics.totalDefects}
-              icon={<HiChartBar />}
-              onClick={() => handleMetricClick("all")}
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[320px_minmax(0,1fr)] xl:grid-cols-[340px_minmax(0,1fr)]">
+          <aside className="lg:sticky lg:top-24 lg:self-start">
+            <FilterPanel
+              onFiltersChange={setFilters}
+              availableModules={state.availableModules}
+              isLoading={state.isLoading || !moduleSeverityLoaded}
             />
-            <MetricsCard
-              title="Open Defects"
-              value={state.metrics.openDefects}
-              icon={<HiExclamationCircle />}
-              onClick={() => handleMetricClick("open")}
-            />
-            <MetricsCard
-              title="Closed Defects"
-              value={state.metrics.closedDefects}
-              icon={<HiClipboardList />}
-              onClick={() => handleMetricClick("closed")}
-            />
-            <MetricsCard
-              title="Critical Priority Issues"
-              value={state.metrics.highSeverityCount}
-              icon={<HiExclamationCircle />}
-              onClick={() => handleMetricClick("critical")}
-            />
-          </div>
-        ) : null}
+          </aside>
 
-        {/* Charts Section */}
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          {state.isLoading ? (
-            <>
-              <SkeletonChart />
-              <SkeletonChart />
-            </>
-          ) : (
-            <>
-              <DefectsByModuleChart data={state.defectsByModule} />
-              <DefectsBySeverityChart data={state.defectsBySeverity} />
-            </>
-          )}
-        </div>
+          <section className="space-y-5">
+            <div className="rounded-3xl border border-(--border-color) bg-[rgba(255,255,255,0.9)] px-5 py-4 shadow-[0_12px_30px_rgba(27,94,32,0.08)]">
+              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <h1 className="text-2xl font-bold leading-tight text-(--heading-color) md:text-3xl">
+                    Defect Dashboard
+                  </h1>
+                  <p className="mt-1.5 text-sm text-(--muted-color)">
+                    Use filters first, then review cards and charts, then open
+                    rows for details.
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => router.push("/all-defects")}
+                    className="rounded-lg border border-(--border-color) bg-(--surface) px-4 py-2 text-sm font-medium text-(--heading-color) transition-colors hover:border-(--primary-color) hover:bg-emerald-50"
+                  >
+                    View All Defects
+                  </button>
+                  <button
+                    onClick={scrollToDefectsTable}
+                    className="rounded-lg bg-(--primary-color) px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-(--primary-hover-color)"
+                  >
+                    Jump to Table
+                  </button>
+                </div>
+              </div>
+            </div>
 
-        {/* Trend Chart */}
-        <div className="rounded-3xl border border-(--border-color) bg-[rgba(255,255,255,0.88)] p-4 shadow-[0_10px_28px_rgba(27,94,32,0.06)] sm:p-5">
-          {state.isLoading ? (
-            <SkeletonChart />
-          ) : (
-            <DefectsTrendChart data={state.defectsTrend} />
-          )}
-        </div>
+            {state.isLoading ? (
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+                {[...Array(4)].map((_, i) => (
+                  <SkeletonCard key={i} />
+                ))}
+              </div>
+            ) : state.metrics ? (
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+                <MetricsCard
+                  title="Total Defects"
+                  value={state.metrics.totalDefects}
+                  icon={<HiChartBar />}
+                  onClick={() => handleMetricClick("all")}
+                />
+                <MetricsCard
+                  title="Open Defects"
+                  value={state.metrics.openDefects}
+                  icon={<HiExclamationCircle />}
+                  onClick={() => handleMetricClick("open")}
+                />
+                <MetricsCard
+                  title="Closed Defects"
+                  value={state.metrics.closedDefects}
+                  icon={<HiClipboardList />}
+                  onClick={() => handleMetricClick("closed")}
+                />
+                <MetricsCard
+                  title="Critical Priority Issues"
+                  value={state.metrics.highSeverityCount}
+                  icon={<HiExclamationCircle />}
+                  onClick={() => handleMetricClick("critical")}
+                />
+              </div>
+            ) : null}
 
-        {/* Additional Metrics */}
-        {state.isLoading ? (
-          <SkeletonCard />
-        ) : state.averageResolutionTime > 0 ? (
-          <div className="rounded-2xl border border-(--border-color) bg-(--surface) p-6 shadow-[0_12px_32px_rgba(27,94,32,0.08)] transition-all duration-300 hover:shadow-[0_16px_36px_rgba(27,94,32,0.12)]">
-            <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-(--muted-color)">
-              Average Resolution Time
-            </h3>
-            <p className="text-5xl font-bold text-(--heading-color)">
-              {state.averageResolutionTime}
-            </p>
-            <p className="mt-2 text-sm text-(--muted-color)">
-              days to resolve defects
-            </p>
-          </div>
-        ) : null}
+            <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
+              {state.isLoading ? (
+                <>
+                  <SkeletonChart />
+                  <SkeletonChart />
+                </>
+              ) : (
+                <>
+                  <DefectsByModuleChart data={state.defectsByModule} />
+                  <DefectsBySeverityChart data={state.defectsBySeverity} />
+                </>
+              )}
+            </div>
 
-        {/* Data Table */}
-        <div
-          ref={defectsTableRef}
-          className="rounded-3xl border border-(--border-color) bg-(--surface) p-4 shadow-[0_12px_30px_rgba(27,94,32,0.07)] sm:p-5"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="flex items-center gap-2 text-lg font-semibold text-(--heading-color)">
-              <HiClipboardList className="h-5 w-5 text-(--primary-color)" />
-              Defects List
-            </h2>
-            <button
-              onClick={handleExportCSV}
-              disabled={state.isLoading}
-              className="flex items-center gap-2 rounded-lg bg-(--primary-color) px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:bg-(--primary-hover-color) hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
+            <div className="rounded-3xl border border-(--border-color) bg-[rgba(255,255,255,0.88)] p-3.5 shadow-[0_10px_28px_rgba(27,94,32,0.06)] sm:p-4">
+              {state.isLoading ? (
+                <SkeletonChart />
+              ) : (
+                <DefectsTrendChart data={state.defectsTrend} />
+              )}
+            </div>
+
+            {/* Additional Metrics */}
+            {state.isLoading ? (
+              <SkeletonCard />
+            ) : state.averageResolutionTime > 0 ? (
+              <div className="rounded-2xl border border-(--border-color) bg-(--surface) p-4 shadow-[0_12px_32px_rgba(27,94,32,0.08)] transition-all duration-300 hover:shadow-[0_16px_36px_rgba(27,94,32,0.12)]">
+                <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-(--muted-color)">
+                  Average Resolution Time
+                </h3>
+                <p className="text-4xl font-bold text-(--heading-color)">
+                  {state.averageResolutionTime}
+                </p>
+                <p className="mt-1 text-sm text-(--muted-color)">
+                  days to resolve defects
+                </p>
+              </div>
+            ) : null}
+
+            {/* Data Table */}
+            <div
+              ref={defectsTableRef}
+              className="rounded-3xl border border-(--border-color) bg-(--surface) p-3.5 shadow-[0_12px_30px_rgba(27,94,32,0.07)] sm:p-4"
             >
-              <HiDownload className="h-4 w-4" />
-              <span>Export All</span>
-            </button>
-          </div>
-          {state.isLoading ? (
-            <SkeletonTable />
-          ) : (
-            <DefectsTable
-              defects={state.defects}
-              isLoading={tableLoading}
-              currentPage={state.currentPage}
-              totalPages={state.totalPages}
-              onPageChange={handlePageChange}
-              sortBy={state.sortBy}
-              sortOrder={state.sortOrder}
-              onSortChange={handleSortChange}
-            />
-          )}
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="flex items-center gap-2 text-lg font-semibold text-(--heading-color)">
+                  <HiClipboardList className="h-5 w-5 text-(--primary-color)" />
+                  Defects List
+                </h2>
+                <button
+                  onClick={handleExportCSV}
+                  disabled={state.isLoading}
+                  className="flex items-center gap-2 rounded-lg bg-(--primary-color) px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:bg-(--primary-hover-color) hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <HiDownload className="h-4 w-4" />
+                  <span>Export All</span>
+                </button>
+              </div>
+              {state.isLoading ? (
+                <SkeletonTable />
+              ) : (
+                <DefectsTable
+                  defects={state.defects}
+                  isLoading={tableLoading}
+                  currentPage={state.currentPage}
+                  totalPages={state.totalPages}
+                  onPageChange={handlePageChange}
+                  sortBy={state.sortBy}
+                  sortOrder={state.sortOrder}
+                  onSortChange={handleSortChange}
+                />
+              )}
+            </div>
+          </section>
         </div>
       </div>
     </div>

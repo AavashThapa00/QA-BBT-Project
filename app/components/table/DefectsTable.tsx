@@ -69,7 +69,7 @@ function SortButton({
   return (
     <button
       onClick={() => onClick(column, nextOrder)}
-      className="flex items-center gap-2 rounded px-2 py-1 font-semibold uppercase tracking-wide text-(--heading-color) transition-colors hover:bg-emerald-50 hover:text-(--primary-color)"
+      className="flex items-center gap-2 whitespace-nowrap rounded px-2 py-1 font-semibold uppercase tracking-wide text-(--heading-color) transition-colors hover:bg-emerald-50 hover:text-(--primary-color)"
     >
       {label}
       {isActive && (
@@ -187,6 +187,8 @@ export default function DefectsTable({
     return moduleMatch && severityMatch && priorityMatch && statusMatch;
   });
 
+  const skeletonRows = Array.from({ length: 8 });
+
   return (
     <div className="overflow-hidden rounded-2xl border border-(--border-color) bg-(--surface) shadow-[0_10px_26px_rgba(27,94,32,0.08)]">
       <div className="overflow-x-auto">
@@ -273,16 +275,28 @@ export default function DefectsTable({
           </thead>
           <tbody className="divide-y divide-(--border-color) bg-(--surface)">
             {isLoading ? (
-              <tr>
-                <td colSpan={6} className="px-6 py-8 text-center">
-                  <div className="flex items-center justify-center gap-3">
-                    <div className="h-6 w-6 animate-spin rounded-full border-2 border-emerald-200 border-t-(--primary-color)"></div>
-                    <span className="font-medium text-(--muted-color)">
-                      Loading data...
-                    </span>
-                  </div>
-                </td>
-              </tr>
+              skeletonRows.map((_, index) => (
+                <tr key={`skeleton-${index}`} className="animate-pulse">
+                  <td className="whitespace-nowrap px-6 py-4">
+                    <div className="h-4 w-24 rounded bg-emerald-100" />
+                  </td>
+                  <td className="whitespace-nowrap px-6 py-4">
+                    <div className="h-6 w-20 rounded-lg bg-emerald-100" />
+                  </td>
+                  <td className="whitespace-nowrap px-6 py-4">
+                    <div className="h-6 w-16 rounded-lg bg-emerald-100" />
+                  </td>
+                  <td className="whitespace-nowrap px-6 py-4">
+                    <div className="h-6 w-16 rounded-lg bg-emerald-100" />
+                  </td>
+                  <td className="whitespace-nowrap px-6 py-4">
+                    <div className="h-6 w-20 rounded-lg bg-emerald-100" />
+                  </td>
+                  <td className="whitespace-nowrap px-6 py-4">
+                    <div className="h-4 w-20 rounded bg-emerald-100" />
+                  </td>
+                </tr>
+              ))
             ) : filteredDefects.length === 0 ? (
               <tr>
                 <td

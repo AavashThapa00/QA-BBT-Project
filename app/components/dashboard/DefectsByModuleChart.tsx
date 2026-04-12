@@ -45,8 +45,8 @@ export default function DefectsByModuleChart({
   };
 
   return (
-    <div className="rounded-2xl border border-(--border-color) bg-(--surface) p-8 shadow-[0_10px_24px_rgba(27,94,32,0.08)] transition-all duration-300 hover:shadow-[0_14px_30px_rgba(27,94,32,0.12)]">
-      <div className="flex items-center justify-between mb-6">
+    <div className="rounded-2xl border border-(--border-color) bg-(--surface) p-5 shadow-[0_10px_24px_rgba(27,94,32,0.08)] transition-all duration-300 hover:shadow-[0_14px_30px_rgba(27,94,32,0.12)]">
+      <div className="mb-4 flex items-center justify-between">
         <div>
           <h3 className="text-lg font-semibold text-(--heading-color) flex items-center gap-2">
             <HiChartBar className="w-5 h-5 text-(--primary-color)" />
@@ -73,14 +73,14 @@ export default function DefectsByModuleChart({
       </div>
 
       {data.length === 0 ? (
-        <div className="flex items-center justify-center h-64 text-(--muted-color)">
+        <div className="flex h-52 items-center justify-center text-(--muted-color)">
           <div className="text-center">
             <HiInbox className="text-3xl mb-2 block mx-auto" />
             <div>No data available</div>
           </div>
         </div>
       ) : (
-        <ResponsiveContainer width="100%" height={320}>
+        <ResponsiveContainer width="100%" height={250}>
           <BarChart
             data={sortedData}
             layout="vertical"
@@ -105,7 +105,7 @@ export default function DefectsByModuleChart({
             <YAxis
               type="category"
               dataKey="module"
-              tick={{ fontSize: 13, fill: "#1B5E20", fontWeight: 600 }}
+              tick={{ fontSize: 12, fill: "#1B5E20", fontWeight: 600 }}
               axisLine={{ stroke: "#D7E1D8" }}
               width={90}
             />
@@ -125,7 +125,7 @@ export default function DefectsByModuleChart({
               dataKey="count"
               name="Issues"
               radius={[0, 8, 8, 0]}
-              barSize={20}
+              barSize={16}
               background={{ fill: "rgba(224, 233, 225, 0.8)", radius: 8 }}
               isAnimationActive={true}
             >
@@ -143,32 +143,6 @@ export default function DefectsByModuleChart({
           </BarChart>
         </ResponsiveContainer>
       )}
-
-      <div className="mt-6 pt-4 border-t border-(--border-color)">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-          {sortedData.slice(0, 4).map((item, index) => (
-            <div
-              key={item.module}
-              className="flex items-center justify-between p-2.5 rounded-lg bg-(--surface-soft) border border-(--border-color) hover:border-(--primary-color) transition-colors"
-            >
-              <span className="text-sm text-(--text-color) font-medium">
-                {item.module}
-              </span>
-              <span
-                className="text-sm font-bold"
-                style={{
-                  color:
-                    index === 0
-                      ? "#2E7D32"
-                      : moduleColors[item.module] || "#4CAF50",
-                }}
-              >
-                {item.count}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }
