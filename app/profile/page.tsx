@@ -3,7 +3,12 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { HiArrowLeft, HiTrash, HiCheckCircle } from "react-icons/hi";
-import { getCurrentUser, updateProfileAction, changePasswordAction } from "@/app/actions/auth";
+import AppButton from "@/app/components/common/AppButton";
+import {
+  getCurrentUser,
+  updateProfileAction,
+  changePasswordAction,
+} from "@/app/actions/auth";
 import { getUploadedFiles, deleteFileData } from "@/app/actions/files";
 
 interface AuthUser {
@@ -35,7 +40,10 @@ export default function ProfilePage() {
       setLoading(true);
       const current = await getCurrentUser();
       setUser(current);
-      if (current && (current.role === "admin" || current.role === "super_admin")) {
+      if (
+        current &&
+        (current.role === "admin" || current.role === "super_admin")
+      ) {
         const files = await getUploadedFiles();
         setUploadedFiles(files);
       }
@@ -46,9 +54,9 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 p-8">
+      <div className="min-h-screen bg-(--page-background) p-8">
         <div className="flex items-center justify-center h-96">
-          <div className="animate-spin rounded-full h-12 w-12 border-2 border-slate-700 border-t-blue-500"></div>
+          <div className="h-12 w-12 animate-spin rounded-full border-2 border-emerald-200 border-t-(--primary-color)"></div>
         </div>
       </div>
     );
@@ -56,14 +64,18 @@ export default function ProfilePage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-slate-950 p-8">
+      <div className="min-h-screen bg-(--page-background) p-8">
         <div className="max-w-lg mx-auto">
-          <div className="bg-slate-900 border border-slate-800 rounded-lg p-8 text-center">
-            <h1 className="text-2xl font-bold text-white">Not signed in</h1>
-            <p className="text-slate-400 mt-3 text-sm">Please sign in to view your profile.</p>
+          <div className="rounded-lg border border-(--border-color) bg-(--surface) p-8 text-center">
+            <h1 className="text-2xl font-bold text-(--heading-color)">
+              Not signed in
+            </h1>
+            <p className="mt-3 text-sm text-(--muted-color)">
+              Please sign in to view your profile.
+            </p>
             <Link
               href="/login"
-              className="inline-flex mt-6 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded-lg transition-colors"
+              className="mt-6 inline-flex rounded-lg bg-(--primary-color) px-6 py-2 font-semibold text-white transition-colors hover:bg-(--primary-hover-color)"
             >
               Go to Login
             </Link>
@@ -86,7 +98,9 @@ export default function ProfilePage() {
   };
 
   const onDeleteFile = async (fileName: string) => {
-    if (!confirm(`Delete all defects from "${fileName}"? This cannot be undone.`)) {
+    if (
+      !confirm(`Delete all defects from "${fileName}"? This cannot be undone.`)
+    ) {
       return;
     }
     setDeleting(fileName);
@@ -99,32 +113,29 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 overflow-hidden relative">
-      {/* Animated Background */}
-      <div className="fixed inset-0 opacity-30 -z-10">
-        <div className="absolute top-20 left-1/4 w-80 h-80 bg-purple-600 rounded-full mix-blend-multiply filter blur-3xl animate-blob"></div>
-        <div className="absolute top-1/2 right-1/3 w-80 h-80 bg-violet-600 rounded-full mix-blend-multiply filter blur-3xl animate-blob" style={{ animationDelay: '2s' }}></div>
-        <div className="absolute bottom-20 left-1/2 w-80 h-80 bg-indigo-600 rounded-full mix-blend-multiply filter blur-3xl animate-blob" style={{ animationDelay: '4s' }}></div>
-      </div>
-
-      <div className="w-full px-4 sm:px-6 lg:px-10 xl:px-12 py-6 lg:py-10 relative">
+    <div className="min-h-screen bg-(--page-background)">
+      <div className="w-full px-4 py-6 sm:px-6 lg:px-10 lg:py-10 xl:px-12">
         {/* Back Link */}
         <Link
           href="/"
-          className="inline-flex items-center gap-2 text-slate-400 hover:text-purple-400 transition-all duration-300 transform hover:translate-x-1 mb-10 text-sm group animate-in fade-in duration-500"
+          className="group mb-8 inline-flex items-center gap-2 text-sm text-(--muted-color) transition-all duration-300 hover:translate-x-1 hover:text-(--primary-color) animate-in fade-in"
         >
           <HiArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
           Back to Dashboard
         </Link>
 
-  {/* Profile Header */}
-  <div className="mb-10 animate-in fade-in-up duration-500">
+        {/* Profile Header */}
+        <div className="mb-10 animate-in fade-in-up duration-500">
           <div className="flex items-end justify-between">
             <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 to-indigo-400 bg-clip-text text-transparent">{user.name}</h1>
-              <p className="text-slate-400 mt-1 text-base">{user.email}</p>
+              <h1 className="text-3xl font-bold text-(--heading-color)">
+                {user.name}
+              </h1>
+              <p className="mt-1 text-base text-(--muted-color)">
+                {user.email}
+              </p>
             </div>
-            <span className="text-purple-300 text-sm font-medium px-4 py-2 bg-gradient-to-r from-purple-600/30 to-indigo-600/30 rounded-full border border-purple-500/30 font-semibold">
+            <span className="rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700">
               {user.role === "super_admin" ? "Super Admin" : "Admin"}
             </span>
           </div>
@@ -133,104 +144,123 @@ export default function ProfilePage() {
         {/* Main Content */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10 animate-in fade-in-up duration-500 delay-100">
           {/* Profile Details Card */}
-          <div className="backdrop-blur-xl bg-slate-900/50 border border-slate-800/50 rounded-2xl p-8 hover:shadow-2xl hover:shadow-purple-500/10 transition-all duration-300">
-            <h2 className="text-xl font-bold bg-gradient-to-r from-purple-400 to-violet-400 bg-clip-text text-transparent mb-6">Profile Details</h2>
+          <div className="rounded-2xl border border-(--border-color) bg-(--surface) p-8 shadow-sm transition-all duration-300 hover:border-emerald-200">
+            <h2 className="mb-6 text-xl font-bold text-(--heading-color)">
+              Profile Details
+            </h2>
             <form action={onUpdateProfile} className="space-y-5">
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">Full Name</label>
+                <label className="mb-2 block text-sm font-medium text-(--text-color)">
+                  Full Name
+                </label>
                 <input
                   name="name"
                   type="text"
                   defaultValue={user.name}
                   required
-                  className="w-full bg-slate-800/50 border border-slate-700/50 text-white rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/50 transition-all duration-300 backdrop-blur-sm"
+                  className="w-full rounded-lg border border-(--border-color) bg-(--surface-soft) px-4 py-2 text-sm text-(--text-color) transition-all duration-300 focus:outline-none focus:border-(--primary-color) focus:ring-2 focus:ring-(--primary-color)/20"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">Email Address</label>
+                <label className="mb-2 block text-sm font-medium text-(--text-color)">
+                  Email Address
+                </label>
                 <input
                   name="email"
                   type="email"
                   defaultValue={user.email}
                   required
-                  className="w-full bg-slate-800/50 border border-slate-700/50 text-white rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/50 transition-all duration-300 backdrop-blur-sm"
+                  className="w-full rounded-lg border border-(--border-color) bg-(--surface-soft) px-4 py-2 text-sm text-(--text-color) transition-all duration-300 focus:outline-none focus:border-(--primary-color) focus:ring-2 focus:ring-(--primary-color)/20"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">Phone Number</label>
+                <label className="mb-2 block text-sm font-medium text-(--text-color)">
+                  Phone Number
+                </label>
                 <input
                   name="phone"
                   type="tel"
                   defaultValue={user.phone || ""}
-                  className="w-full bg-slate-800/50 border border-slate-700/50 text-white rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/50 transition-all duration-300 backdrop-blur-sm"
+                  className="w-full rounded-lg border border-(--border-color) bg-(--surface-soft) px-4 py-2 text-sm text-(--text-color) transition-all duration-300 focus:outline-none focus:border-(--primary-color) focus:ring-2 focus:ring-(--primary-color)/20"
                 />
               </div>
               {profileMessage && (
-                <div className="flex items-center gap-2 p-3 bg-emerald-500/15 border border-emerald-500/30 rounded-lg text-sm text-emerald-300 animate-in fade-in duration-300">
-                  <HiCheckCircle className="w-4 h-4 flex-shrink-0" />
+                <div className="animate-in fade-in flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700 duration-300">
+                  <HiCheckCircle className="h-4 w-4 shrink-0" />
                   {profileMessage}
                 </div>
               )}
-              <button
+              <AppButton
                 type="submit"
-                className="w-full bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 text-white py-3 rounded-lg font-semibold text-sm transition-all duration-300 transform hover:shadow-lg hover:shadow-purple-500/50 hover:scale-105 active:scale-95"
+                variant="primary"
+                className="w-full py-3"
               >
                 Save Changes
-              </button>
+              </AppButton>
             </form>
           </div>
 
           {/* Security Card */}
-          <div className="backdrop-blur-xl bg-slate-900/50 border border-slate-800/50 rounded-2xl p-8 hover:shadow-2xl hover:shadow-purple-500/10 transition-all duration-300">
-            <h2 className="text-xl font-bold bg-gradient-to-r from-purple-400 to-violet-400 bg-clip-text text-transparent mb-6">Change Password</h2>
+          <div className="rounded-2xl border border-(--border-color) bg-(--surface) p-8 shadow-sm transition-all duration-300 hover:border-emerald-200">
+            <h2 className="mb-6 text-xl font-bold text-(--heading-color)">
+              Change Password
+            </h2>
             <form action={onChangePassword} className="space-y-5">
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">Current Password</label>
+                <label className="mb-2 block text-sm font-medium text-(--text-color)">
+                  Current Password
+                </label>
                 <input
                   name="currentPassword"
                   type="password"
                   required
-                  className="w-full bg-slate-800/50 border border-slate-700/50 text-white rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/50 transition-all duration-300 backdrop-blur-sm"
+                  className="w-full rounded-lg border border-(--border-color) bg-(--surface-soft) px-4 py-2 text-sm text-(--text-color) transition-all duration-300 focus:outline-none focus:border-(--primary-color) focus:ring-2 focus:ring-(--primary-color)/20"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">New Password</label>
+                <label className="mb-2 block text-sm font-medium text-(--text-color)">
+                  New Password
+                </label>
                 <input
                   name="newPassword"
                   type="password"
                   required
-                  className="w-full bg-slate-800/50 border border-slate-700/50 text-white rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/50 transition-all duration-300 backdrop-blur-sm"
+                  className="w-full rounded-lg border border-(--border-color) bg-(--surface-soft) px-4 py-2 text-sm text-(--text-color) transition-all duration-300 focus:outline-none focus:border-(--primary-color) focus:ring-2 focus:ring-(--primary-color)/20"
                 />
               </div>
               {passwordMessage && (
-                <div className="flex items-center gap-2 p-3 bg-emerald-500/15 border border-emerald-500/30 rounded-lg text-sm text-emerald-300 animate-in fade-in duration-300">
-                  <HiCheckCircle className="w-4 h-4 flex-shrink-0" />
+                <div className="animate-in fade-in flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700 duration-300">
+                  <HiCheckCircle className="h-4 w-4 shrink-0" />
                   {passwordMessage}
                 </div>
               )}
-              <button
+              <AppButton
                 type="submit"
-                className="w-full bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 text-white py-3 rounded-lg font-semibold text-sm transition-all duration-300 transform hover:shadow-lg hover:shadow-purple-500/50 hover:scale-105 active:scale-95"
+                variant="primary"
+                className="w-full py-3"
               >
                 Update Password
-              </button>
+              </AppButton>
             </form>
           </div>
         </div>
 
         {/* Admin Management Section (Super Admin Only) */}
         {user.role === "super_admin" && (
-          <div className="backdrop-blur-xl bg-gradient-to-br from-purple-600/15 to-indigo-600/15 border-2 border-purple-500/30 rounded-2xl p-8 mb-10 hover:shadow-2xl hover:shadow-purple-500/10 transition-all duration-300 animate-in fade-in-up duration-500 delay-200">
+          <div className="mb-10 animate-in fade-in-up rounded-2xl border border-emerald-200 bg-emerald-50/30 p-8 shadow-sm duration-500 delay-200">
             <div className="flex items-start justify-between gap-6">
               <div className="flex-1">
-                <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-300 to-indigo-300 bg-clip-text text-transparent mb-2">Admin Management</h2>
-                <p className="text-slate-300 text-sm">
-                  Create new admin accounts, manage user roles, and view all system users.
+                <h2 className="mb-2 text-2xl font-bold text-(--heading-color)">
+                  Admin Management
+                </h2>
+                <p className="text-sm text-(--muted-color)">
+                  Create new admin accounts, manage user roles, and view all
+                  system users.
                 </p>
               </div>
               <Link
                 href="/super-admin"
-                className="flex-shrink-0 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white px-6 py-3 rounded-lg text-sm font-semibold transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-purple-500/50 hover:scale-105 active:scale-95"
+                className="shrink-0 rounded-lg bg-(--primary-color) px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-(--primary-hover-color)"
               >
                 + Add New Admin
               </Link>
@@ -240,35 +270,41 @@ export default function ProfilePage() {
 
         {/* Uploaded Files Section */}
         {uploadedFiles.length > 0 && (
-          <div className="backdrop-blur-xl bg-slate-900/50 border border-slate-800/50 rounded-2xl p-8 hover:shadow-2xl hover:shadow-purple-500/10 transition-all duration-300 animate-in fade-in-up duration-500 delay-300">
-            <h2 className="text-xl font-bold bg-gradient-to-r from-purple-400 to-violet-400 bg-clip-text text-transparent mb-6">Uploaded Files</h2>
+          <div className="animate-in fade-in-up rounded-2xl border border-(--border-color) bg-(--surface) p-8 shadow-sm duration-500 delay-300">
+            <h2 className="mb-6 text-xl font-bold text-(--heading-color)">
+              Uploaded Files
+            </h2>
             <div className="space-y-3">
               {uploadedFiles.map((file) => (
                 <div
                   key={file.name}
-                  className="flex items-start justify-between gap-4 p-4 bg-slate-800/30 border border-slate-800/50 rounded-lg hover:border-purple-500/30 hover:bg-slate-800/50 transition-all duration-300 group"
+                  className="group flex items-start justify-between gap-4 rounded-lg border border-(--border-color) bg-(--surface-soft) p-4 transition-all duration-300 hover:border-emerald-200 hover:bg-emerald-50/20"
                 >
                   <div className="flex-1 min-w-0">
-                    <p className="text-white text-sm font-medium break-words group-hover:text-purple-300 transition-colors">{file.name}</p>
-                    <p className="text-slate-400 text-xs mt-2 group-hover:text-slate-300 transition-colors">
-                      {file.count} defect{file.count !== 1 ? "s" : ""} • Uploaded by {file.uploadedBy} on {file.uploadedAt}
+                    <p className="wrap-break-word text-sm font-medium text-(--text-color) transition-colors group-hover:text-(--heading-color)">
+                      {file.name}
+                    </p>
+                    <p className="mt-2 text-xs text-(--muted-color)">
+                      {file.count} defect{file.count !== 1 ? "s" : ""} •
+                      Uploaded by {file.uploadedBy} on {file.uploadedAt}
                     </p>
                   </div>
-                  <button
+                  <AppButton
                     type="button"
                     onClick={() => onDeleteFile(file.name)}
                     disabled={deleting === file.name}
-                    className="text-red-400 hover:text-red-300 hover:bg-red-500/20 p-2 rounded-lg transition-all duration-300 disabled:opacity-50 flex-shrink-0 group-hover:scale-110"
+                    variant="dangerSoft"
+                    size="icon"
                     title="Delete file and all its defects"
                   >
                     <HiTrash className="w-5 h-5" />
-                  </button>
+                  </AppButton>
                 </div>
               ))}
             </div>
             {deleteMessage && (
-              <div className="flex items-center gap-2 p-3 bg-emerald-500/15 border border-emerald-500/30 rounded-lg text-sm text-emerald-300 mt-4 animate-in fade-in duration-300">
-                <HiCheckCircle className="w-4 h-4 flex-shrink-0" />
+              <div className="mt-4 animate-in fade-in flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700 duration-300">
+                <HiCheckCircle className="h-4 w-4 shrink-0" />
                 {deleteMessage}
               </div>
             )}

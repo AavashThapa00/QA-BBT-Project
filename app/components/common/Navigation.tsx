@@ -9,6 +9,7 @@ import {
   HiViewList,
   HiUserGroup,
   HiClipboardCheck,
+  HiShieldCheck,
   HiUserCircle,
   HiPlus,
   HiLogout,
@@ -34,12 +35,26 @@ const navItems: NavItem[] = [
   { name: "QC Status", href: "/qc-dashboard", icon: HiClipboardCheck },
 ];
 
+function BrandLogo() {
+  return (
+    <div className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-linear-to-br from-(--heading-color) via-(--primary-color) to-(--heading-color) shadow-lg shadow-[rgba(76,175,80,0.25)] ring-1 ring-[rgba(255,255,255,0.55)] transition-all duration-300 group-hover:scale-105 sm:h-10 sm:w-10">
+      <span className="absolute inset-0.5 rounded-[9px] bg-[rgba(255,255,255,0.12)]" />
+      <HiShieldCheck
+        className="relative h-5.5 w-5.5 text-white"
+        aria-hidden="true"
+      />
+      <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-white/90 ring-2 ring-(--primary-color)" />
+    </div>
+  );
+}
+
 export default function Navigation() {
   const pathname = usePathname();
   const [isAuthed, setIsAuthed] = useState(false);
   const [authRole, setAuthRole] = useState<"super_admin" | "admin" | null>(
     null,
   );
+  const [userName, setUserName] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
@@ -51,11 +66,13 @@ export default function Navigation() {
         if (!mounted) return;
         setIsAuthed(!!user);
         setAuthRole(user?.role ?? null);
+        setUserName(user?.name ?? "");
       })
       .catch(() => {
         if (!mounted) return;
         setIsAuthed(false);
         setAuthRole(null);
+        setUserName("");
       });
     return () => {
       mounted = false;
@@ -119,26 +136,25 @@ export default function Navigation() {
     return null;
   }
 
+  const userInitials = (userName || "User")
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("");
+
   return (
-    <nav className="sticky top-0 z-50 backdrop-blur-xl bg-slate-950/60 border-b border-slate-800/60 shadow-2xl shadow-slate-950/30">
+    <nav className="sticky top-0 z-50 border-b border-(--border-color) bg-[rgba(255,255,255,0.92)] backdrop-blur-xl shadow-[0_8px_24px_rgba(27,94,32,0.08)]">
       <div className="w-full px-2 sm:px-4 lg:px-10 xl:px-12">
         <div className="flex items-center justify-between min-h-16 py-2.5 gap-2 sm:gap-3">
           {/* Logo/Title */}
           <div className="shrink-0 min-w-0">
-            <Link href="/" className="flex items-center gap-3 group">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-linear-to-br from-blue-500 via-purple-500 to-pink-500 shadow-lg shadow-blue-500/30 ring-1 ring-white/10 transition-all duration-300 group-hover:scale-105 group-hover:shadow-purple-500/40 sm:h-10 sm:w-10">
-                <span className="text-white font-black text-sm tracking-wide">
-                  BBT
-                </span>
-              </div>
-              <div className="hidden sm:block leading-tight">
-                <p className="text-sm font-semibold text-white md:text-base">
-                  Black Box Testing
-                </p>
-                <p className="hidden md:block text-slate-400 text-xs">
-                  QA Intelligence Platform
-                </p>
-              </div>
+            <Link
+              href="/"
+              className="group inline-flex items-center"
+              aria-label="Go to dashboard home"
+            >
+              <BrandLogo />
             </Link>
           </div>
 
@@ -157,8 +173,8 @@ export default function Navigation() {
                       flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-300 whitespace-nowrap border
                       ${
                         isActive
-                          ? "bg-linear-to-r from-blue-600 to-purple-600 text-white border-blue-500/40 shadow-lg shadow-blue-500/25"
-                          : "text-slate-300 border-transparent hover:bg-slate-800/70 hover:border-slate-700 hover:text-white"
+                          ? "bg-(--primary-color) text-white border-[rgba(76,175,80,0.28)] shadow-lg shadow-[rgba(76,175,80,0.2)]"
+                          : "text-(--text-color) border-transparent hover:bg-[rgba(165,214,167,0.14)] hover:border-[rgba(76,175,80,0.22)] hover:text-(--heading-color)"
                       }
                     `}
                   >
@@ -174,21 +190,23 @@ export default function Navigation() {
                 <button
                   type="button"
                   onClick={() => setMenuOpen((open) => !open)}
-                  className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-300 text-slate-300 border border-transparent hover:bg-slate-800/70 hover:border-slate-700 hover:text-white"
+                  className="flex items-center gap-2 rounded-xl border border-transparent px-2 py-1.5 text-sm font-medium text-(--text-color) transition-all duration-300 hover:border-[rgba(76,175,80,0.22)] hover:bg-[rgba(165,214,167,0.14)] hover:text-(--heading-color)"
                   aria-haspopup="menu"
                   aria-expanded={menuOpen}
                   aria-label="Open user menu"
                 >
-                  <HiUserCircle className="w-5 h-5" />
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-(--primary-color) text-xs font-semibold text-white">
+                    {userInitials || "U"}
+                  </span>
                 </button>
                 {menuOpen && (
                   <div
                     role="menu"
-                    className="absolute right-0 mt-2 w-52 backdrop-blur-xl bg-slate-900/95 border border-slate-700/70 rounded-xl shadow-2xl overflow-hidden"
+                    className="absolute right-0 mt-2 w-52 overflow-hidden rounded-xl border border-(--border-color) bg-[rgba(255,255,255,0.98)] shadow-[0_16px_36px_rgba(27,94,32,0.12)] backdrop-blur-xl"
                   >
                     <Link
                       href="/profile"
-                      className="flex items-center gap-2 px-4 py-2.5 text-sm text-slate-200 hover:bg-slate-800/80"
+                      className="flex items-center gap-2 px-4 py-2.5 text-sm text-(--text-color) hover:bg-[rgba(165,214,167,0.16)]"
                       role="menuitem"
                       onClick={() => setMenuOpen(false)}
                     >
@@ -198,7 +216,7 @@ export default function Navigation() {
                     {authRole === "super_admin" && (
                       <Link
                         href="/super-admin"
-                        className="flex items-center gap-2 px-4 py-2.5 text-sm text-slate-200 hover:bg-slate-800/80"
+                        className="flex items-center gap-2 px-4 py-2.5 text-sm text-(--text-color) hover:bg-[rgba(165,214,167,0.16)]"
                         role="menuitem"
                         onClick={() => setMenuOpen(false)}
                       >
@@ -209,7 +227,7 @@ export default function Navigation() {
                     <button
                       type="button"
                       onClick={() => logoutAction()}
-                      className="w-full text-left flex items-center gap-2 px-4 py-2.5 text-sm text-slate-200 hover:bg-slate-800/80"
+                      className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-(--text-color) hover:bg-[rgba(229,57,53,0.09)]"
                       role="menuitem"
                     >
                       <HiLogout className="w-4 h-4" />
@@ -225,8 +243,8 @@ export default function Navigation() {
                   flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-300 border
                   ${
                     pathname === "/login"
-                      ? "bg-linear-to-r from-blue-600 to-purple-600 text-white border-blue-500/40 shadow-lg shadow-blue-500/25"
-                      : "text-slate-300 border-transparent hover:bg-slate-800/70 hover:border-slate-700 hover:text-white"
+                      ? "bg-(--primary-color) text-white border-[rgba(76,175,80,0.28)] shadow-lg shadow-[rgba(76,175,80,0.2)]"
+                      : "text-(--text-color) border-transparent hover:bg-[rgba(165,214,167,0.14)] hover:border-[rgba(76,175,80,0.22)] hover:text-(--heading-color)"
                   }
                 `}
               >
@@ -241,15 +259,17 @@ export default function Navigation() {
             {isAuthed ? (
               <Link
                 href="/profile"
-                className="flex items-center justify-center p-2 rounded-xl text-slate-300 border border-transparent hover:bg-slate-800/70 hover:border-slate-700 hover:text-white"
+                className="flex items-center justify-center rounded-xl border border-transparent p-1 text-(--text-color) hover:border-[rgba(76,175,80,0.22)] hover:bg-[rgba(165,214,167,0.14)] hover:text-(--heading-color)"
                 aria-label="Open profile"
               >
-                <HiUserCircle className="w-5 h-5" />
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-(--primary-color) text-xs font-semibold text-white">
+                  {userInitials || "U"}
+                </span>
               </Link>
             ) : (
               <Link
                 href="/login"
-                className="flex items-center justify-center p-2 rounded-xl text-slate-300 border border-transparent hover:bg-slate-800/70 hover:border-slate-700 hover:text-white"
+                className="flex items-center justify-center rounded-xl border border-transparent p-2 text-(--text-color) hover:border-[rgba(76,175,80,0.22)] hover:bg-[rgba(165,214,167,0.14)] hover:text-(--heading-color)"
                 aria-label="Open login"
               >
                 <HiUserCircle className="w-5 h-5" />
@@ -259,7 +279,7 @@ export default function Navigation() {
             <button
               type="button"
               onClick={() => setMobileNavOpen((open) => !open)}
-              className="flex items-center justify-center p-2 rounded-xl text-slate-300 border border-transparent hover:bg-slate-800/70 hover:border-slate-700 hover:text-white"
+              className="flex items-center justify-center rounded-xl border border-transparent p-2 text-(--text-color) hover:border-[rgba(76,175,80,0.22)] hover:bg-[rgba(165,214,167,0.14)] hover:text-(--heading-color)"
               aria-label={
                 mobileNavOpen ? "Close navigation menu" : "Open navigation menu"
               }
@@ -278,20 +298,22 @@ export default function Navigation() {
 
       {mobileNavOpen && (
         <div
-          className="lg:hidden fixed inset-0 z-40 bg-slate-950/70 backdrop-blur-sm"
+          className="fixed inset-0 z-40 bg-[rgba(27,94,32,0.28)] backdrop-blur-sm lg:hidden"
           onClick={() => setMobileNavOpen(false)}
         >
           <div
             id="mobile-navigation-panel"
-            className="absolute right-0 top-0 h-full w-[min(85vw,360px)] bg-slate-900 border-l border-slate-700/70 shadow-2xl p-4 overflow-y-auto"
+            className="absolute right-0 top-0 h-full w-[min(85vw,360px)] overflow-y-auto border-l border-(--border-color) bg-(--surface) p-4 shadow-2xl"
             onClick={(event) => event.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-4">
-              <p className="text-slate-100 font-semibold text-sm">Navigation</p>
+              <p className="text-sm font-semibold text-(--heading-color)">
+                Navigation
+              </p>
               <button
                 type="button"
                 onClick={() => setMobileNavOpen(false)}
-                className="p-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800"
+                className="rounded-lg p-2 text-(--text-color) hover:bg-[rgba(165,214,167,0.16)] hover:text-(--heading-color)"
                 aria-label="Close navigation menu"
               >
                 <HiX className="w-5 h-5" />
@@ -312,8 +334,8 @@ export default function Navigation() {
                       flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium border transition-all duration-200
                       ${
                         isActive
-                          ? "bg-linear-to-r from-blue-600 to-purple-600 text-white border-blue-500/40 shadow-lg shadow-blue-500/20"
-                          : "text-slate-200 border-slate-700/60 hover:bg-slate-800/80 hover:border-slate-600"
+                          ? "bg-(--primary-color) text-white border-[rgba(76,175,80,0.28)] shadow-lg shadow-[rgba(76,175,80,0.2)]"
+                          : "text-(--text-color) border-(--border-color) hover:bg-[rgba(165,214,167,0.14)] hover:border-[rgba(76,175,80,0.22)]"
                       }
                     `}
                   >
@@ -324,13 +346,13 @@ export default function Navigation() {
               })}
             </div>
 
-            <div className="mt-5 pt-4 border-t border-slate-700/70">
+            <div className="mt-5 border-t border-(--border-color) pt-4">
               {isAuthed ? (
                 <>
                   <Link
                     href="/profile"
                     onClick={() => setMobileNavOpen(false)}
-                    className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium text-slate-200 border border-slate-700/60 hover:bg-slate-800/80"
+                    className="flex items-center gap-3 rounded-xl border border-(--border-color) px-3 py-3 text-sm font-medium text-(--text-color) hover:bg-[rgba(165,214,167,0.14)]"
                   >
                     <HiUserCircle className="w-4 h-4" />
                     <span>Profile</span>
@@ -340,7 +362,7 @@ export default function Navigation() {
                     <Link
                       href="/super-admin"
                       onClick={() => setMobileNavOpen(false)}
-                      className="mt-2 flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium text-slate-200 border border-slate-700/60 hover:bg-slate-800/80"
+                      className="mt-2 flex items-center gap-3 rounded-xl border border-(--border-color) px-3 py-3 text-sm font-medium text-(--text-color) hover:bg-[rgba(165,214,167,0.14)]"
                     >
                       <HiPlus className="w-4 h-4" />
                       <span>Add Admin</span>
@@ -350,7 +372,7 @@ export default function Navigation() {
                   <button
                     type="button"
                     onClick={() => logoutAction()}
-                    className="mt-2 w-full text-left flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium text-slate-200 border border-slate-700/60 hover:bg-slate-800/80"
+                    className="mt-2 flex w-full items-center gap-3 rounded-xl border border-(--border-color) px-3 py-3 text-left text-sm font-medium text-(--text-color) hover:bg-[rgba(229,57,53,0.09)]"
                   >
                     <HiLogout className="w-4 h-4" />
                     <span>Logout</span>
@@ -360,7 +382,7 @@ export default function Navigation() {
                 <Link
                   href="/login"
                   onClick={() => setMobileNavOpen(false)}
-                  className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium text-slate-200 border border-slate-700/60 hover:bg-slate-800/80"
+                  className="flex items-center gap-3 rounded-xl border border-(--border-color) px-3 py-3 text-sm font-medium text-(--text-color) hover:bg-[rgba(165,214,167,0.14)]"
                 >
                   <HiUserCircle className="w-4 h-4" />
                   <span>Login</span>

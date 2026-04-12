@@ -20,7 +20,7 @@ export default function CSVUpload({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = async (
-    event: React.ChangeEvent<HTMLInputElement>
+    event: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -63,11 +63,11 @@ export default function CSVUpload({
       <div className="flex items-center justify-center w-full">
         <label
           htmlFor="csv-upload"
-          className="flex flex-col items-center justify-center w-full h-40 border-2 border-slate-700 border-dashed rounded-lg cursor-pointer bg-slate-800 hover:border-blue-600 hover:bg-slate-700 transition-all group"
+          className="group flex h-40 w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-(--border-color) bg-(--surface-soft) transition-all hover:border-(--primary-color) hover:bg-emerald-50"
         >
           <div className="flex flex-col items-center justify-center pt-5 pb-6">
             <svg
-              className="w-10 h-10 mb-4 text-slate-500 group-hover:text-blue-400 transition-colors"
+              className="mb-4 h-10 w-10 text-(--muted-color) transition-colors group-hover:text-(--primary-color)"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -80,10 +80,14 @@ export default function CSVUpload({
               />
             </svg>
             <p className="mb-2 text-sm">
-              <span className="font-semibold text-white group-hover:text-blue-400 transition-colors">Click to upload</span>
-              <span className="text-slate-400"> or drag and drop</span>
+              <span className="font-semibold text-(--heading-color) transition-colors group-hover:text-(--primary-color)">
+                Click to upload
+              </span>
+              <span className="text-(--muted-color)"> or drag and drop</span>
             </p>
-            <p className="text-xs text-slate-500">CSV file from Google Sheets (max 50MB)</p>
+            <p className="text-xs text-(--muted-color)">
+              CSV file from Google Sheets (max 50MB)
+            </p>
           </div>
           <input
             ref={fileInputRef}
@@ -98,50 +102,61 @@ export default function CSVUpload({
       </div>
 
       {isLoading && (
-        <div className="flex items-center justify-center p-4 bg-blue-900/30 rounded-lg border border-blue-800">
-          <div className="animate-spin rounded-full h-8 w-8 border-2 border-slate-700 border-t-blue-500"></div>
-          <span className="ml-3 text-blue-300 font-medium">Processing files...</span>
+        <div className="flex items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 p-4">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-emerald-200 border-t-(--primary-color)"></div>
+          <span className="ml-3 font-medium text-emerald-700">
+            Processing files...
+          </span>
         </div>
       )}
 
       {showToast && result?.success && (
-        <Toast 
-          message="Successfully Uploaded the CSV File" 
-          type="success" 
+        <Toast
+          message="Successfully Uploaded the CSV File"
+          type="success"
           duration={3000}
           onClose={() => setShowToast(false)}
         />
       )}
 
       {result && result.success && result.errors.length > 0 && (
-        <div className={`p-4 rounded-xl border-2 bg-amber-900/30 border-amber-700`}>
+        <div className={`rounded-xl border border-amber-200 bg-amber-50 p-4`}>
           <div className="flex items-start gap-3">
-            <div className={`text-xl mt-0.5 text-amber-400`}>
-              ⚠️
-            </div>
+            <div className={`mt-0.5 text-xl text-amber-600`}>⚠️</div>
             <div className="flex-1">
-              <div className={`font-semibold text-sm text-amber-200`}>
-                Upload completed with {result.skipped} skipped row{result.skipped !== 1 ? 's' : ''}
+              <div className={`text-sm font-semibold text-amber-700`}>
+                Upload completed with {result.skipped} skipped row
+                {result.skipped !== 1 ? "s" : ""}
               </div>
               <div className="mt-4">
-                <p className="text-sm font-semibold text-amber-300 mb-2">
+                <p className="mb-2 text-sm font-semibold text-amber-700">
                   ⚠️ Skipped Defects ({result.errors.length} total):
                 </p>
-                <div className="bg-slate-800 rounded-lg border border-amber-800 max-h-64 overflow-y-auto">
-                  <ul className="divide-y divide-amber-900">
+                <div className="max-h-64 overflow-y-auto rounded-lg border border-amber-200 bg-white">
+                  <ul className="divide-y divide-amber-100">
                     {result.errors.map((error, index) => (
-                      <li key={index} className="px-3 py-2 hover:bg-slate-700 transition-colors">
+                      <li
+                        key={index}
+                        className="px-3 py-2 transition-colors hover:bg-amber-50"
+                      >
                         <div className="flex items-start gap-2">
-                          <span className="font-bold text-amber-400 text-xs mt-0.5 min-w-fit">Row {error.row}</span>
-                          <span className="text-xs text-amber-300 flex-1">{error.reason}</span>
+                          <span className="mt-0.5 min-w-fit text-xs font-bold text-amber-700">
+                            Row {error.row}
+                          </span>
+                          <span className="flex-1 text-xs text-amber-800">
+                            {error.reason}
+                          </span>
                         </div>
                       </li>
                     ))}
                   </ul>
                 </div>
-                <p className="text-xs text-amber-400 mt-2 italic flex items-center gap-2">
+                <p className="mt-2 flex items-center gap-2 text-xs italic text-amber-700">
                   <HiClipboardList className="w-4 h-4" />
-                  <span>These defects were not imported (duplicates or validation issues)</span>
+                  <span>
+                    These defects were not imported (duplicates or validation
+                    issues)
+                  </span>
                 </p>
               </div>
             </div>
@@ -150,35 +165,45 @@ export default function CSVUpload({
       )}
 
       {result && !result.success && (
-        <div className={`p-4 rounded-xl border-2 bg-red-900/30 border-red-800`}>
+        <div className={`rounded-xl border border-rose-200 bg-rose-50 p-4`}>
           <div className="flex items-start gap-3">
-            <div className={`text-xl mt-0.5 text-red-400`}>
+            <div className={`mt-0.5 text-xl text-rose-600`}>
               <HiXCircle />
             </div>
             <div className="flex-1">
-              <div className={`font-semibold text-sm text-red-200`}>
+              <div className={`text-sm font-semibold text-rose-700`}>
                 {result.message}
               </div>
               {result.errors.length > 0 && (
                 <div className="mt-4">
-                  <p className="text-sm font-semibold text-red-300 mb-2">
+                  <p className="mb-2 text-sm font-semibold text-rose-700">
                     ❌ Validation Errors ({result.errors.length} total):
                   </p>
-                  <div className="bg-slate-800 rounded-lg border border-red-800 max-h-64 overflow-y-auto">
-                    <ul className="divide-y divide-red-900">
+                  <div className="max-h-64 overflow-y-auto rounded-lg border border-rose-200 bg-white">
+                    <ul className="divide-y divide-rose-100">
                       {result.errors.map((error, index) => (
-                        <li key={index} className="px-3 py-2 hover:bg-slate-700 transition-colors">
+                        <li
+                          key={index}
+                          className="px-3 py-2 transition-colors hover:bg-rose-50"
+                        >
                           <div className="flex items-start gap-2">
-                            <span className="font-bold text-red-400 text-xs mt-0.5 min-w-fit">Row {error.row}</span>
-                            <span className="text-xs text-red-300 flex-1">{error.reason}</span>
+                            <span className="mt-0.5 min-w-fit text-xs font-bold text-rose-700">
+                              Row {error.row}
+                            </span>
+                            <span className="flex-1 text-xs text-rose-800">
+                              {error.reason}
+                            </span>
                           </div>
                         </li>
                       ))}
                     </ul>
                   </div>
-                  <p className="text-xs text-red-400 mt-2 italic flex items-center gap-2">
+                  <p className="mt-2 flex items-center gap-2 text-xs italic text-rose-700">
                     <HiClipboardList className="w-4 h-4" />
-                    <span>Review the errors above to fix your CSV and try uploading again</span>
+                    <span>
+                      Review the errors above to fix your CSV and try uploading
+                      again
+                    </span>
                   </p>
                 </div>
               )}

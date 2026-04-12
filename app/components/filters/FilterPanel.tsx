@@ -1,7 +1,19 @@
 "use client";
 
 import React, { useState } from "react";
-import { HiFilter, HiX, HiSearch } from "react-icons/hi";
+import {
+  Listbox,
+  ListboxButton,
+  ListboxOption,
+  ListboxOptions,
+} from "@headlessui/react";
+import {
+  HiCheck,
+  HiChevronDown,
+  HiFilter,
+  HiSearch,
+  HiX,
+} from "react-icons/hi";
 import type { Severity, Status } from "@/lib/types";
 import { SeverityEnum, StatusEnum, type DefectFilters } from "@/lib/types";
 
@@ -9,6 +21,104 @@ interface FilterPanelProps {
   onFiltersChange: (filters: DefectFilters) => void;
   availableModules?: string[];
   isLoading?: boolean;
+}
+
+interface MultiSelectDropdownProps {
+  label: string;
+  placeholder: string;
+  options: Array<{ value: string; label: string }>;
+  selectedValues: string[];
+  onChange: (values: string[]) => void;
+  disabled?: boolean;
+}
+
+function MultiSelectDropdown({
+  label,
+  placeholder,
+  options,
+  selectedValues,
+  onChange,
+  disabled = false,
+}: MultiSelectDropdownProps) {
+  const selectedCount = selectedValues.length;
+  const selectedOptions = options.filter((option) =>
+    selectedValues.includes(option.value),
+  );
+
+  const removeSelectedValue = (value: string) => {
+    onChange(selectedValues.filter((selected) => selected !== value));
+  };
+
+  return (
+    <div>
+      <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-(--muted-color)">
+        {label}
+      </label>
+      <Listbox
+        value={selectedValues}
+        onChange={onChange}
+        multiple
+        disabled={disabled}
+      >
+        <div className="relative">
+          <ListboxButton className="flex w-full items-center justify-between rounded-lg border border-(--border-color) bg-(--surface-soft) px-3 py-2 text-left text-sm text-(--text-color) transition-colors hover:border-(--primary-color) disabled:cursor-not-allowed disabled:opacity-50">
+            <span className="truncate">
+              {selectedCount > 0 ? `${selectedCount} selected` : placeholder}
+            </span>
+            <HiChevronDown className="h-4 w-4 text-(--muted-color)" />
+          </ListboxButton>
+
+          <ListboxOptions className="absolute z-30 mt-1 max-h-56 w-full overflow-auto rounded-lg border border-(--border-color) bg-(--surface) p-1 shadow-lg focus:outline-none">
+            {options.map((option) => (
+              <ListboxOption
+                key={option.value}
+                value={option.value}
+                className={({ active }) =>
+                  `cursor-pointer rounded-md px-2 py-2 text-sm ${
+                    active
+                      ? "bg-emerald-50 text-(--heading-color)"
+                      : "text-(--text-color)"
+                  }`
+                }
+              >
+                {({ selected }) => (
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="truncate">{option.label}</span>
+                    {selected ? (
+                      <HiCheck className="h-4 w-4 text-(--primary-color)" />
+                    ) : null}
+                  </div>
+                )}
+              </ListboxOption>
+            ))}
+          </ListboxOptions>
+        </div>
+      </Listbox>
+
+      {selectedOptions.length > 0 && (
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {selectedOptions.map((option) => (
+            <span
+              key={option.value}
+              className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs text-emerald-800"
+            >
+              <span className="max-w-30 truncate">{option.label}</span>
+              <button
+                type="button"
+                onClick={() => removeSelectedValue(option.value)}
+                disabled={disabled}
+                className="rounded-full p-0.5 text-emerald-700 transition-colors hover:bg-emerald-200 hover:text-emerald-900 disabled:opacity-50"
+                aria-label={`Remove ${option.label}`}
+                title={`Remove ${option.label}`}
+              >
+                <HiX className="h-3 w-3" />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function FilterPanel({
@@ -23,6 +133,62 @@ export default function FilterPanel({
   const [modules, setModules] = useState<string[]>([]);
   const [statuses, setStatuses] = useState<string[]>([]);
 
+  const severityOptions = Object.values(SeverityEnum).map((severity) => ({
+    value: severity,
+    label: severity.charAt(0) + severity.slice(1).toLowerCase(),
+  }));
+
+  const statusOptions = [
+    { value: StatusEnum.OPEN, label: "Open" },
+    { value: StatusEnum.IN_PROGRESS, label: "In Progress" },
+    { value: StatusEnum.ON_HOLD, label: "On Hold" },
+    { value: StatusEnum.CLOSED, label: "Fixed" },
+    { value: StatusEnum.AS_IT_IS, label: "As it is" },
+  ];
+
+  const moduleOptions = availableModules.map((module) => ({
+    value: module,
+    label: module,
+  }));
+
+  const hasSearch = searchInput.trim().length >= 3;
+  const hasAnyFilter =
+    hasSearch ||
+    Boolean(dateFrom) ||
+    Boolean(dateTo) ||
+    severities.length > 0 ||
+    modules.length > 0 ||
+    statuses.length > 0;
+  const activeFilterCount =
+    (hasSearch ? 1 : 0) +
+    (dateFrom ? 1 : 0) +
+    (dateTo ? 1 : 0) +
+    (severities.length > 0 ? 1 : 0) +
+    (modules.length > 0 ? 1 : 0) +
+    (statuses.length > 0 ? 1 : 0);
+
+  const formatDateForInput = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  const getRangeDates = (days: number) => {
+    const to = new Date();
+    const from = new Date();
+    from.setDate(to.getDate() - (days - 1));
+    return {
+      fromValue: formatDateForInput(from),
+      toValue: formatDateForInput(to),
+    };
+  };
+
+  const activeQuickRange = [7, 14, 30].find((days) => {
+    const { fromValue, toValue } = getRangeDates(days);
+    return dateFrom === fromValue && dateTo === toValue;
+  });
+
   // Handle search on Enter key press
   const handleSearchKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
@@ -35,7 +201,8 @@ export default function FilterPanel({
   const applyFilters = () => {
     const filters: DefectFilters = {};
 
-    if (searchInput && searchInput.length >= 3) filters.searchTerm = searchInput;
+    if (searchInput && searchInput.length >= 3)
+      filters.searchTerm = searchInput;
     if (dateFrom) filters.dateFrom = new Date(dateFrom);
     if (dateTo) filters.dateTo = new Date(dateTo);
     if (severities.length > 0) filters.severity = severities as Severity[];
@@ -45,33 +212,25 @@ export default function FilterPanel({
     onFiltersChange(filters);
   };
 
+  const applyLastDays = (days: number) => {
+    const { fromValue, toValue } = getRangeDates(days);
+
+    setDateFrom(fromValue);
+    setDateTo(toValue);
+
+    onFiltersChange({
+      ...(hasSearch ? { searchTerm: searchInput } : {}),
+      ...(severities.length > 0 ? { severity: severities as Severity[] } : {}),
+      ...(modules.length > 0 ? { module: modules } : {}),
+      ...(statuses.length > 0 ? { status: statuses as Status[] } : {}),
+      dateFrom: new Date(fromValue),
+      dateTo: new Date(toValue),
+    });
+  };
+
   // Handle clearing the search
   const handleClearSearch = () => {
     setSearchInput("");
-  };
-
-  const handleSeverityToggle = (Severity: string) => {
-    setSeverities((prev) =>
-      prev.includes(Severity)
-        ? prev.filter((s) => s !== Severity)
-        : [...prev, Severity]
-    );
-  };
-
-  const handleModuleToggle = (module: string) => {
-    setModules((prev) =>
-      prev.includes(module)
-        ? prev.filter((m) => m !== module)
-        : [...prev, module]
-    );
-  };
-
-  const handleStatusToggle = (status: string) => {
-    setStatuses((prev) =>
-      prev.includes(status)
-        ? prev.filter((s) => s !== status)
-        : [...prev, status]
-    );
   };
 
   const clearFilters = () => {
@@ -85,183 +244,138 @@ export default function FilterPanel({
   };
 
   return (
-    <div className="bg-slate-900 rounded-lg border border-slate-800 shadow-sm p-6 sm:p-8">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-          <HiFilter className="w-5 h-5 text-blue-400" />
-          Filter Results
-        </h3>
-        {((searchInput && searchInput.length >= 3) || dateFrom || dateTo || severities.length > 0 || modules.length > 0 || statuses.length > 0) && (
-          <button
-            onClick={clearFilters}
-            className="text-xs font-semibold text-slate-400 hover:text-slate-300 hover:bg-slate-800 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-2"
-          >
-            <HiX className="w-4 h-4" />
-            <span>Clear All</span>
-          </button>
-        )}
+    <div className="rounded-3xl border border-(--border-color) bg-(--surface) p-4 shadow-[0_10px_28px_rgba(27,94,32,0.08)]">
+      <div className="mb-4 flex items-start justify-between gap-4">
+        <div>
+          <h3 className="flex items-center gap-2 text-base font-semibold text-(--heading-color)">
+            <HiFilter className="h-4 w-4 text-(--primary-color)" />
+            Filters
+          </h3>
+        </div>
       </div>
 
       {/* Search Bar */}
-      <div className="mb-6">
-        <div className="relative flex gap-2">
+      <div className="mb-4">
+        <div className="relative flex flex-col gap-2">
           <div className="relative flex-1">
-            <HiSearch className="absolute left-3 top-3.5 w-5 h-5 text-slate-500 pointer-events-none" />
+            <HiSearch className="absolute left-2 top-3.25 w-4 h-4 text-(--muted-color) pointer-events-none" />
             <input
               type="text"
-              placeholder="Search issue, module"
+              placeholder="Search by issue or module"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              onKeyPress={handleSearchKeyPress}
+              onKeyDown={handleSearchKeyPress}
               disabled={isLoading}
-              className="w-full pl-10 pr-10 py-2.5 border border-slate-700 rounded-lg text-sm text-white bg-slate-800 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed hover:border-slate-600 transition-colors"
+              className="w-full pl-8 placeholder:text-sm pr-2 py-2.5 border border-(--border-color) rounded-lg text-sm text-(--text-color) bg-(--surface-soft) placeholder-(--muted-color) focus:outline-none focus:ring-2 focus:ring-(--primary-color) focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed hover:border-(--primary-color) transition-colors"
             />
-            {(searchInput && searchInput.length >= 3) && (
+            {searchInput && searchInput.length >= 3 && (
               <button
                 onClick={handleClearSearch}
-                className="absolute right-3 top-3.5 text-slate-500 hover:text-slate-300 transition-colors"
+                className="absolute right-2 top-3.5 text-(--muted-color) hover:text-(--heading-color) transition-colors"
                 title="Clear search"
               >
-                <HiX className="w-5 h-5" />
+                <HiX className="w-4 h-4" />
               </button>
             )}
           </div>
           <button
             onClick={applyFilters}
             disabled={isLoading}
-            className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2 whitespace-nowrap"
+            className="bg-(--primary-color) hover:bg-(--primary-hover-color) text-white font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2 whitespace-nowrap justify-center px-4 py-2 text-sm"
           >
             <HiSearch className="w-4 h-4" />
             <span>Search</span>
           </button>
         </div>
+        {searchInput.trim().length > 0 && searchInput.trim().length < 3 && (
+          <p className="mt-2 text-xs text-amber-700">
+            Enter at least 3 characters to apply search.
+          </p>
+        )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {/* Date Range */}
-        <div>
-          <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wide mb-2">
-            Date From
-          </label>
-          <input
-            type="date"
-            value={dateFrom}
-            onChange={(e) => setDateFrom(e.target.value)}
-            disabled={isLoading}
-            className="w-full px-3 py-2.5 border border-slate-700 rounded-lg text-sm text-white bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed hover:border-slate-600 transition-colors"
-          />
-        </div>
+      <div className="grid grid-cols-1 gap-4">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <div>
+            <label className="block text-xs font-semibold text-(--muted-color) uppercase tracking-wide mb-2">
+              Date From
+            </label>
+            <input
+              type="date"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+              disabled={isLoading}
+              className="w-full px-3 py-2.5 border border-(--border-color) rounded-lg text-xs text-(--text-color) bg-(--surface-soft) focus:outline-none focus:ring-2 focus:ring-(--primary-color) focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed hover:border-(--primary-color) transition-colors"
+            />
+          </div>
 
-        <div>
-          <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wide mb-2">
-            Date To
-          </label>
-          <input
-            type="date"
-            value={dateTo}
-            onChange={(e) => setDateTo(e.target.value)}
-            disabled={isLoading}
-            className="w-full px-3 py-2.5 border border-slate-700 rounded-lg text-sm text-white bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed hover:border-slate-600 transition-colors"
-          />
-        </div>
-
-        {/* Priority Filter */}
-        <div>
-          <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wide mb-3">
-            Priority
-          </label>
-          <div className="space-y-2.5">
-            {Object.values(SeverityEnum).map((Severity: string) => (
-              <label
-                key={Severity as string}
-                className="flex items-center gap-3 text-sm cursor-pointer group"
-              >
-                <input
-                  type="checkbox"
-                  checked={severities.includes(Severity as string)}
-                  onChange={() => handleSeverityToggle(Severity as string)}
-                  disabled={isLoading}
-                  className="rounded border-slate-600 text-blue-500 focus:ring-blue-500 disabled:opacity-50 cursor-pointer bg-slate-700"
-                />
-                <span className="text-slate-300 group-hover:text-white font-medium">{Severity as string}</span>
-              </label>
-            ))}
+          <div>
+            <label className="block text-xs font-semibold text-(--muted-color) uppercase tracking-wide mb-2">
+              Date To
+            </label>
+            <input
+              type="date"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+              disabled={isLoading}
+              className="w-full px-3 py-2.5 border border-(--border-color) rounded-lg text-xs text-(--text-color) bg-(--surface-soft) focus:outline-none focus:ring-2 focus:ring-(--primary-color) focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed hover:border-(--primary-color) transition-colors"
+            />
           </div>
         </div>
 
-        {/* Status Filter */}
-        <div>
-          <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wide mb-3">
-            Status
-          </label>
-          <div className="space-y-2.5">
-            {[
-              { value: StatusEnum.ON_HOLD, label: "Pending" },
-              { value: StatusEnum.CLOSED, label: "Fixed" },
-              { value: StatusEnum.AS_IT_IS, label: "As it is" },
-              { value: StatusEnum.OPEN, label: "Hold" },
-            ].map((status) => (
-              <label
-                key={status.value}
-                className="flex items-center gap-3 text-sm cursor-pointer group"
-              >
-                <input
-                  type="checkbox"
-                  checked={statuses.includes(status.value)}
-                  onChange={() => handleStatusToggle(status.value)}
-                  disabled={isLoading}
-                  className="rounded border-slate-600 text-blue-500 focus:ring-blue-500 disabled:opacity-50 cursor-pointer bg-slate-700"
-                />
-                <span className="text-slate-300 group-hover:text-white font-medium">{status.label}</span>
-              </label>
-            ))}
-          </div>
-        </div>
+        <MultiSelectDropdown
+          label="Severity"
+          placeholder="Select severity"
+          options={severityOptions}
+          selectedValues={severities}
+          onChange={setSeverities}
+          disabled={isLoading}
+        />
+
+        <MultiSelectDropdown
+          label="Status"
+          placeholder="Select status"
+          options={statusOptions}
+          selectedValues={statuses}
+          onChange={setStatuses}
+          disabled={isLoading}
+        />
       </div>
 
       {/* Modules */}
       {availableModules.length > 0 && (
-        <div className="mt-8 pt-8 border-t border-slate-700">
-          <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wide mb-4">
-            Modules ({modules.length} selected)
-          </label>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-            {availableModules.map((module) => (
-              <label
-                key={module}
-                className="flex items-center gap-3 px-3 py-2 rounded-lg border border-slate-700 bg-slate-800/50 cursor-pointer hover:border-blue-500 hover:bg-slate-700 transition-colors group"
-              >
-                <input
-                  type="checkbox"
-                  checked={modules.includes(module)}
-                  onChange={() => handleModuleToggle(module)}
-                  disabled={isLoading}
-                  className="rounded border-slate-600 text-blue-500 focus:ring-blue-500 disabled:opacity-50 cursor-pointer bg-slate-700"
-                />
-                <span className="text-sm text-slate-300 group-hover:text-white font-medium truncate">{module}</span>
-              </label>
-            ))}
-          </div>
+        <div className="mt-4 border-t border-(--border-color) pt-4">
+          <MultiSelectDropdown
+            label="Modules"
+            placeholder="Select modules"
+            options={moduleOptions}
+            selectedValues={modules}
+            onChange={setModules}
+            disabled={isLoading}
+          />
         </div>
       )}
 
       {/* Apply Filters Button */}
-      <div className="mt-8 pt-6 border-t border-slate-700 flex gap-3 justify-end">
+      <div className="mt-4 flex gap-2 justify-stretch border-t border-(--border-color) pt-4">
         <button
           onClick={clearFilters}
-          className="px-6 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-medium rounded-lg transition-colors border border-slate-700 hover:border-slate-600"
+          disabled={!hasAnyFilter}
+          className="bg-(--surface-soft) hover:bg-emerald-50 text-(--muted-color) hover:text-(--heading-color) font-medium rounded-lg transition-colors border border-(--border-color) hover:border-(--primary-color) flex-1 px-4 py-2 text-sm"
         >
           Reset
         </button>
         <button
           onClick={applyFilters}
-          disabled={isLoading}
-          className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          disabled={
+            isLoading ||
+            (searchInput.trim().length > 0 && searchInput.trim().length < 3)
+          }
+          className="bg-(--primary-color) hover:bg-(--primary-hover-color) text-white font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex-1 px-4 py-2 text-sm"
         >
-          Apply Filters
+          Apply Filters ({activeFilterCount})
         </button>
       </div>
     </div>
   );
 }
-
