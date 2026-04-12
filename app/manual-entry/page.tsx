@@ -11,6 +11,7 @@ import {
   HiEye,
   HiX,
 } from "react-icons/hi";
+import AppButton from "@/app/components/common/AppButton";
 import CSVUpload from "@/app/components/uploads/CSVUpload";
 import {
   createManualDefect,
@@ -585,14 +586,15 @@ export default function ManualEntryPage() {
               />
             </div>
 
-            <button
+            <AppButton
               onClick={onCreateIssue}
               disabled={creating}
-              className="mt-5 inline-flex items-center gap-2 rounded-lg bg-(--primary-color) px-6 py-3 font-semibold text-white shadow-sm transition-all duration-300 hover:bg-(--primary-hover-color) disabled:cursor-not-allowed disabled:opacity-50"
+              variant="primary"
+              className="mt-5 px-6 py-3"
             >
               <HiPlus className="w-5 h-5" />
               {creating ? "Adding..." : "Add Issue"}
-            </button>
+            </AppButton>
           </div>
 
           {/* Messages */}
@@ -795,27 +797,29 @@ export default function ManualEntryPage() {
                         </td>
                         <td className="px-4 py-3 align-top">
                           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                            <button
+                            <AppButton
                               onClick={() => onOpenRow(row.id)}
                               disabled={
                                 openingId === row.id || deletingId === row.id
                               }
-                              className="inline-flex items-center gap-1.5 rounded-lg bg-(--primary-color) px-3 py-1.5 text-xs font-semibold text-white transition-all duration-300 hover:bg-(--primary-hover-color) disabled:cursor-not-allowed disabled:opacity-50"
+                              variant="primary"
+                              size="sm"
                             >
                               <HiEye className="w-4 h-4" />
                               {openingId === row.id ? "Opening" : "Open"}
-                            </button>
-                            <button
+                            </AppButton>
+                            <AppButton
                               onClick={() => onDeleteRow(row.id)}
                               disabled={
                                 deletingId === row.id || openingId === row.id
                               }
                               title="Remove issue"
                               aria-label="Remove issue"
-                              className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-(--danger-color) text-white transition-all duration-300 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                              variant="danger"
+                              size="icon"
                             >
                               <HiTrash className="w-4 h-4" />
-                            </button>
+                            </AppButton>
                           </div>
                         </td>
                       </tr>
