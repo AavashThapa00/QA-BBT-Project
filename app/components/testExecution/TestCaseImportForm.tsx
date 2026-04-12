@@ -1,13 +1,17 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { HiArrowUp, HiCheckCircle } from "react-icons/hi";
 import * as XLSX from "xlsx";
 import AppButton from "@/app/components/common/AppButton";
+import { TestCycle } from "@/lib/testCaseTypes";
 
 interface TestCaseImportProps {
   onImportSuccess?: (cycleName: string, imported: number) => void;
   onImportError?: (error: string) => void;
+  cycleNodes?: TestCycle[];
+  defaultParentId?: string;
+  defaultCycleName?: string;
 }
 
 function normalizeHeader(value: unknown): string {
@@ -53,13 +57,31 @@ function rowsToCsv(rows: string[][]): string {
 export default function TestCaseImportForm({
   onImportSuccess,
   onImportError,
+  cycleNodes = [],
+  defaultParentId = "",
+  defaultCycleName = "",
 }: TestCaseImportProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [cycleName, setCycleName] = useState("");
+  const [parentId, setParentId] = useState("");
+  const [moduleName, setModuleName] = useState("");
+  const [sectionName, setSectionName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [publicImportLoading, setPublicImportLoading] = useState(false);
+  const [publicWorkbookFileName, setPublicWorkbookFileName] =
+    useState("HSA.xlsx");
   const [result, setResult] = useState<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setParentId(defaultParentId || "");
+  }, [defaultParentId]);
+
+  useEffect(() => {
+    if (!defaultCycleName) return;
+    setCycleName(defaultCycleName);
+  }, [defaultCycleName]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -148,6 +170,9 @@ export default function TestCaseImportForm({
         body: JSON.stringify({
           csvContent,
           cycleName: cycleName.trim(),
+          parentId: parentId || null,
+          moduleName: moduleName.trim() || null,
+          sectionName: sectionName.trim() || null,
         }),
       });
 
@@ -160,6 +185,9 @@ export default function TestCaseImportForm({
           setIsOpen(false);
           setCsvFile(null);
           setCycleName("");
+          setParentId("");
+          setModuleName("");
+          setSectionName("");
           setResult(null);
         }, 2000);
       } else {
@@ -171,6 +199,39 @@ export default function TestCaseImportForm({
       setResult(null);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleImportPublicWorkbook = async () => {
+    try {
+      setPublicImportLoading(true);
+
+      const response = await fetch(
+        "/api/v1/test-cases/import-public-workbook",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            fileName: publicWorkbookFileName.trim() || "HSA.xlsx",
+            cycleName: "Test Cycle 1",
+          }),
+        },
+      );
+
+      const data = await response.json();
+      if (!data.success) {
+        onImportError?.(data.error?.message || "Workbook import failed");
+        return;
+      }
+
+      setResult(data.data);
+      onImportSuccess?.(data.data.cycleName, data.data.imported);
+    } catch (error) {
+      onImportError?.(
+        error instanceof Error ? error.message : "Workbook import failed",
+      );
+    } finally {
+      setPublicImportLoading(false);
     }
   };
 
@@ -187,7 +248,7 @@ export default function TestCaseImportForm({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 p-4 backdrop-blur-sm">
       <div className="w-full max-w-lg rounded-2xl border border-emerald-100 bg-white p-8 shadow-xl animate-in fade-in zoom-in">
         <h3 className="mb-6 text-lg font-bold text-(--heading-color)">
-          Import Test Cases from CSV
+          Import Test Cases from CSV/XLSX
         </h3>
 
         <div className="space-y-4">
@@ -204,8 +265,54 @@ export default function TestCaseImportForm({
               className="w-full rounded-lg border border-emerald-200 bg-emerald-50/40 px-3 py-2 text-sm text-(--text-color) focus:outline-none focus:ring-2 focus:ring-emerald-500"
             />
             <p className="mt-1 text-xs text-(--muted-color)">
-              This cycle will be created if it doesn't exist
+              This cycle will be created under the selected folder (if any)
             </p>
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-semibold text-(--heading-color)">
+              Parent Folder (Optional)
+            </label>
+            <select
+              value={parentId}
+              onChange={(e) => setParentId(e.target.value)}
+              className="w-full rounded-lg border border-emerald-200 bg-emerald-50/40 px-3 py-2 text-sm text-(--text-color) focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            >
+              <option value="">No parent (root)</option>
+              {cycleNodes
+                .filter((node) => (node.kind ?? "cycle") === "folder")
+                .map((folder) => (
+                  <option key={folder.id} value={folder.id}>
+                    {folder.name}
+                  </option>
+                ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-semibold text-(--heading-color)">
+              Parent Section (Optional)
+            </label>
+            <input
+              type="text"
+              value={moduleName}
+              onChange={(e) => setModuleName(e.target.value)}
+              placeholder="e.g., Authentication / Discover / Challenges / Dojos"
+              className="w-full rounded-lg border border-emerald-200 bg-emerald-50/40 px-3 py-2 text-sm text-(--text-color) focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            />
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-semibold text-(--heading-color)">
+              Test Case Heading (Optional)
+            </label>
+            <input
+              type="text"
+              value={sectionName}
+              onChange={(e) => setSectionName(e.target.value)}
+              placeholder="e.g., Login Test Cases"
+              className="w-full rounded-lg border border-emerald-200 bg-emerald-50/40 px-3 py-2 text-sm text-(--text-color) focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            />
           </div>
 
           {/* File Upload */}
@@ -245,6 +352,12 @@ export default function TestCaseImportForm({
                   <p className="font-semibold text-emerald-700">
                     Successfully imported {result.imported} test cases
                   </p>
+                  {result.fileName && (
+                    <p className="mt-1 text-xs text-emerald-700/80">
+                      Workbook: {result.fileName} → {result.rootFolderName} /{" "}
+                      {result.cycleName}
+                    </p>
+                  )}
                   {result.failed > 0 && (
                     <p className="mt-1 text-xs text-emerald-700/80">
                       {result.failed} rows skipped
@@ -255,6 +368,35 @@ export default function TestCaseImportForm({
             </div>
           )}
 
+          <div className="rounded-lg border border-emerald-200 bg-emerald-50/60 p-3">
+            <p className="text-xs text-(--muted-color)">
+              One-click option: import a workbook from public/. Root folder is
+              auto-created from workbook name (for example, HSA.xlsx → HSA),
+              then seed into Test Cycle 1 with mapped scopes.
+            </p>
+            <input
+              type="text"
+              value={publicWorkbookFileName}
+              onChange={(e) => setPublicWorkbookFileName(e.target.value)}
+              placeholder="Workbook in public folder (e.g., HSA.xlsx)"
+              className="mt-3 w-full rounded-lg border border-emerald-200 bg-white px-3 py-2 text-sm text-(--text-color) focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            />
+            <AppButton
+              onClick={handleImportPublicWorkbook}
+              disabled={
+                loading ||
+                publicImportLoading ||
+                !publicWorkbookFileName.trim().toLowerCase().endsWith(".xlsx")
+              }
+              variant="secondary"
+              className="mt-3 w-full"
+            >
+              {publicImportLoading
+                ? "Importing public workbook..."
+                : `Import from public/${publicWorkbookFileName.trim() || "HSA.xlsx"}`}
+            </AppButton>
+          </div>
+
           {/* Buttons */}
           <div className="flex items-center gap-3 pt-4">
             <AppButton
@@ -262,6 +404,8 @@ export default function TestCaseImportForm({
                 setIsOpen(false);
                 setCsvFile(null);
                 setCycleName("");
+                setParentId("");
+                setSectionName("");
                 setResult(null);
               }}
               disabled={loading}
@@ -272,7 +416,9 @@ export default function TestCaseImportForm({
             </AppButton>
             <AppButton
               onClick={handleImport}
-              disabled={loading || !csvFile || !cycleName.trim()}
+              disabled={
+                loading || publicImportLoading || !csvFile || !cycleName.trim()
+              }
               variant="primary"
               className="flex-1"
             >

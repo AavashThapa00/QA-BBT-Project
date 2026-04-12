@@ -3,14 +3,18 @@ export type TestExecutionStatus = "NOT_RUN" | "PASS" | "FAIL";
 export interface TestCycle {
   id: string;
   name: string;
+  kind?: "folder" | "cycle";
+  parentId?: string | null;
   description?: string;
   createdAt: Date;
-  updatedAt: Date;
+  updatedAt?: Date;
 }
 
 export interface TestCase {
   id: string;
   testCaseId: string;
+  moduleName?: string | null;
+  sectionName?: string | null;
   title: string;
   steps: string;
   expectedResult: string;

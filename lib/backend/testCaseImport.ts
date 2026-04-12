@@ -1,10 +1,14 @@
 import { randomUUID } from "crypto";
+import path from "path";
+import * as XLSX from "xlsx";
 import { Collection } from "mongodb";
 import { mongoCollections } from "@/lib/mongodb";
 
 type TestCycleDoc = {
   id: string;
   name: string;
+  kind?: "folder" | "cycle";
+  parentId?: string | null;
   description?: string | null;
   createdAt: Date;
   updatedAt?: Date;
@@ -13,8 +17,10 @@ type TestCycleDoc = {
 type TestCaseDoc = {
   id: string;
   testCaseId: string;
+  moduleName?: string | null;
   title: string;
   steps: string;
+  sectionName?: string | null;
   expectedResult?: string | null;
   cycleId: string;
   createdAt: Date;
@@ -39,10 +45,17 @@ async function ensureTestCaseSchema() {
 
   await Promise.all([
     testCycles.createIndex({ id: 1 }, { unique: true }),
-    testCycles.createIndex({ name: 1 }, { unique: true }),
+    testCycles.createIndex({ parentId: 1, kind: 1, name: 1 }),
     testCycles.createIndex({ createdAt: -1 }),
     testCases.createIndex({ id: 1 }, { unique: true }),
     testCases.createIndex({ cycleId: 1, testCaseId: 1 }, { unique: true }),
+    testCases.createIndex({
+      cycleId: 1,
+      moduleName: 1,
+      sectionName: 1,
+      testCaseId: 1,
+    }),
+    testCases.createIndex({ cycleId: 1, sectionName: 1, testCaseId: 1 }),
   ]);
 
   schemaReady = true;
@@ -53,6 +66,7 @@ export interface ParsedTestCase {
   title: string;
   steps: string;
   expectedResult: string;
+  sectionName?: string | null;
 }
 
 function cleanCell(value: string): string {
@@ -295,6 +309,8 @@ export function parseTestCaseCSV(csvContent: string): ParsedTestCase[] {
 export async function importTestCasesForCycle(
   cycleId: string,
   testCases: ParsedTestCase[],
+  sectionName?: string,
+  moduleName?: string,
 ): Promise<{ imported: number; failed: number; errors: string[] }> {
   const errors: string[] = [];
   let imported = 0;
@@ -327,8 +343,13 @@ export async function importTestCasesForCycle(
       await collection.insertOne({
         id: randomUUID(),
         testCaseId: tc.testCaseId,
+        moduleName: moduleName?.trim() ? moduleName.trim() : null,
         title: tc.title,
         steps: tc.steps,
+        sectionName:
+          sectionName?.trim() || tc.sectionName?.trim()
+            ? (sectionName?.trim() || tc.sectionName?.trim())!
+            : null,
         expectedResult: tc.expectedResult || null,
         cycleId,
         createdAt: new Date(),
@@ -346,12 +367,16 @@ export async function importTestCasesForCycle(
   return { imported, failed, errors };
 }
 
-export async function getOrCreateTestCycle(cycleName: string): Promise<string> {
+export async function getOrCreateTestCycle(
+  cycleName: string,
+  parentId?: string | null,
+): Promise<string> {
   await ensureTestCaseSchema();
   const collection = await getTestCyclesCollection();
+  const normalizedParentId = parentId ?? null;
 
   const existing = await collection.findOne(
-    { name: cycleName },
+    { name: cycleName, kind: "cycle", parentId: normalizedParentId },
     { projection: { _id: 0, id: 1 } },
   );
 
@@ -364,6 +389,8 @@ export async function getOrCreateTestCycle(cycleName: string): Promise<string> {
     await collection.insertOne({
       id,
       name: cycleName,
+      kind: "cycle",
+      parentId: normalizedParentId,
       description: `Test cycle for ${cycleName}`,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -371,10 +398,300 @@ export async function getOrCreateTestCycle(cycleName: string): Promise<string> {
     return id;
   } catch {
     const raced = await collection.findOne(
-      { name: cycleName },
+      { name: cycleName, kind: "cycle", parentId: normalizedParentId },
       { projection: { _id: 0, id: 1 } },
     );
     if (raced) return raced.id;
     throw new Error("Failed to create test cycle");
   }
+}
+
+function normalizeSheetName(name: string): string {
+  return name.toLowerCase().replace(/\s+/g, " ").trim();
+}
+
+function mapSheetToModuleName(sheetName: string): string | null {
+  const normalized = normalizeSheetName(sheetName);
+
+  const mapping: Record<string, string | null> = {
+    "priority based log": null,
+    "defect log": null,
+    authentication: "Authentication",
+    "web features": "Web Features",
+    dashboard: "Dashboard",
+    profile: "Profile",
+    "instant explanations": "Instant Explanations",
+    "lr - ivy": "LR-IVY",
+    testpaper: "Test Paper",
+    "revision note": "Revision Notes",
+    "get answer a day": "Get answerr a day",
+    "academic support": "academic support",
+    planbook: "Planbook",
+    "subscription & tc": "Subscription and tc",
+  };
+
+  return mapping[normalized] ?? sheetName.trim();
+}
+
+function isStructuredTestCaseId(value: string): boolean {
+  const id = value.trim();
+  if (!id) return false;
+  if (!/^[A-Za-z0-9_-]+$/.test(id)) return false;
+  return /\d/.test(id);
+}
+
+function extractHeaderIndices(headerRow: string[]) {
+  const normalized = headerRow.map(normalizeHeader);
+  const idIdx = normalized.findIndex(
+    (h) =>
+      h.includes("test case id") ||
+      h.includes("testno") ||
+      h.includes("test no") ||
+      h === "id" ||
+      h.includes("tc id"),
+  );
+  const titleIdx = normalized.findIndex(
+    (h) =>
+      h.includes("use case") ||
+      h.includes("scenario") ||
+      h.includes("description"),
+  );
+  const stepIndices = normalized
+    .map((h, idx) => ({ h, idx }))
+    .filter(({ h }) => h.includes("step"))
+    .map(({ idx }) => idx);
+  const resultIdx = normalized.findIndex(
+    (h) => h.includes("result") || h.includes("expected"),
+  );
+
+  return { idIdx, titleIdx, stepIndices, resultIdx };
+}
+
+function findHeaderRowIndexFromRows(rows: string[][]): number {
+  const searchLimit = Math.min(rows.length, 30);
+  for (let i = 0; i < searchLimit; i++) {
+    const { idIdx, titleIdx, stepIndices } = extractHeaderIndices(
+      rows[i] ?? [],
+    );
+    if (idIdx >= 0 && titleIdx >= 0 && stepIndices.length > 0) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+function parseTestCasesFromSheetRows(rows: string[][]): ParsedTestCase[] {
+  const headerRowIndex = findHeaderRowIndexFromRows(rows);
+  if (headerRowIndex < 0) {
+    return [];
+  }
+
+  const { idIdx, titleIdx, stepIndices, resultIdx } = extractHeaderIndices(
+    rows[headerRowIndex] ?? [],
+  );
+
+  if (idIdx < 0 || titleIdx < 0 || stepIndices.length === 0) {
+    return [];
+  }
+
+  const parsed: ParsedTestCase[] = [];
+  let currentSection: string | null = null;
+  let current: ParsedTestCase | null = null;
+  let generatedCounter = 1;
+
+  const pushCurrent = () => {
+    if (!current) return;
+    if (!current.testCaseId || !current.title || !current.steps) {
+      current = null;
+      return;
+    }
+
+    current.steps = current.steps
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .join("\n");
+
+    parsed.push(current);
+    current = null;
+  };
+
+  for (let i = headerRowIndex + 1; i < rows.length; i++) {
+    const row = (rows[i] ?? []).map((cell) => String(cell ?? "").trim());
+    if (!row.some(Boolean)) {
+      continue;
+    }
+
+    const rawId = (row[idIdx] || "").trim();
+    const rawTitle = (row[titleIdx] || "").trim();
+    const rawSteps = collectNonEmpty(row, stepIndices).join("\n").trim();
+    const rawResult = resultIdx >= 0 ? (row[resultIdx] || "").trim() : "";
+
+    // Section heading rows are typically non-ID, title-only rows.
+    if (!rawId && rawTitle && !rawSteps) {
+      currentSection = rawTitle;
+      continue;
+    }
+
+    if (rawId && isStructuredTestCaseId(rawId)) {
+      pushCurrent();
+      current = {
+        testCaseId: rawId,
+        title: rawTitle || rawId,
+        steps: rawSteps || "Step details not provided",
+        expectedResult: rawResult || "",
+        sectionName: currentSection,
+      };
+      continue;
+    }
+
+    // Rows with title + steps but no ID are treated as independent test cases.
+    if (!rawId && rawTitle && rawSteps) {
+      pushCurrent();
+      current = {
+        testCaseId: `AUTO_${String(generatedCounter++).padStart(4, "0")}`,
+        title: rawTitle,
+        steps: rawSteps,
+        expectedResult: rawResult || "",
+        sectionName: currentSection,
+      };
+      continue;
+    }
+
+    // Continuation rows append to current test case.
+    if (current) {
+      const extra = [rawSteps, rawTitle].filter(Boolean).join("\n").trim();
+      if (extra) {
+        current.steps = current.steps ? `${current.steps}\n${extra}` : extra;
+      }
+      if (!current.expectedResult && rawResult) {
+        current.expectedResult = rawResult;
+      }
+    }
+  }
+
+  pushCurrent();
+  return parsed;
+}
+
+async function getOrCreateFolder(
+  folderName: string,
+  parentId?: string | null,
+): Promise<string> {
+  await ensureTestCaseSchema();
+  const collection = await getTestCyclesCollection();
+  const normalizedParentId = parentId ?? null;
+
+  const existing = await collection.findOne(
+    { name: folderName, kind: "folder", parentId: normalizedParentId },
+    { projection: { _id: 0, id: 1 } },
+  );
+
+  if (existing) {
+    return existing.id;
+  }
+
+  const id = randomUUID();
+  try {
+    await collection.insertOne({
+      id,
+      name: folderName,
+      kind: "folder",
+      parentId: normalizedParentId,
+      description: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    return id;
+  } catch {
+    const raced = await collection.findOne(
+      { name: folderName, kind: "folder", parentId: normalizedParentId },
+      { projection: { _id: 0, id: 1 } },
+    );
+    if (raced) return raced.id;
+    throw new Error(`Failed to create folder: ${folderName}`);
+  }
+}
+
+export async function importPublicWorkbookToHierarchy(options?: {
+  fileName?: string;
+  rootFolderName?: string;
+  cycleName?: string;
+}) {
+  const fileName = options?.fileName?.trim() || "HSA.xlsx";
+  const derivedRootFolder = path.parse(fileName).name.trim() || "HSA";
+  const rootFolderName = options?.rootFolderName?.trim() || derivedRootFolder;
+  const cycleName = options?.cycleName?.trim() || "Test Cycle 1";
+
+  const workbookPath = path.join(process.cwd(), "public", fileName);
+  const workbook = XLSX.readFile(workbookPath);
+
+  const rootFolderId = await getOrCreateFolder(rootFolderName, null);
+  const cycleId = await getOrCreateTestCycle(cycleName, rootFolderId);
+
+  const summary: Array<{
+    sheet: string;
+    moduleName: string;
+    imported: number;
+    failed: number;
+    parsed: number;
+  }> = [];
+
+  let totalImported = 0;
+  let totalFailed = 0;
+
+  for (const sheetName of workbook.SheetNames) {
+    const moduleName = mapSheetToModuleName(sheetName);
+    if (!moduleName) {
+      continue;
+    }
+
+    const worksheet = workbook.Sheets[sheetName];
+    const rows = XLSX.utils.sheet_to_json(worksheet, {
+      header: 1,
+      raw: false,
+      defval: "",
+    }) as string[][];
+
+    const moduleSlug = moduleName.replace(/\s+/g, "_").toUpperCase();
+    const parsed = parseTestCasesFromSheetRows(rows).map((tc) => ({
+      ...tc,
+      testCaseId: tc.testCaseId.startsWith("AUTO_")
+        ? `${moduleSlug}_${tc.testCaseId}`
+        : tc.testCaseId,
+    }));
+    if (parsed.length === 0) {
+      continue;
+    }
+
+    await getOrCreateFolder(moduleName, cycleId);
+
+    const result = await importTestCasesForCycle(
+      cycleId,
+      parsed,
+      undefined,
+      moduleName,
+    );
+
+    totalImported += result.imported;
+    totalFailed += result.failed;
+
+    summary.push({
+      sheet: sheetName,
+      moduleName,
+      imported: result.imported,
+      failed: result.failed,
+      parsed: parsed.length,
+    });
+  }
+
+  return {
+    cycleId,
+    cycleName,
+    rootFolderName,
+    fileName,
+    imported: totalImported,
+    failed: totalFailed,
+    sheets: summary,
+  };
 }

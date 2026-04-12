@@ -1,11 +1,14 @@
 import { NextRequest } from "next/server";
-import { getTestCasesForCycleForApi, getTestExecutionsForCycleForApi } from "@/lib/backend/testCycles";
+import {
+  getTestCasesForCycleForApi,
+  getTestExecutionsForCycleForApi,
+} from "@/lib/backend/testCycles";
 import { fail, ok } from "@/lib/backend/http";
 import { getApiUser } from "@/lib/backend/session";
 
 export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ cycleId: string }> }
+  _request: NextRequest,
+  { params }: { params: Promise<{ cycleId: string }> },
 ) {
   try {
     const user = await getApiUser();
@@ -21,8 +24,8 @@ export async function GET(
     ]);
 
     // Merge test cases with their execution data
-    const mergedData = testCases.map((testCase: any) => {
-      const execution = executions.find((e: any) => e.testCaseId === testCase.id);
+    const mergedData = testCases.map((testCase) => {
+      const execution = executions.find((e) => e.testCaseId === testCase.id);
       return {
         ...testCase,
         executionStatus: execution?.status ?? "NOT_RUN",

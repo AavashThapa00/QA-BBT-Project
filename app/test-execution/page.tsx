@@ -5,10 +5,7 @@ import {
   HiArrowLeft,
   HiCheckCircle,
   HiXCircle,
-  HiChevronDown,
   HiExclamationCircle,
-  HiDownload,
-  HiTrash,
   HiArrowRight,
   HiX,
 } from "react-icons/hi";
@@ -46,7 +43,7 @@ const STATUS_COLORS: Record<
   NOT_RUN: {
     bg: "bg-slate-100",
     text: "text-slate-700",
-    icon: <HiChevronDown />,
+    icon: <HiArrowRight />,
   },
   PASS: {
     bg: "bg-emerald-100",
@@ -67,12 +64,31 @@ const PRIORITY_OPTIONS = ["LOW", "MEDIUM", "HIGH", "MAJOR"] as const;
 
 export default function TestCaseExecutionPage() {
   const [cycles, setCycles] = useState<TestCycle[]>([]);
+  const [selectedMainFolder, setSelectedMainFolder] = useState<string>("");
   const [selectedCycle, setSelectedCycle] = useState<string>("");
+  const [selectedScopeId, setSelectedScopeId] = useState<string>("");
+  const [newMainFolderName, setNewMainFolderName] = useState("");
+  const [newChildCycleName, setNewChildCycleName] = useState("");
+  const [newScopeName, setNewScopeName] = useState("");
+  const [creatingNode, setCreatingNode] = useState(false);
+  const [creatingTestCase, setCreatingTestCase] = useState(false);
+  const [newCaseSectionName, setNewCaseSectionName] =
+    useState("Login Test Cases");
+  const [newCaseTitle, setNewCaseTitle] = useState("");
+  const [newCaseSteps, setNewCaseSteps] = useState("");
+  const [newCaseStatus, setNewCaseStatus] =
+    useState<TestExecutionStatus>("NOT_RUN");
+  const [newCaseRemarks, setNewCaseRemarks] = useState("");
+  const [caseSearch, setCaseSearch] = useState("");
+  const [caseScopeFilter, setCaseScopeFilter] = useState("ALL");
+  const [caseHeadingFilter, setCaseHeadingFilter] = useState("ALL");
+  const [caseStatusFilter, setCaseStatusFilter] = useState<
+    "ALL" | TestExecutionStatus
+  >("ALL");
   const [testCases, setTestCases] = useState<TestCaseWithExecution[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingTestCases, setLoadingTestCases] = useState(false);
   const [hasLoadedTestCases, setHasLoadedTestCases] = useState(false);
-  const [isCycleDropdownOpen, setIsCycleDropdownOpen] = useState(false);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [failModal, setFailModal] = useState<FailModalState>({
     isOpen: false,
@@ -97,6 +113,130 @@ export default function TestCaseExecutionPage() {
     text: string;
   } | null>(null);
 
+  const getNodePath = (nodeId: string): string => {
+    const map = new Map(cycles.map((node) => [node.id, node]));
+    const parts: string[] = [];
+    let cursor = map.get(nodeId);
+
+    while (cursor) {
+      parts.unshift(cursor.name);
+      if (!cursor.parentId) break;
+      cursor = map.get(cursor.parentId);
+    }
+
+    return parts.join(" / ");
+  };
+
+  const folderNodes = cycles.filter(
+    (node) => (node.kind ?? "cycle") === "folder",
+  );
+  const rootFolders = folderNodes.filter((node) => !node.parentId);
+  const mainFolders = rootFolders.length > 0 ? rootFolders : folderNodes;
+  const executableCycles = cycles.filter(
+    (node) => (node.kind ?? "cycle") === "cycle",
+  );
+  const selectedCycleNode = executableCycles.find(
+    (node) => node.id === selectedCycle,
+  );
+  const inferredChildParentFolderId =
+    selectedCycleNode?.parentId || selectedMainFolder || "";
+  const descendantFolderIds = (() => {
+    if (!selectedMainFolder) return new Set<string>();
+    const set = new Set<string>([selectedMainFolder]);
+    let expanded = true;
+    while (expanded) {
+      expanded = false;
+      for (const folder of folderNodes) {
+        if (
+          folder.parentId &&
+          set.has(folder.parentId) &&
+          !set.has(folder.id)
+        ) {
+          set.add(folder.id);
+          expanded = true;
+        }
+      }
+    }
+    return set;
+  })();
+
+  const childCycles = executableCycles.filter((node) => {
+    if (!selectedMainFolder) return !node.parentId;
+    return Boolean(node.parentId && descendantFolderIds.has(node.parentId));
+  });
+  const scopeNodes = selectedCycle
+    ? folderNodes.filter((node) => (node.parentId || "") === selectedCycle)
+    : [];
+  const selectedScopeName =
+    scopeNodes.find((node) => node.id === selectedScopeId)?.name || "";
+  const selectedCycleName =
+    executableCycles.find((node) => node.id === selectedCycle)?.name || "";
+  const selectedMainFolderPath = selectedMainFolder
+    ? getNodePath(selectedMainFolder)
+    : "Root";
+  const availableScopes = Array.from(
+    new Set(
+      testCases
+        .map((tc) => (tc.moduleName || "General").trim())
+        .filter(Boolean),
+    ),
+  ).sort((a, b) => a.localeCompare(b));
+
+  const availableHeadings = Array.from(
+    new Set(
+      testCases
+        .map((tc) => (tc.sectionName || "General Test Cases").trim())
+        .filter(Boolean),
+    ),
+  ).sort((a, b) => a.localeCompare(b));
+
+  const normalizedCaseSearch = caseSearch.trim().toLowerCase();
+
+  const filteredTestCases = testCases.filter((tc) => {
+    const scope = (tc.moduleName || "General").trim();
+    const heading = (tc.sectionName || "General Test Cases").trim();
+
+    const matchesScope = caseScopeFilter === "ALL" || scope === caseScopeFilter;
+    const matchesHeading =
+      caseHeadingFilter === "ALL" || heading === caseHeadingFilter;
+    const matchesStatus =
+      caseStatusFilter === "ALL" || tc.executionStatus === caseStatusFilter;
+    const matchesSearch =
+      !normalizedCaseSearch ||
+      tc.testCaseId.toLowerCase().includes(normalizedCaseSearch) ||
+      tc.title.toLowerCase().includes(normalizedCaseSearch) ||
+      tc.steps.toLowerCase().includes(normalizedCaseSearch);
+
+    return matchesScope && matchesHeading && matchesStatus && matchesSearch;
+  });
+
+  const groupedTestCases = filteredTestCases.reduce<
+    Array<{
+      moduleName: string;
+      heading: string;
+      items: TestCaseWithExecution[];
+    }>
+  >((acc, testCase) => {
+    const moduleName = (testCase.moduleName || "General").trim();
+    const heading = (testCase.sectionName || "General Test Cases").trim();
+    const existing = acc.find(
+      (group) => group.moduleName === moduleName && group.heading === heading,
+    );
+    if (existing) {
+      existing.items.push(testCase);
+    } else {
+      acc.push({ moduleName, heading, items: [testCase] });
+    }
+    return acc;
+  }, []);
+
+  const clearCaseFilters = () => {
+    setCaseSearch("");
+    setCaseScopeFilter("ALL");
+    setCaseHeadingFilter("ALL");
+    setCaseStatusFilter("ALL");
+  };
+
   useEffect(() => {
     if (!message) return;
 
@@ -115,9 +255,43 @@ export default function TestCaseExecutionPage() {
         const response = await fetch("/api/v1/test-cycles");
         const data = await response.json();
         if (data.success) {
-          setCycles(data.data || []);
-          if (data.data?.length > 0) {
-            setSelectedCycle(data.data[0].id);
+          const nodes = (data.data || []) as TestCycle[];
+          setCycles(nodes);
+
+          const folders = nodes.filter((n) => (n.kind ?? "cycle") === "folder");
+          const roots = folders.filter((n) => !n.parentId);
+          const mains = roots.length > 0 ? roots : folders;
+          const firstMain = mains[0];
+          if (firstMain) {
+            setSelectedMainFolder(firstMain.id);
+            const folderSet = new Set<string>([firstMain.id]);
+            let expanded = true;
+            while (expanded) {
+              expanded = false;
+              for (const folder of folders) {
+                if (
+                  folder.parentId &&
+                  folderSet.has(folder.parentId) &&
+                  !folderSet.has(folder.id)
+                ) {
+                  folderSet.add(folder.id);
+                  expanded = true;
+                }
+              }
+            }
+
+            const firstChildCycle = nodes.find(
+              (n) =>
+                (n.kind ?? "cycle") === "cycle" &&
+                Boolean(n.parentId && folderSet.has(n.parentId)),
+            );
+            setSelectedCycle(firstChildCycle?.id ?? "");
+          } else {
+            const rootCycle = nodes.find(
+              (n) => (n.kind ?? "cycle") === "cycle" && !n.parentId,
+            );
+            setSelectedMainFolder("");
+            setSelectedCycle(rootCycle?.id ?? "");
           }
         }
       } catch (error) {
@@ -133,7 +307,12 @@ export default function TestCaseExecutionPage() {
 
   // Fetch test cases when cycle is selected
   useEffect(() => {
-    if (!selectedCycle) return;
+    if (!selectedCycle) {
+      setTestCases([]);
+      setRemarks({});
+      setHasLoadedTestCases(true);
+      return;
+    }
 
     async function loadTestCases() {
       try {
@@ -160,6 +339,46 @@ export default function TestCaseExecutionPage() {
   }, [selectedCycle]);
 
   useEffect(() => {
+    if (!selectedMainFolder) return;
+    const exists = mainFolders.some(
+      (folder) => folder.id === selectedMainFolder,
+    );
+    if (!exists) {
+      setSelectedMainFolder(mainFolders[0]?.id ?? "");
+    }
+  }, [selectedMainFolder, mainFolders]);
+
+  useEffect(() => {
+    if (!selectedMainFolder) {
+      const rootCycle = executableCycles.find((cycle) => !cycle.parentId);
+      if (
+        !selectedCycle ||
+        !executableCycles.some((cycle) => cycle.id === selectedCycle)
+      ) {
+        setSelectedCycle(rootCycle?.id ?? "");
+      }
+      return;
+    }
+
+    const belongs = childCycles.some((cycle) => cycle.id === selectedCycle);
+    if (!belongs) {
+      setSelectedCycle(childCycles[0]?.id ?? "");
+    }
+  }, [selectedMainFolder, selectedCycle, childCycles, executableCycles]);
+
+  useEffect(() => {
+    if (!selectedCycle) {
+      setSelectedScopeId("");
+      return;
+    }
+
+    const exists = scopeNodes.some((scope) => scope.id === selectedScopeId);
+    if (!exists) {
+      setSelectedScopeId(scopeNodes[0]?.id ?? "");
+    }
+  }, [selectedCycle, selectedScopeId, scopeNodes]);
+
+  useEffect(() => {
     if (!selectedCycle) return;
 
     async function loadRuns() {
@@ -178,6 +397,29 @@ export default function TestCaseExecutionPage() {
 
     loadRuns();
   }, [selectedCycle]);
+
+  const reloadSelectedCycleTestCases = async () => {
+    if (!selectedCycle) return;
+
+    try {
+      setLoadingTestCases(true);
+      setHasLoadedTestCases(false);
+      const response = await fetch(
+        `/api/v1/test-cycles/${selectedCycle}/test-cases`,
+      );
+      const data = await response.json();
+      if (data.success) {
+        setTestCases(data.data || []);
+        setRemarks({});
+      }
+    } catch (error) {
+      console.error("Failed to reload test cases:", error);
+      setMessage({ type: "error", text: "Failed to reload test cases" });
+    } finally {
+      setLoadingTestCases(false);
+      setHasLoadedTestCases(true);
+    }
+  };
 
   const handlePass = async (testCaseId: string) => {
     if (!selectedCycle) return;
@@ -374,6 +616,228 @@ export default function TestCaseExecutionPage() {
     setMessage({ type: "success", text: "Test cases imported successfully!" });
   };
 
+  const handleCreateMainFolder = async () => {
+    const name = newMainFolderName.trim();
+    if (!name) {
+      setMessage({
+        type: "error",
+        text: "Enter main title name (e.g., HSA Cycle)",
+      });
+      return;
+    }
+
+    try {
+      setCreatingNode(true);
+      const response = await fetch("/api/v1/test-cycles", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
+          kind: "folder",
+          parentId: null,
+        }),
+      });
+
+      const data = await response.json();
+      if (!data.success) {
+        setMessage({
+          type: "error",
+          text: data.error?.message || "Failed to create main title",
+        });
+        return;
+      }
+
+      const created = data.data as TestCycle;
+      setCycles((prev) => [created, ...prev]);
+      setSelectedMainFolder(created.id);
+      setSelectedCycle("");
+      setNewMainFolderName("");
+      setMessage({ type: "success", text: "Main title created" });
+    } catch (error) {
+      console.error("Failed to create main title:", error);
+      setMessage({ type: "error", text: "Failed to create main title" });
+    } finally {
+      setCreatingNode(false);
+    }
+  };
+
+  const handleCreateChildCycle = async () => {
+    const name = newChildCycleName.trim();
+    if (!name) {
+      setMessage({ type: "error", text: "Enter child cycle name" });
+      return;
+    }
+
+    if (!selectedMainFolder) {
+      setMessage({
+        type: "error",
+        text: "Select or create a main title first",
+      });
+      return;
+    }
+
+    if (!inferredChildParentFolderId) {
+      setMessage({
+        type: "error",
+        text: "Select a parent folder for this child cycle",
+      });
+      return;
+    }
+
+    try {
+      setCreatingNode(true);
+      const response = await fetch("/api/v1/test-cycles", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
+          kind: "cycle",
+          parentId: inferredChildParentFolderId,
+        }),
+      });
+
+      const data = await response.json();
+      if (!data.success) {
+        setMessage({
+          type: "error",
+          text: data.error?.message || "Failed to create test cycle",
+        });
+        return;
+      }
+
+      const created = data.data as TestCycle;
+      setCycles((prev) => [created, ...prev]);
+      setSelectedCycle(created.id);
+      setNewChildCycleName("");
+      setMessage({ type: "success", text: "Child test cycle created" });
+    } catch (error) {
+      console.error("Failed to create child cycle:", error);
+      setMessage({ type: "error", text: "Failed to create test cycle" });
+    } finally {
+      setCreatingNode(false);
+    }
+  };
+
+  const handleCreateScope = async () => {
+    const name = newScopeName.trim();
+    if (!name) {
+      setMessage({ type: "error", text: "Enter testing scope name" });
+      return;
+    }
+
+    if (!selectedCycle) {
+      setMessage({ type: "error", text: "Select a child cycle first" });
+      return;
+    }
+
+    try {
+      setCreatingNode(true);
+      const response = await fetch("/api/v1/test-cycles", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
+          kind: "folder",
+          parentId: selectedCycle,
+        }),
+      });
+
+      const data = await response.json();
+      if (!data.success) {
+        setMessage({
+          type: "error",
+          text: data.error?.message || "Failed to create testing scope",
+        });
+        return;
+      }
+
+      const created = data.data as TestCycle;
+      setCycles((prev) => [created, ...prev]);
+      setSelectedScopeId(created.id);
+      setNewScopeName("");
+      setMessage({ type: "success", text: "Testing scope created" });
+    } catch (error) {
+      console.error("Failed to create testing scope:", error);
+      setMessage({ type: "error", text: "Failed to create testing scope" });
+    } finally {
+      setCreatingNode(false);
+    }
+  };
+
+  const handleCreateTestCase = async () => {
+    if (!selectedCycle) {
+      setMessage({ type: "error", text: "Select a child test cycle first" });
+      return;
+    }
+
+    if (
+      !selectedScopeName.trim() ||
+      !newCaseSectionName.trim() ||
+      !newCaseTitle.trim() ||
+      !newCaseSteps.trim()
+    ) {
+      setMessage({
+        type: "error",
+        text: "Testing scope, heading, title, and steps are required",
+      });
+      return;
+    }
+
+    try {
+      setCreatingTestCase(true);
+
+      const createResponse = await fetch("/api/v1/test-cases", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          cycleId: selectedCycle,
+          moduleName: selectedScopeName.trim(),
+          sectionName: newCaseSectionName.trim() || "General Test Cases",
+          title: newCaseTitle.trim(),
+          steps: newCaseSteps.trim(),
+        }),
+      });
+
+      const createData = await createResponse.json();
+      if (!createData.success) {
+        setMessage({
+          type: "error",
+          text: createData.error?.message || "Failed to create test case",
+        });
+        return;
+      }
+
+      const createdCaseId = createData.data.id as string;
+
+      if (newCaseStatus !== "NOT_RUN" || newCaseRemarks.trim()) {
+        await fetch("/api/v1/test-executions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            cycleId: selectedCycle,
+            testCaseId: createdCaseId,
+            status: newCaseStatus,
+            remarks: newCaseRemarks.trim() || null,
+          }),
+        });
+      }
+
+      await reloadSelectedCycleTestCases();
+
+      setNewCaseSectionName("Login Test Cases");
+      setNewCaseTitle("");
+      setNewCaseSteps("");
+      setNewCaseRemarks("");
+      setNewCaseStatus("NOT_RUN");
+      setMessage({ type: "success", text: "Test case created successfully" });
+    } catch (error) {
+      console.error("Failed to create test case:", error);
+      setMessage({ type: "error", text: "Failed to create test case" });
+    } finally {
+      setCreatingTestCase(false);
+    }
+  };
+
   const handleImportError = (error: string) => {
     setMessage({ type: "error", text: `Import failed: ${error}` });
   };
@@ -412,7 +876,7 @@ export default function TestCaseExecutionPage() {
   const handleDeleteRun = async (runId: string) => {
     if (
       !selectedCycle ||
-      !window.confirm("Are you sure you want to delete this run folder?")
+      !window.confirm("Are you sure you want to delete this snapshot?")
     )
       return;
 
@@ -430,14 +894,14 @@ export default function TestCaseExecutionPage() {
         setRuns((prev) => prev.filter((r) => r.id !== runId));
         setMessage({
           type: "success",
-          text: "Run folder deleted successfully",
+          text: "Snapshot deleted successfully",
         });
       } else {
-        setMessage({ type: "error", text: "Failed to delete run folder" });
+        setMessage({ type: "error", text: "Failed to delete snapshot" });
       }
     } catch (error) {
       console.error("Failed to delete run:", error);
-      setMessage({ type: "error", text: "Failed to delete run folder" });
+      setMessage({ type: "error", text: "Failed to delete snapshot" });
     } finally {
       setDeletingRunId(null);
     }
@@ -454,7 +918,7 @@ export default function TestCaseExecutionPage() {
       const data = await response.json();
 
       if (!data.success || !data.data?.data?.executions) {
-        setMessage({ type: "error", text: "Failed to open run folder" });
+        setMessage({ type: "error", text: "Failed to open snapshot" });
         return;
       }
 
@@ -510,11 +974,11 @@ export default function TestCaseExecutionPage() {
       );
       setMessage({
         type: "success",
-        text: "Run folder opened. You can continue testing from the saved state.",
+        text: "Snapshot restored. You can continue testing from the saved state.",
       });
     } catch (error) {
       console.error("Failed to open run folder:", error);
-      setMessage({ type: "error", text: "Failed to open run folder" });
+      setMessage({ type: "error", text: "Failed to open snapshot" });
     } finally {
       setRestoringRunId(null);
     }
@@ -522,7 +986,10 @@ export default function TestCaseExecutionPage() {
 
   const handleNewTestCycle = () => {
     if (!selectedCycle || testCases.length === 0) return;
-    setNewCycleFolderName("");
+    const stamp = new Date().toLocaleString();
+    setNewCycleFolderName(
+      `${selectedCycleName || "Cycle"} Snapshot - ${stamp}`,
+    );
     setIsNewCycleModalOpen(true);
   };
 
@@ -533,7 +1000,7 @@ export default function TestCaseExecutionPage() {
     if (!trimmedName) {
       setMessage({
         type: "error",
-        text: "Enter a folder name before starting a new test cycle",
+        text: "Enter a snapshot name",
       });
       return;
     }
@@ -555,7 +1022,7 @@ export default function TestCaseExecutionPage() {
       if (!saveData.success) {
         setMessage({
           type: "error",
-          text: saveData.error?.message || "Failed to save run folder",
+          text: saveData.error?.message || "Failed to save snapshot",
         });
         return;
       }
@@ -591,11 +1058,11 @@ export default function TestCaseExecutionPage() {
       setNewCycleFolderName("");
       setMessage({
         type: "success",
-        text: "Run folder saved and new test cycle started (all test cases set to PENDING).",
+        text: "Snapshot saved and cycle reset to PENDING.",
       });
     } catch (error) {
       console.error("Failed to start new test cycle:", error);
-      setMessage({ type: "error", text: "Failed to start new test cycle" });
+      setMessage({ type: "error", text: "Failed to save snapshot and reset" });
     } finally {
       setSavingRun(false);
     }
@@ -659,141 +1126,276 @@ export default function TestCaseExecutionPage() {
         <TestCaseImportForm
           onImportSuccess={handleImportSuccess}
           onImportError={handleImportError}
+          cycleNodes={cycles}
+          defaultParentId={selectedMainFolder}
+          defaultCycleName={selectedCycleName}
         />
 
-        {/* Cycle Selector */}
-        <div className="rounded-2xl border border-emerald-100 bg-white p-6 shadow-sm">
-          <div className="mb-4">
-            <label className="mb-2 block text-sm font-semibold text-(--heading-color)">
-              Select Test Cycle
-            </label>
-            <div className="relative">
-              <button
-                onClick={() => setIsCycleDropdownOpen(!isCycleDropdownOpen)}
-                className="flex w-full items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50/40 px-4 py-3 text-left text-(--text-color) transition-all hover:border-emerald-300"
-              >
-                <span>
-                  {cycles.find((c) => c.id === selectedCycle)?.name ||
-                    "Select a cycle"}
-                </span>
-                <HiChevronDown
-                  className={`w-4 h-4 transition-transform ${isCycleDropdownOpen ? "rotate-180" : ""}`}
-                />
-              </button>
+        {/* Hierarchy Flow */}
+        <div className="rounded-2xl border border-emerald-200 bg-linear-to-r from-white to-emerald-50/50 p-6 shadow-sm">
+          <h2 className="mb-2 text-lg font-bold text-(--heading-color)">
+            Test Cycle Hierarchy
+          </h2>
+          <p className="mb-5 text-xs text-(--muted-color)">
+            1) Create main title (example: HSA Cycle) → 2) Create child cycles
+            (Test Cycle 1, 2, 3) → 3) Create testing scope (Authentication,
+            Discover, Challenges, Dojos) → 4) Add test cases under headings.
+          </p>
 
-              {isCycleDropdownOpen && (
-                <div className="absolute left-0 right-0 top-full z-10 mt-2 overflow-hidden rounded-xl border border-emerald-100 bg-white shadow-lg">
-                  {cycles.map((cycle) => (
-                    <button
-                      key={cycle.id}
-                      onClick={() => {
-                        setSelectedCycle(cycle.id);
-                        setIsCycleDropdownOpen(false);
-                      }}
-                      className="w-full px-4 py-3 text-left text-sm text-(--text-color) transition-colors hover:bg-emerald-50"
-                    >
-                      {cycle.name}
-                    </button>
-                  ))}
+          <div className="grid gap-4 lg:grid-cols-2">
+            <div className="rounded-xl border border-emerald-200 bg-white p-4">
+              <h3 className="mb-3 text-sm font-semibold text-(--heading-color)">
+                Main Title (Folder)
+              </h3>
+              <label className="mb-2 block text-xs font-medium text-(--muted-color)">
+                Select Main Title
+              </label>
+              <select
+                value={selectedMainFolder}
+                onChange={(e) => setSelectedMainFolder(e.target.value)}
+                className="mb-3 w-full rounded-lg border border-emerald-200 bg-emerald-50/40 px-3 py-2 text-sm text-(--text-color) focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              >
+                {mainFolders.length === 0 ? (
+                  <option value="">No main titles yet</option>
+                ) : (
+                  mainFolders.map((folder) => (
+                    <option key={folder.id} value={folder.id}>
+                      {getNodePath(folder.id)}
+                    </option>
+                  ))
+                )}
+              </select>
+
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <input
+                  type="text"
+                  value={newMainFolderName}
+                  onChange={(e) => setNewMainFolderName(e.target.value)}
+                  placeholder="Create main title e.g., HSA Cycle"
+                  className="w-full rounded-lg border border-emerald-200 bg-emerald-50/40 px-3 py-2 text-sm text-(--text-color) focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                />
+                <AppButton
+                  onClick={handleCreateMainFolder}
+                  disabled={creatingNode}
+                  variant="primary"
+                  size="sm"
+                >
+                  {creatingNode ? "Creating..." : "Create"}
+                </AppButton>
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-emerald-200 bg-white p-4">
+              <h3 className="mb-3 text-sm font-semibold text-(--heading-color)">
+                Child Test Cycles
+              </h3>
+              <p className="mb-2 text-xs text-(--muted-color)">
+                Inside: {selectedMainFolderPath}
+              </p>
+
+              <label className="mb-2 block text-xs font-medium text-(--muted-color)">
+                Select Child Cycle
+              </label>
+              <select
+                value={selectedCycle}
+                onChange={(e) => setSelectedCycle(e.target.value)}
+                className="mb-3 w-full rounded-lg border border-emerald-200 bg-emerald-50/40 px-3 py-2 text-sm text-(--text-color) focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              >
+                {childCycles.length === 0 ? (
+                  <option value="">No child cycles yet</option>
+                ) : (
+                  childCycles.map((cycle) => (
+                    <option key={cycle.id} value={cycle.id}>
+                      {getNodePath(cycle.id)}
+                    </option>
+                  ))
+                )}
+              </select>
+
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <input
+                  type="text"
+                  value={newChildCycleName}
+                  onChange={(e) => setNewChildCycleName(e.target.value)}
+                  placeholder="Create child cycle e.g., Test Cycle 2"
+                  className="w-full rounded-lg border border-emerald-200 bg-emerald-50/40 px-3 py-2 text-sm text-(--text-color) focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                />
+                <AppButton
+                  onClick={handleCreateChildCycle}
+                  disabled={creatingNode || !selectedMainFolder}
+                  variant="primary"
+                  size="sm"
+                >
+                  {creatingNode ? "Creating..." : "Create Child"}
+                </AppButton>
+              </div>
+
+              <div className="mt-4 border-t border-emerald-100 pt-4">
+                <label className="mb-2 block text-xs font-medium text-(--muted-color)">
+                  Testing Scope (inside selected child cycle)
+                </label>
+                <select
+                  value={selectedScopeId}
+                  onChange={(e) => setSelectedScopeId(e.target.value)}
+                  className="mb-3 w-full rounded-lg border border-emerald-200 bg-emerald-50/40 px-3 py-2 text-sm text-(--text-color) focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                >
+                  {scopeNodes.length === 0 ? (
+                    <option value="">No scope yet</option>
+                  ) : (
+                    scopeNodes.map((scope) => (
+                      <option key={scope.id} value={scope.id}>
+                        {scope.name}
+                      </option>
+                    ))
+                  )}
+                </select>
+
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <input
+                    type="text"
+                    value={newScopeName}
+                    onChange={(e) => setNewScopeName(e.target.value)}
+                    placeholder="Create scope e.g., Authentication"
+                    className="w-full rounded-lg border border-emerald-200 bg-emerald-50/40 px-3 py-2 text-sm text-(--text-color) focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                  <AppButton
+                    onClick={handleCreateScope}
+                    disabled={creatingNode || !selectedCycle}
+                    variant="primary"
+                    size="sm"
+                  >
+                    {creatingNode ? "Creating..." : "Create Scope"}
+                  </AppButton>
                 </div>
-              )}
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Run Folder Archive */}
-        <div className="rounded-2xl border border-emerald-100 bg-white p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-(--heading-color)">
-              Test Cycle Run Folder
-            </h2>
-            <AppButton
-              onClick={handleNewTestCycle}
-              disabled={!selectedCycle || testCases.length === 0}
-              variant="primary"
-              size="md"
-              title="Reset all test cases to PENDING and start a new cycle"
-            >
-              <HiArrowRight className="w-4 h-4" />
-              New Test Cycle
-            </AppButton>
-          </div>
+        {/* Manual Test Case Creation */}
+        <div className="rounded-2xl border border-emerald-200 bg-white p-6 shadow-sm">
+          <h2 className="mb-2 text-lg font-bold text-(--heading-color)">
+            Create Test Case
+          </h2>
           <p className="mb-4 text-xs text-(--muted-color)">
-            Save the current cycle run as a folder entry and download it with
-            fail action issues.
+            Main Title: {selectedMainFolderPath} • Child Cycle:{" "}
+            {selectedCycle
+              ? getNodePath(selectedCycle)
+              : "Select a child cycle"}{" "}
+            • Scope: {selectedScopeName || "Select/create a scope"}
           </p>
 
-          <div className="mb-5">
-            <input
-              type="text"
-              value={runSearch}
-              onChange={(e) => setRunSearch(e.target.value)}
-              placeholder="Search test cycle folders..."
-              className="w-full rounded-lg border border-emerald-200 bg-emerald-50/40 px-3 py-2 text-sm text-(--text-color) focus:outline-none focus:ring-2 focus:ring-emerald-500"
-            />
+          <div className="grid gap-3 md:grid-cols-2">
+            <div>
+              <label className="mb-2 block text-xs font-semibold text-(--heading-color)">
+                Testing Scope
+              </label>
+              <select
+                value={selectedScopeId}
+                onChange={(e) => setSelectedScopeId(e.target.value)}
+                className="w-full rounded-lg border border-emerald-200 bg-emerald-50/40 px-3 py-2 text-sm text-(--text-color) focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              >
+                {scopeNodes.length === 0 ? (
+                  <option value="">No scope yet</option>
+                ) : (
+                  scopeNodes.map((scope) => (
+                    <option key={scope.id} value={scope.id}>
+                      {scope.name}
+                    </option>
+                  ))
+                )}
+              </select>
+            </div>
+
+            <div>
+              <label className="mb-2 block text-xs font-semibold text-(--heading-color)">
+                Test Case ID
+              </label>
+              <div className="rounded-lg border border-emerald-200 bg-emerald-50/40 px-3 py-2 text-sm text-(--muted-color)">
+                Auto-generated (TC-001, TC-002...)
+              </div>
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="mb-2 block text-xs font-semibold text-(--heading-color)">
+                Section / Heading (e.g., Login Test Cases)
+              </label>
+              <input
+                type="text"
+                value={newCaseSectionName}
+                onChange={(e) => setNewCaseSectionName(e.target.value)}
+                placeholder="Login Test Cases"
+                className="w-full rounded-lg border border-emerald-200 bg-emerald-50/40 px-3 py-2 text-sm text-(--text-color) focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              />
+            </div>
+
+            <div>
+              <label className="mb-2 block text-xs font-semibold text-(--heading-color)">
+                STATUS
+              </label>
+              <select
+                value={newCaseStatus}
+                onChange={(e) =>
+                  setNewCaseStatus(e.target.value as TestExecutionStatus)
+                }
+                className="w-full rounded-lg border border-emerald-200 bg-emerald-50/40 px-3 py-2 text-sm text-(--text-color) focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              >
+                <option value="NOT_RUN">PENDING</option>
+                <option value="PASS">PASS</option>
+                <option value="FAIL">FAIL</option>
+              </select>
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="mb-2 block text-xs font-semibold text-(--heading-color)">
+                TITLE
+              </label>
+              <input
+                type="text"
+                value={newCaseTitle}
+                onChange={(e) => setNewCaseTitle(e.target.value)}
+                placeholder="User can login with valid credentials"
+                className="w-full rounded-lg border border-emerald-200 bg-emerald-50/40 px-3 py-2 text-sm text-(--text-color) focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              />
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="mb-2 block text-xs font-semibold text-(--heading-color)">
+                STEPS
+              </label>
+              <textarea
+                value={newCaseSteps}
+                onChange={(e) => setNewCaseSteps(e.target.value)}
+                placeholder="1. Open app\n2. Enter username/password\n3. Click Login"
+                className="h-28 w-full resize-none rounded-lg border border-emerald-200 bg-emerald-50/40 px-3 py-2 text-sm text-(--text-color) focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              />
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="mb-2 block text-xs font-semibold text-(--heading-color)">
+                REMARKS
+              </label>
+              <input
+                type="text"
+                value={newCaseRemarks}
+                onChange={(e) => setNewCaseRemarks(e.target.value)}
+                placeholder="Optional initial remarks"
+                className="w-full rounded-lg border border-emerald-200 bg-emerald-50/40 px-3 py-2 text-sm text-(--text-color) focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              />
+            </div>
           </div>
 
-          {runs.length === 0 ? (
-            <p className="text-sm text-(--muted-color)">
-              No saved run folders yet.
-            </p>
-          ) : filteredRuns.length === 0 ? (
-            <p className="text-sm text-(--muted-color)">
-              No run folders match your search.
-            </p>
-          ) : (
-            <div className="space-y-2">
-              {filteredRuns.map((run) => (
-                <div
-                  key={run.id}
-                  className="flex items-center justify-between rounded-lg border border-emerald-100 bg-emerald-50/40 px-3 py-2"
-                >
-                  <button
-                    onClick={() => handleOpenRun(run.id)}
-                    disabled={restoringRunId === run.id}
-                    className="text-left hover:opacity-90 disabled:opacity-60 transition-opacity"
-                    title="Open this run folder to continue"
-                  >
-                    <p className="text-sm font-medium text-(--text-color) underline-offset-2 hover:underline">
-                      {run.name}
-                    </p>
-                    <p className="text-xs text-(--muted-color)">
-                      {new Date(run.createdAt).toLocaleString()}
-                    </p>
-                    {restoringRunId === run.id && (
-                      <p className="mt-1 text-xs text-emerald-700">
-                        Opening...
-                      </p>
-                    )}
-                  </button>
-                  <div className="flex items-center gap-2">
-                    <AppButton
-                      onClick={() => handleDownloadRun(run.id)}
-                      disabled={downloadingRunId === run.id}
-                      variant="successSoft"
-                      size="sm"
-                      title="Download run file"
-                    >
-                      <HiDownload className="w-4 h-4" />
-                      {downloadingRunId === run.id
-                        ? "Preparing..."
-                        : "Download"}
-                    </AppButton>
-                    <AppButton
-                      onClick={() => handleDeleteRun(run.id)}
-                      disabled={deletingRunId === run.id}
-                      variant="dangerSoft"
-                      size="sm"
-                      title="Delete run folder"
-                    >
-                      <HiTrash className="w-4 h-4" />
-                      {deletingRunId === run.id ? "Deleting..." : "Delete"}
-                    </AppButton>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          <div className="mt-4 flex justify-end">
+            <AppButton
+              onClick={handleCreateTestCase}
+              disabled={creatingTestCase || !selectedCycle || !selectedScopeId}
+              variant="primary"
+              size="sm"
+              title="Create test case"
+            >
+              {creatingTestCase ? "Creating..." : "Create Test Case"}
+            </AppButton>
+          </div>
         </div>
 
         {/* Test Cases Table */}
@@ -802,6 +1404,74 @@ export default function TestCaseExecutionPage() {
             <h2 className="mb-6 text-xl font-bold text-(--heading-color)">
               Test Cases
             </h2>
+            <p className="mb-4 text-xs text-(--muted-color)">
+              Main: {selectedMainFolderPath} • Child:{" "}
+              {selectedCycle ? getNodePath(selectedCycle) : "Not selected"}
+            </p>
+
+            <div className="mb-5 rounded-xl border border-emerald-100 bg-emerald-50/30 p-3">
+              <div className="grid gap-3 md:grid-cols-4">
+                <input
+                  type="text"
+                  value={caseSearch}
+                  onChange={(e) => setCaseSearch(e.target.value)}
+                  placeholder="Search by ID, title, or steps"
+                  className="w-full rounded-lg border border-emerald-200 bg-white px-3 py-2 text-sm text-(--text-color) focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                />
+                <select
+                  value={caseScopeFilter}
+                  onChange={(e) => setCaseScopeFilter(e.target.value)}
+                  className="w-full rounded-lg border border-emerald-200 bg-white px-3 py-2 text-sm text-(--text-color) focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                >
+                  <option value="ALL">All Scopes</option>
+                  {availableScopes.map((scope) => (
+                    <option key={scope} value={scope}>
+                      {scope}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={caseHeadingFilter}
+                  onChange={(e) => setCaseHeadingFilter(e.target.value)}
+                  className="w-full rounded-lg border border-emerald-200 bg-white px-3 py-2 text-sm text-(--text-color) focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                >
+                  <option value="ALL">All Headings</option>
+                  {availableHeadings.map((heading) => (
+                    <option key={heading} value={heading}>
+                      {heading}
+                    </option>
+                  ))}
+                </select>
+                <div className="flex gap-2">
+                  <select
+                    value={caseStatusFilter}
+                    onChange={(e) =>
+                      setCaseStatusFilter(
+                        e.target.value as "ALL" | TestExecutionStatus,
+                      )
+                    }
+                    className="w-full rounded-lg border border-emerald-200 bg-white px-3 py-2 text-sm text-(--text-color) focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  >
+                    <option value="ALL">All Statuses</option>
+                    <option value="NOT_RUN">PENDING</option>
+                    <option value="PASS">PASS</option>
+                    <option value="FAIL">FAIL</option>
+                  </select>
+                  <AppButton
+                    onClick={clearCaseFilters}
+                    variant="secondary"
+                    size="sm"
+                    title="Clear all filters"
+                  >
+                    Clear
+                  </AppButton>
+                </div>
+              </div>
+              <p className="mt-2 text-xs text-(--muted-color)">
+                Showing {filteredTestCases.length} of {testCases.length} test
+                cases
+              </p>
+            </div>
 
             {loadingTestCases || !hasLoadedTestCases ? (
               <div className="text-center py-12">
@@ -813,6 +1483,13 @@ export default function TestCaseExecutionPage() {
                 <HiExclamationCircle className="mx-auto mb-3 h-12 w-12 text-(--muted-color)" />
                 <p className="text-(--muted-color)">
                   No test cases found for this cycle
+                </p>
+              </div>
+            ) : filteredTestCases.length === 0 ? (
+              <div className="text-center py-12">
+                <HiExclamationCircle className="mx-auto mb-3 h-12 w-12 text-(--muted-color)" />
+                <p className="text-(--muted-color)">
+                  No test cases match current filters
                 </p>
               </div>
             ) : (
@@ -841,95 +1518,109 @@ export default function TestCaseExecutionPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {testCases.map((testCase, idx) => (
+                    {groupedTestCases.flatMap((group) => [
                       <tr
-                        key={testCase.id}
-                        className={`border-b border-emerald-50 ${idx % 2 === 0 ? "bg-emerald-50/20" : ""} transition-colors hover:bg-emerald-50/50`}
+                        key={`heading-${group.moduleName}-${group.heading}`}
+                        className="border-y border-emerald-200 bg-emerald-100/70"
                       >
-                        <td className="px-4 py-3 font-mono text-(--text-color)">
-                          {testCase.testCaseId}
+                        <td
+                          colSpan={6}
+                          className="px-4 py-2 text-xs font-bold uppercase tracking-wide text-emerald-800"
+                        >
+                          {group.moduleName} / {group.heading} (
+                          {group.items.length})
                         </td>
-                        <td className="max-w-sm wrap-break-word whitespace-normal px-4 py-3 text-(--text-color)">
-                          {testCase.title}
-                        </td>
-                        <td className="max-w-md whitespace-pre-line wrap-break-word px-4 py-3 text-xs align-top text-(--muted-color)">
-                          {testCase.steps}
-                        </td>
-                        <td className="px-4 py-3">
-                          <div
-                            className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold ${STATUS_COLORS[testCase.executionStatus].bg} ${STATUS_COLORS[testCase.executionStatus].text}`}
-                          >
-                            {testCase.executionStatus !== "NOT_RUN" &&
-                              STATUS_COLORS[testCase.executionStatus].icon}
-                            <span>
-                              {STATUS_LABELS[testCase.executionStatus]}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3">
-                          <input
-                            type="text"
-                            value={
-                              remarks[testCase.id] ||
-                              testCase.executionRemarks ||
-                              ""
-                            }
-                            onChange={(e) =>
-                              handleRemarkChange(testCase.id, e.target.value)
-                            }
-                            placeholder="Add remarks..."
-                            className="w-full rounded border border-emerald-200 bg-emerald-50/40 px-2 py-1 text-xs text-(--text-color) focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                          />
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex flex-wrap items-center justify-center gap-2">
-                            <AppButton
-                              onClick={() => handlePass(testCase.id)}
-                              disabled={savingId === testCase.id}
-                              title="Mark as Pass"
-                              aria-label="Mark as Pass"
-                              variant="successSoft"
-                              size="sm"
-                              className="py-1"
+                      </tr>,
+                      ...group.items.map((testCase, idx) => (
+                        <tr
+                          key={testCase.id}
+                          className={`border-b border-emerald-50 ${idx % 2 === 0 ? "bg-emerald-50/20" : ""} transition-colors hover:bg-emerald-50/50`}
+                        >
+                          <td className="px-4 py-3 font-mono text-(--text-color)">
+                            {testCase.testCaseId}
+                          </td>
+                          <td className="max-w-sm wrap-break-word whitespace-normal px-4 py-3 text-(--text-color)">
+                            {testCase.title}
+                          </td>
+                          <td className="max-w-md whitespace-pre-line wrap-break-word px-4 py-3 text-xs align-top text-(--muted-color)">
+                            {testCase.steps}
+                          </td>
+                          <td className="px-4 py-3">
+                            <div
+                              className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold ${STATUS_COLORS[testCase.executionStatus].bg} ${STATUS_COLORS[testCase.executionStatus].text}`}
                             >
-                              {savingId === testCase.id ? (
-                                "..."
-                              ) : (
-                                <HiCheckCircle className="w-4 h-4" />
-                              )}
-                            </AppButton>
-                            <AppButton
-                              onClick={() => handleFailClick(testCase)}
-                              disabled={savingId === testCase.id}
-                              title="Mark as Fail"
-                              aria-label="Mark as Fail"
-                              variant="dangerSoft"
-                              size="sm"
-                              className="py-1"
-                            >
-                              {savingId === testCase.id ? (
-                                "..."
-                              ) : (
-                                <HiXCircle className="w-4 h-4" />
-                              )}
-                            </AppButton>
-                            {testCase.executionStatus !== "NOT_RUN" && (
+                              {testCase.executionStatus !== "NOT_RUN" &&
+                                STATUS_COLORS[testCase.executionStatus].icon}
+                              <span>
+                                {STATUS_LABELS[testCase.executionStatus]}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            <input
+                              type="text"
+                              value={
+                                remarks[testCase.id] ||
+                                testCase.executionRemarks ||
+                                ""
+                              }
+                              onChange={(e) =>
+                                handleRemarkChange(testCase.id, e.target.value)
+                              }
+                              placeholder="Add remarks..."
+                              className="w-full rounded border border-emerald-200 bg-emerald-50/40 px-2 py-1 text-xs text-(--text-color) focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                            />
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex flex-wrap items-center justify-center gap-2">
                               <AppButton
-                                onClick={() =>
-                                  handleRevertToPending(testCase.id)
-                                }
+                                onClick={() => handlePass(testCase.id)}
                                 disabled={savingId === testCase.id}
-                                variant="secondary"
+                                title="Mark as Pass"
+                                aria-label="Mark as Pass"
+                                variant="successSoft"
                                 size="sm"
                                 className="py-1"
                               >
-                                {savingId === testCase.id ? "..." : "Revert"}
+                                {savingId === testCase.id ? (
+                                  "..."
+                                ) : (
+                                  <HiCheckCircle className="w-4 h-4" />
+                                )}
                               </AppButton>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                              <AppButton
+                                onClick={() => handleFailClick(testCase)}
+                                disabled={savingId === testCase.id}
+                                title="Mark as Fail"
+                                aria-label="Mark as Fail"
+                                variant="dangerSoft"
+                                size="sm"
+                                className="py-1"
+                              >
+                                {savingId === testCase.id ? (
+                                  "..."
+                                ) : (
+                                  <HiXCircle className="w-4 h-4" />
+                                )}
+                              </AppButton>
+                              {testCase.executionStatus !== "NOT_RUN" && (
+                                <AppButton
+                                  onClick={() =>
+                                    handleRevertToPending(testCase.id)
+                                  }
+                                  disabled={savingId === testCase.id}
+                                  variant="secondary"
+                                  size="sm"
+                                  className="py-1"
+                                >
+                                  {savingId === testCase.id ? "..." : "Revert"}
+                                </AppButton>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      )),
+                    ])}
                   </tbody>
                 </table>
               </div>
@@ -1075,23 +1766,23 @@ export default function TestCaseExecutionPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 p-4 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-2xl border border-emerald-100 bg-white p-8 shadow-xl animate-in fade-in zoom-in">
             <h3 className="mb-2 text-lg font-bold text-(--heading-color)">
-              Start New Test Cycle
+              Save Snapshot & Reset Cycle
             </h3>
             <p className="mb-5 text-sm text-(--muted-color)">
-              Name the folder to save the current test cycle before all test
-              case statuses are reset to pending.
+              Save current progress as a snapshot. Then all test case statuses
+              will reset to PENDING.
             </p>
 
             <div className="space-y-4">
               <div>
                 <label className="mb-2 block text-sm font-semibold text-(--heading-color)">
-                  Folder Name
+                  Snapshot Name
                 </label>
                 <input
                   type="text"
                   value={newCycleFolderName}
                   onChange={(e) => setNewCycleFolderName(e.target.value)}
-                  placeholder="e.g., HSA Cycle - 26 Mar"
+                  placeholder="e.g., HSA Cycle Snapshot - 12 Apr 2026"
                   className="w-full rounded-lg border border-emerald-200 bg-emerald-50/40 px-3 py-2 text-sm text-(--text-color) focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
@@ -1114,7 +1805,7 @@ export default function TestCaseExecutionPage() {
                   variant="primary"
                   className="flex-1"
                 >
-                  {savingRun ? "Saving..." : "Save & Start"}
+                  {savingRun ? "Saving..." : "Save & Reset"}
                 </AppButton>
               </div>
             </div>
