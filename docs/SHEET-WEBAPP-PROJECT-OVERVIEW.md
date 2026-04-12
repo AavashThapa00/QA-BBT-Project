@@ -68,25 +68,7 @@ In spreadsheet-driven workflows, teams often face inconsistent formats, duplicat
 
 The overall flow starts with authenticated access, then branches into ingestion, issue operations, and analytics consumption. All branches converge at the same centralized issue repository.
 
-```mermaid
-flowchart LR
-    U[User] --> A[Login or Google OAuth]
-    A --> R{Role Resolved}
-
-    R -->|User/Admin| D1[Dashboard / Manual Entry]
-    R -->|Super Admin| D2[Admin + User Controls]
-
-    D1 --> I[Import Excel/CSV or Add Manual Issue]
-    I --> V[Parse + Validate + Normalize]
-    V --> DB[(PostgreSQL)]
-
-    DB --> Q1[Issue List and Detail Views]
-    DB --> Q2[Analytics, Trends, QC, Team Performance]
-    DB --> Q3[Exports and Operational Reports]
-
-    D2 --> M[User and Role Management]
-    M --> DB
-```
+![alt text](image.png)
 
 ---
 
@@ -138,31 +120,11 @@ The analytics area provides visibility from high-level KPIs to trend-level detai
 
 ## 6. Authentication and Authorization Flow
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant UI as Next.js UI
-    participant Auth as Auth Layer
-    participant DB as PostgreSQL
-
-    User->>UI: Submit credentials / OAuth callback
-    UI->>Auth: Start authentication
-    Auth->>DB: Verify user + fetch role
-    DB-->>Auth: User identity + permissions
-    Auth-->>UI: Create session cookie
-    UI-->>User: Redirect by role and access policy
-```
+![alt text](image-1.png)
 
 ### Role enforcement flow
 
-```mermaid
-flowchart TD
-    RQ[Request Protected Route] --> CK{Session Valid?}
-    CK -->|No| LG[Redirect to Login]
-    CK -->|Yes| RL{Role Check}
-    RL -->|Insufficient| NA[Show Unauthorized or Redirect]
-    RL -->|Allowed| OK[Allow Page/Action Execution]
-```
+![alt text](image-2.png)
 
 ---
 
@@ -170,35 +132,13 @@ flowchart TD
 
 This flow applies to both bulk import and structured manual entry.
 
-```mermaid
-flowchart TD
-    F[File Upload / Manual Input] --> P[Parse Input]
-    P --> M[Map Fields and Normalize Values]
-    M --> Z[Zod Validation]
-    Z -->|Invalid| E[Validation Error Report]
-    Z -->|Valid| D[Deduplication / Business Rules]
-    D --> S[Persist to PostgreSQL]
-    S --> T[Update Metrics, Lists, and Charts]
-```
+![alt text](image-3.png)
 
 ---
 
 ## 8. Issue Management Workflow
 
-```mermaid
-flowchart LR
-    C[Create Issue] --> A1[Assign Owner]
-    A1 --> O[Status OPEN]
-    O --> IP[Status IN_PROGRESS]
-    IP --> H[Status ON_HOLD]
-    H --> IP
-    IP --> CL[Status CLOSED]
-    IP --> AI[Status AS_IT_IS]
-    CL --> QC[QC Validation]
-    QC --> PASS[QC Passed]
-    QC --> FAIL[QC Failed/Rework]
-    FAIL --> IP
-```
+![alt text](image-4.png)
 
 ### Operational steps
 
@@ -213,31 +153,13 @@ flowchart LR
 
 ## 9. Analytics Generation Flow
 
-```mermaid
-flowchart TD
-    U[User Applies Filters] --> Q[Server Query Builder]
-    Q --> M1[Metrics Aggregation]
-    Q --> M2[Severity and Module Distribution]
-    Q --> M3[Trend Computation]
-    Q --> M4[Team Performance Computation]
-    M1 --> V[Recharts Visualization Layer]
-    M2 --> V
-    M3 --> V
-    M4 --> V
-    V --> UI[Interactive Dashboard Views]
-```
+![alt text](image-5.png)
 
 ---
 
 ## 10. Planned Real-Time Sync Flow
 
-```mermaid
-flowchart LR
-    DB[(PostgreSQL)] --> EVT[Change Event Stream]
-    EVT --> RT[Realtime Service / WebSocket Layer]
-    RT --> SUB[Connected Clients]
-    SUB --> REF[Patch UI State + Refresh Aggregates]
-```
+![alt text](image-6.png)
 
 ---
 
