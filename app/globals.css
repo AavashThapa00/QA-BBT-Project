@@ -1,19 +1,39 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0f172a;
-  --foreground: #f1f5f9;
-  --focus-ring: #60a5fa;
-  --scrollbar-track: #1e293b;
-  --scrollbar-thumb: #475569;
-  --scrollbar-thumb-hover: #64748b;
-  --primary: #3b82f6;
-  --primary-dark: #1e40af;
-  --accent: #06b6d4;
-  --success: #10b981;
-  --warning: #f59e0b;
-  --danger: #ef4444;
-  --font-sans: var(--font-geist-sans);
+  --page-background: #F5F7F6;
+  --surface: #FFFFFF;
+  --surface-soft: #FAFBFA;
+  --border-color: #E0E0E0;
+  --heading-color: #1B5E20;
+  --text-color: #333333;
+  --muted-color: #757575;
+  --primary-color: #4CAF50;
+  --primary-hover-color: #43A047;
+  --accent-color: #A5D6A7;
+  --success-color: #4CAF50;
+  --warning-color: #FB8C00;
+  --danger-color: #E53935;
+  --info-color: #1E88E5;
+  --secondary-color: #8E24AA;
+  --chart-positive-color: #4CAF50;
+  --chart-negative-color: #E53935;
+  --chart-neutral-color: #1E88E5;
+  --chart-attention-color: #FB8C00;
+  --chart-secondary-color: #8E24AA;
+  --background: var(--page-background);
+  --foreground: var(--text-color);
+  --focus-ring: #43A047;
+  --scrollbar-track: #E8EFE9;
+  --scrollbar-thumb: #A5D6A7;
+  --scrollbar-thumb-hover: #4CAF50;
+  --primary: #4CAF50;
+  --primary-dark: #1B5E20;
+  --accent: #A5D6A7;
+  --success: #4CAF50;
+  --warning: #FB8C00;
+  --danger: #E53935;
+  --font-sans: "Poppins";
   --font-mono: var(--font-geist-mono);
 }
 
@@ -29,6 +49,10 @@ textarea {
   transition: color 180ms ease, background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
 }
 
+button:not(:disabled) {
+  cursor: pointer;
+}
+
 html {
   scroll-behavior: smooth;
 }
@@ -36,12 +60,12 @@ html {
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  font-family: "Poppins", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
   line-height: 1.5;
 }
 
 ::selection {
-  background: rgba(37, 99, 235, 0.22);
+  background: rgba(76, 175, 80, 0.18);
 }
 
 :focus-visible {

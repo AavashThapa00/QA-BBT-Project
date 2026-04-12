@@ -8,13 +8,25 @@ import {
   verifyLoginCodeAction,
 } from "@/app/actions/auth";
 
+type AuthState = {
+  success?: boolean;
+  message?: string;
+  challengeId?: string;
+  email?: string;
+  code?: string;
+};
+
+const fieldClassName =
+  "w-full rounded-xl border border-(--border-color) bg-(--surface-soft) px-3 py-2.5 text-(--text-color) shadow-sm transition-colors duration-200 placeholder:text-[#9CA3AF] focus:border-(--primary-color) focus:outline-none focus:ring-2 focus:ring-(--primary-color)/20";
+
 function CredentialsSubmitButton() {
   const { pending } = useFormStatus();
+
   return (
     <button
       type="submit"
       disabled={pending}
-      className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-3 rounded-lg transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed shadow-lg hover:shadow-blue-500/50 transform hover:scale-105 active:scale-95"
+      className="w-full cursor-pointer rounded-xl bg-(--primary-color) px-4 py-3 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(76,175,80,0.16)] transition-colors duration-200 hover:bg-(--primary-hover-color) disabled:cursor-not-allowed disabled:opacity-60"
     >
       {pending ? "Sending code..." : "Send verification code"}
     </button>
@@ -23,14 +35,50 @@ function CredentialsSubmitButton() {
 
 function VerifySubmitButton() {
   const { pending } = useFormStatus();
+
   return (
     <button
       type="submit"
       disabled={pending}
-      className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-3 rounded-lg transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed shadow-lg hover:shadow-blue-500/50 transform hover:scale-105 active:scale-95"
+      className="w-full cursor-pointer rounded-xl bg-(--primary-color) px-4 py-3 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(76,175,80,0.16)] transition-colors duration-200 hover:bg-(--primary-hover-color) disabled:cursor-not-allowed disabled:opacity-60"
     >
       {pending ? "Verifying..." : "Verify and sign in"}
     </button>
+  );
+}
+
+function GoogleIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5">
+      <path
+        fill="#4285F4"
+        d="M21.35 11.1h-9.17v2.98h5.27c-.23 1.3-.97 2.4-2.08 3.13v2.6h3.37c1.97-1.82 3.1-4.5 3.1-7.72 0-.74-.07-1.45-.2-2.1z"
+      />
+      <path
+        fill="#34A853"
+        d="M12.18 22c2.8 0 5.15-.93 6.87-2.52l-3.37-2.6c-.93.62-2.12.99-3.5.99-2.69 0-4.97-1.82-5.78-4.27H2.91v2.68A10 10 0 0 0 12.18 22z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M6.4 13.6c-.2-.62-.32-1.28-.32-1.96s.12-1.34.32-1.96V7H2.91A10 10 0 0 0 2 11.64c0 1.61.38 3.14.91 4.64l3.49-2.68z"
+      />
+      <path
+        fill="#EA4335"
+        d="M12.18 5.02c1.52 0 2.9.52 4 1.56l2.99-2.99C17.32 1.9 14.97 1 12.18 1A10 10 0 0 0 2.91 7l3.49 2.68C7.21 6.84 9.49 5.02 12.18 5.02z"
+      />
+    </svg>
+  );
+}
+
+function GoogleContinueButton() {
+  return (
+    <a
+      href="/api/auth/google/start"
+      className="flex w-full items-center justify-center gap-3 rounded-xl border border-[rgba(66,133,244,0.22)] bg-[rgba(255,255,255,0.96)] px-4 py-3 text-sm font-semibold text-(--text-color) shadow-[0_8px_20px_rgba(27,94,32,0.05)] transition-all duration-200 hover:border-[rgba(66,133,244,0.38)] hover:bg-white hover:shadow-[0_12px_28px_rgba(27,94,32,0.08)]"
+    >
+      <GoogleIcon />
+      Continue with Google
+    </a>
   );
 }
 
@@ -40,25 +88,22 @@ export default function LoginPage() {
   const [loginEmail, setLoginEmail] = useState("");
   const [devCode, setDevCode] = useState<string | null>(null);
 
-  const [requestState, requestAction] = useActionState(
-    async (
-      _prevState: { success?: boolean; message?: string; challengeId?: string; email?: string; code?: string } | null,
-      formData: FormData
-    ) => {
-      return requestLoginCodeAction(formData);
-    },
-    null
-  );
+  const [requestState, requestAction] = useActionState<
+    AuthState | null,
+    FormData
+  >(async (_prevState, formData) => requestLoginCodeAction(formData), null);
 
-  const [verifyState, verifyAction] = useActionState(
-    async (_prevState: { success?: boolean; message?: string } | null, formData: FormData) => {
-      return verifyLoginCodeAction(formData);
-    },
-    null
-  );
+  const [verifyState, verifyAction] = useActionState<
+    AuthState | null,
+    FormData
+  >(async (_prevState, formData) => verifyLoginCodeAction(formData), null);
 
   useEffect(() => {
-    if (requestState?.success && requestState.challengeId && requestState.email) {
+    if (
+      requestState?.success &&
+      requestState.challengeId &&
+      requestState.email
+    ) {
       setChallengeId(requestState.challengeId);
       setLoginEmail(requestState.email);
       setDevCode(requestState.code || null);
@@ -74,111 +119,139 @@ export default function LoginPage() {
   }, [loginEmail]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center p-6 overflow-hidden relative">
-      {/* Animated Background */}
-      <div className="fixed inset-0 opacity-30 -z-10">
-        <div className="absolute top-1/4 left-0 w-96 h-96 bg-blue-600 rounded-full mix-blend-multiply filter blur-3xl animate-blob"></div>
-        <div className="absolute bottom-1/4 right-0 w-96 h-96 bg-purple-600 rounded-full mix-blend-multiply filter blur-3xl animate-blob" style={{ animationDelay: '2s' }}></div>
-      </div>
+    <div className="min-h-screen bg-(--page-background) px-6 py-10">
+      <div className="mx-auto flex min-h-[calc(100vh-5rem)] w-full max-w-md items-center justify-center">
+        <div className="w-full overflow-hidden rounded-4xl border border-(--border-color) bg-[rgba(255,255,255,0.96)] shadow-[0_22px_60px_rgba(27,94,32,0.08)]">
+          <div className="h-1 bg-(--primary-color)" />
+          <div className="px-8 py-7">
+            <h1 className="mt-4 text-3xl font-semibold tracking-tight text-(--heading-color)">
+              Welcome back
+            </h1>
+            <p className="mt-2 text-sm leading-6 text-(--muted-color)">
+              Sign in with email, password, or Google.
+            </p>
 
-      <div className="w-full max-w-md backdrop-blur-xl bg-slate-900/50 border border-slate-800/50 rounded-2xl p-8 shadow-2xl animate-in fade-in zoom-in duration-500">
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">Sign In</h1>
-        <p className="text-slate-400 mt-3 text-sm">
-          {step === "credentials"
-            ? "Enter your email and password to receive a verification code"
-            : "Enter the verification code sent to your email"}
-        </p>
-
-        {step === "credentials" ? (
-          <form action={requestAction} className="mt-6 space-y-4">
-            <div>
-              <label className="block text-sm text-slate-300 mb-2">Email</label>
-              <input
-                name="email"
-                type="email"
-                required
-                className="w-full bg-slate-800/50 border border-slate-700/50 text-white rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 backdrop-blur-sm transition-all duration-200"
-              />
+            <div className="mt-6">
+              <GoogleContinueButton />
             </div>
 
-            <div>
-              <label className="block text-sm text-slate-300 mb-2">Password</label>
-              <input
-                name="password"
-                type="password"
-                required
-                className="w-full bg-slate-800/50 border border-slate-700/50 text-white rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 backdrop-blur-sm transition-all duration-200"
-                placeholder="••••••••"
-              />
+            <div className="my-5 flex items-center gap-3 text-[11px] uppercase tracking-[0.2em] text-(--muted-color)">
+              <span className="h-px flex-1 bg-(--border-color)" />
+              <span>or</span>
+              <span className="h-px flex-1 bg-(--border-color)" />
             </div>
 
-            {requestState?.message && !requestState.success && (
-              <div className="text-sm text-red-400 bg-red-900/20 border border-red-700/50 rounded-lg p-3 animate-in fade-in">{requestState.message}</div>
+            {step === "credentials" ? (
+              <form action={requestAction} className="space-y-4">
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-(--heading-color)">
+                    Email
+                  </label>
+                  <input
+                    name="email"
+                    type="email"
+                    required
+                    className={fieldClassName}
+                    placeholder="name@company.com"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-(--heading-color)">
+                    Password
+                  </label>
+                  <input
+                    name="password"
+                    type="password"
+                    required
+                    className={fieldClassName}
+                    placeholder="••••••••"
+                  />
+                </div>
+
+                {requestState?.message && !requestState.success && (
+                  <div className="rounded-xl border border-[rgba(229,57,53,0.18)] bg-[rgba(229,57,53,0.08)] p-3 text-sm text-(--danger-color)">
+                    {requestState.message}
+                  </div>
+                )}
+
+                <div className="flex justify-end">
+                  <Link
+                    href="/forgot-password"
+                    className="text-xs font-medium text-(--heading-color) transition-colors hover:text-(--primary-color)"
+                  >
+                    Forgot password?
+                  </Link>
+                </div>
+
+                <CredentialsSubmitButton />
+              </form>
+            ) : (
+              <form action={verifyAction} className="space-y-4">
+                <input type="hidden" name="challengeId" value={challengeId} />
+
+                <div className="rounded-xl border border-[rgba(76,175,80,0.18)] bg-[rgba(165,214,167,0.12)] p-3 text-sm text-(--muted-color)">
+                  We sent a code to{" "}
+                  <span className="font-semibold text-(--heading-color)">
+                    {maskedEmail}
+                  </span>
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-(--heading-color)">
+                    Verification code
+                  </label>
+                  <input
+                    name="code"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]{6}"
+                    minLength={6}
+                    maxLength={6}
+                    required
+                    className={`${fieldClassName} text-center tracking-[0.3em]`}
+                    placeholder="123456"
+                  />
+                </div>
+
+                {verifyState?.message && (
+                  <div className="rounded-xl border border-[rgba(229,57,53,0.18)] bg-[rgba(229,57,53,0.08)] p-3 text-sm text-(--danger-color)">
+                    {verifyState.message}
+                  </div>
+                )}
+
+                {requestState?.success && requestState.message && (
+                  <div className="rounded-xl border border-[rgba(76,175,80,0.18)] bg-[rgba(76,175,80,0.08)] p-3 text-sm text-(--heading-color)">
+                    {requestState.message}
+                  </div>
+                )}
+
+                {devCode && (
+                  <div className="rounded-xl border border-[rgba(251,140,0,0.18)] bg-[rgba(251,140,0,0.08)] p-3 text-xs text-(--warning-color)">
+                    Development code:{" "}
+                    <span className="font-semibold text-(--warning-color)">
+                      {devCode}
+                    </span>
+                  </div>
+                )}
+
+                <VerifySubmitButton />
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStep("credentials");
+                    setChallengeId("");
+                    setDevCode(null);
+                  }}
+                  className="w-full cursor-pointer rounded-xl border border-(--border-color) py-2.5 text-sm font-medium text-(--heading-color) transition-colors hover:border-(--primary-color) hover:bg-[rgba(165,214,167,0.12)]"
+                >
+                  Use different credentials
+                </button>
+              </form>
             )}
-
-            <div className="flex justify-end">
-              <Link
-                href="/forgot-password"
-                className="text-xs text-blue-300 hover:text-blue-200 transition-colors"
-              >
-                Forgot password?
-              </Link>
-            </div>
-
-            <CredentialsSubmitButton />
-          </form>
-        ) : (
-          <form action={verifyAction} className="mt-6 space-y-4">
-            <input type="hidden" name="challengeId" value={challengeId} />
-
-            <div className="text-xs text-slate-400 bg-slate-800/40 border border-slate-700/60 rounded-lg p-3">
-              Code sent to <span className="text-slate-200">{maskedEmail}</span>
-            </div>
-
-            <div>
-              <label className="block text-sm text-slate-300 mb-2">Verification code</label>
-              <input
-                name="code"
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]{6}"
-                minLength={6}
-                maxLength={6}
-                required
-                className="w-full bg-slate-800/50 border border-slate-700/50 text-white rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 backdrop-blur-sm transition-all duration-200 tracking-[0.3em] text-center"
-                placeholder="123456"
-              />
-            </div>
-
-            {verifyState?.message && (
-              <div className="text-sm text-red-400 bg-red-900/20 border border-red-700/50 rounded-lg p-3 animate-in fade-in">{verifyState.message}</div>
-            )}
-
-            {requestState?.success && requestState.message && (
-              <div className="text-sm text-emerald-300 bg-emerald-900/20 border border-emerald-700/50 rounded-lg p-3 animate-in fade-in">{requestState.message}</div>
-            )}
-
-            {devCode && (
-              <div className="text-xs text-amber-200 bg-amber-900/20 border border-amber-700/50 rounded-lg p-3">
-                Development code: <span className="font-semibold">{devCode}</span>
-              </div>
-            )}
-
-            <VerifySubmitButton />
-
-            <button
-              type="button"
-              onClick={() => {
-                setStep("credentials");
-                setChallengeId("");
-                setDevCode(null);
-              }}
-              className="w-full text-sm text-slate-300 hover:text-white border border-slate-700/70 hover:border-slate-600 rounded-lg py-2.5 transition-colors"
-            >
-              Use different credentials
-            </button>
-          </form>
-        )}
+          </div>
+        </div>
       </div>
     </div>
   );
