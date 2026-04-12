@@ -13,8 +13,8 @@ import {
   HiPlus,
   HiLogout,
   HiArrowRight,
-  HiMoon,
-  HiSun,
+  HiMenu,
+  HiX,
 } from "react-icons/hi";
 import { getCurrentUser, logoutAction } from "@/app/actions/auth";
 
@@ -37,40 +37,10 @@ const navItems: NavItem[] = [
 export default function Navigation() {
   const pathname = usePathname();
   const [isAuthed, setIsAuthed] = useState(false);
-  const [theme, setTheme] = useState<"light" | "dark">("dark");
   const [authRole, setAuthRole] = useState<"super_admin" | "admin" | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
-
-  const applyTheme = (nextTheme: "light" | "dark") => {
-    const root = document.documentElement;
-    root.classList.remove("light", "dark");
-    root.classList.add(nextTheme);
-    root.setAttribute("data-theme", nextTheme);
-    localStorage.setItem("theme", nextTheme);
-    setTheme(nextTheme);
-  };
-
-  const toggleTheme = () => {
-    const root = document.documentElement;
-    const nextTheme: "light" | "dark" = root.classList.contains("dark") ? "light" : "dark";
-    applyTheme(nextTheme);
-  };
-
-  useEffect(() => {
-    const stored = localStorage.getItem("theme");
-    if (stored === "light" || stored === "dark") {
-      setTheme(stored);
-      return;
-    }
-
-    const root = document.documentElement;
-    if (root.classList.contains("light") || root.getAttribute("data-theme") === "light") {
-      setTheme("light");
-      return;
-    }
-    setTheme("dark");
-  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -91,7 +61,7 @@ export default function Navigation() {
   }, []);
 
   useEffect(() => {
-    const handleClick = (event: MouseEvent) => {
+    const handleClick = (event: MouseEvent | TouchEvent) => {
       if (!menuRef.current) return;
       if (!menuRef.current.contains(event.target as Node)) {
         setMenuOpen(false);
@@ -100,21 +70,25 @@ export default function Navigation() {
 
     if (menuOpen) {
       document.addEventListener("mousedown", handleClick);
+      document.addEventListener("touchstart", handleClick);
     }
 
     return () => {
       document.removeEventListener("mousedown", handleClick);
+      document.removeEventListener("touchstart", handleClick);
     };
   }, [menuOpen]);
 
   useEffect(() => {
     setMenuOpen(false);
+    setMobileNavOpen(false);
   }, [pathname]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setMenuOpen(false);
+        setMobileNavOpen(false);
       }
     };
 
@@ -127,13 +101,19 @@ export default function Navigation() {
     return null;
   }
 
-  const navShellClass =
-    theme === "light"
-      ? "sticky top-0 z-50 backdrop-blur-xl bg-white/90 border-b border-slate-300 shadow-md"
-      : "sticky top-0 z-50 backdrop-blur-xl bg-slate-950/60 border-b border-slate-800/60 shadow-2xl shadow-slate-950/30";
+  useEffect(() => {
+    if (!mobileNavOpen) return;
+
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, [mobileNavOpen]);
 
   return (
-    <nav className={navShellClass}>
+    <nav className="sticky top-0 z-50 backdrop-blur-xl bg-slate-950/60 border-b border-slate-800/60 shadow-2xl shadow-slate-950/30">
       <div className="w-full px-2 sm:px-4 lg:px-10 xl:px-12">
         <div className="flex items-center justify-between min-h-16 py-2.5 gap-2 sm:gap-3">
           {/* Logo/Title */}
@@ -151,32 +131,30 @@ export default function Navigation() {
             </Link>
           </div>
 
-          {/* Navigation Links */}
-          <div className="flex items-center gap-1 min-w-0">
+          {/* Desktop Navigation */}
+          <div className="hidden lg:flex items-center gap-1 min-w-0">
             <div className="flex items-center gap-1 overflow-x-auto no-scrollbar pr-1">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = pathname === item.href;
-              
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`
-                    flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-300 whitespace-nowrap border
-                    ${isActive 
-                      ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white border-blue-500/40 shadow-lg shadow-blue-500/25' 
-                      : theme === "light"
-                        ? 'text-slate-700 border-transparent hover:bg-slate-100 hover:border-slate-300 hover:text-slate-900'
-                        : 'text-slate-300 border-transparent hover:bg-slate-800/70 hover:border-slate-700 hover:text-white'
-                    }
-                  `}
-                >
-                  <Icon className="w-4 h-4" />
-                  <span className="hidden lg:inline">{item.name}</span>
-                </Link>
-              );
-            })}
+              {navItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = pathname === item.href;
+
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`
+                      flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-300 whitespace-nowrap border
+                      ${isActive
+                        ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white border-blue-500/40 shadow-lg shadow-blue-500/25"
+                        : "text-slate-300 border-transparent hover:bg-slate-800/70 hover:border-slate-700 hover:text-white"
+                      }
+                    `}
+                  >
+                    <Icon className="w-4 h-4" />
+                    <span>{item.name}</span>
+                  </Link>
+                );
+              })}
             </div>
 
             {isAuthed ? (
@@ -184,32 +162,21 @@ export default function Navigation() {
                 <button
                   type="button"
                   onClick={() => setMenuOpen((open) => !open)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-300 border border-transparent ${
-                    theme === "light"
-                      ? "text-slate-700 hover:bg-slate-100 hover:border-slate-300 hover:text-slate-900"
-                      : "text-slate-300 hover:bg-slate-800/70 hover:border-slate-700 hover:text-white"
-                  }`}
+                  className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-300 text-slate-300 border border-transparent hover:bg-slate-800/70 hover:border-slate-700 hover:text-white"
                   aria-haspopup="menu"
                   aria-expanded={menuOpen}
+                  aria-label="Open user menu"
                 >
                   <HiUserCircle className="w-5 h-5" />
                 </button>
                 {menuOpen && (
                   <div
                     role="menu"
-                    className={`absolute right-0 mt-2 w-52 backdrop-blur-xl rounded-xl shadow-2xl overflow-hidden border ${
-                      theme === "light"
-                        ? "bg-white border-slate-300"
-                        : "bg-slate-900/95 border-slate-700/70"
-                    }`}
+                    className="absolute right-0 mt-2 w-52 backdrop-blur-xl bg-slate-900/95 border border-slate-700/70 rounded-xl shadow-2xl overflow-hidden"
                   >
                     <Link
                       href="/profile"
-                      className={`flex items-center gap-2 px-4 py-2.5 text-sm ${
-                        theme === "light"
-                          ? "text-slate-900 hover:bg-slate-100"
-                          : "text-slate-200 hover:bg-slate-800/80"
-                      }`}
+                      className="flex items-center gap-2 px-4 py-2.5 text-sm text-slate-200 hover:bg-slate-800/80"
                       role="menuitem"
                       onClick={() => setMenuOpen(false)}
                     >
@@ -219,11 +186,7 @@ export default function Navigation() {
                     {authRole === "super_admin" && (
                       <Link
                         href="/super-admin"
-                        className={`flex items-center gap-2 px-4 py-2.5 text-sm ${
-                          theme === "light"
-                            ? "text-slate-900 hover:bg-slate-100"
-                            : "text-slate-200 hover:bg-slate-800/80"
-                        }`}
+                        className="flex items-center gap-2 px-4 py-2.5 text-sm text-slate-200 hover:bg-slate-800/80"
                         role="menuitem"
                         onClick={() => setMenuOpen(false)}
                       >
@@ -233,28 +196,8 @@ export default function Navigation() {
                     )}
                     <button
                       type="button"
-                      onClick={() => {
-                        toggleTheme();
-                        setMenuOpen(false);
-                      }}
-                      className={`w-full text-left flex items-center gap-2 px-4 py-2.5 text-sm ${
-                        theme === "light"
-                          ? "text-slate-900 hover:bg-slate-100"
-                          : "text-slate-200 hover:bg-slate-800/80"
-                      }`}
-                      role="menuitem"
-                    >
-                      {theme === "dark" ? <HiSun className="w-4 h-4" /> : <HiMoon className="w-4 h-4" />}
-                      {theme === "dark" ? "Light Mode" : "Dark Mode"}
-                    </button>
-                    <button
-                      type="button"
                       onClick={() => logoutAction()}
-                      className={`w-full text-left flex items-center gap-2 px-4 py-2.5 text-sm ${
-                        theme === "light"
-                          ? "text-slate-900 hover:bg-slate-100"
-                          : "text-slate-200 hover:bg-slate-800/80"
-                      }`}
+                      className="w-full text-left flex items-center gap-2 px-4 py-2.5 text-sm text-slate-200 hover:bg-slate-800/80"
                       role="menuitem"
                     >
                       <HiLogout className="w-4 h-4" />
@@ -270,19 +213,140 @@ export default function Navigation() {
                   flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-300 border
                   ${pathname === "/login"
                     ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white border-blue-500/40 shadow-lg shadow-blue-500/25"
-                    : theme === "light"
-                      ? "text-slate-700 border-transparent hover:bg-slate-100 hover:border-slate-300 hover:text-slate-900"
-                      : "text-slate-300 border-transparent hover:bg-slate-800/70 hover:border-slate-700 hover:text-white"
+                    : "text-slate-300 border-transparent hover:bg-slate-800/70 hover:border-slate-700 hover:text-white"
                   }
                 `}
               >
                 <HiUserCircle className="w-4 h-4" />
-                <span className="hidden lg:block">Login</span>
+                <span>Login</span>
               </Link>
             )}
           </div>
+
+          {/* Mobile Navigation Trigger */}
+          <div className="flex lg:hidden items-center gap-1">
+            {isAuthed ? (
+              <Link
+                href="/profile"
+                className="flex items-center justify-center p-2 rounded-xl text-slate-300 border border-transparent hover:bg-slate-800/70 hover:border-slate-700 hover:text-white"
+                aria-label="Open profile"
+              >
+                <HiUserCircle className="w-5 h-5" />
+              </Link>
+            ) : (
+              <Link
+                href="/login"
+                className="flex items-center justify-center p-2 rounded-xl text-slate-300 border border-transparent hover:bg-slate-800/70 hover:border-slate-700 hover:text-white"
+                aria-label="Open login"
+              >
+                <HiUserCircle className="w-5 h-5" />
+              </Link>
+            )}
+
+            <button
+              type="button"
+              onClick={() => setMobileNavOpen((open) => !open)}
+              className="flex items-center justify-center p-2 rounded-xl text-slate-300 border border-transparent hover:bg-slate-800/70 hover:border-slate-700 hover:text-white"
+              aria-label={mobileNavOpen ? "Close navigation menu" : "Open navigation menu"}
+              aria-expanded={mobileNavOpen}
+              aria-controls="mobile-navigation-panel"
+            >
+              {mobileNavOpen ? <HiX className="w-5 h-5" /> : <HiMenu className="w-5 h-5" />}
+            </button>
+          </div>
         </div>
       </div>
+
+      {mobileNavOpen && (
+        <div className="lg:hidden fixed inset-0 z-40 bg-slate-950/70 backdrop-blur-sm" onClick={() => setMobileNavOpen(false)}>
+          <div
+            id="mobile-navigation-panel"
+            className="absolute right-0 top-0 h-full w-[min(85vw,360px)] bg-slate-900 border-l border-slate-700/70 shadow-2xl p-4 overflow-y-auto"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-slate-100 font-semibold text-sm">Navigation</p>
+              <button
+                type="button"
+                onClick={() => setMobileNavOpen(false)}
+                className="p-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800"
+                aria-label="Close navigation menu"
+              >
+                <HiX className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              {navItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = pathname === item.href;
+
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setMobileNavOpen(false)}
+                    className={`
+                      flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium border transition-all duration-200
+                      ${isActive
+                        ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white border-blue-500/40 shadow-lg shadow-blue-500/20"
+                        : "text-slate-200 border-slate-700/60 hover:bg-slate-800/80 hover:border-slate-600"
+                      }
+                    `}
+                  >
+                    <Icon className="w-4 h-4" />
+                    <span>{item.name}</span>
+                  </Link>
+                );
+              })}
+            </div>
+
+            <div className="mt-5 pt-4 border-t border-slate-700/70">
+              {isAuthed ? (
+                <>
+                  <Link
+                    href="/profile"
+                    onClick={() => setMobileNavOpen(false)}
+                    className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium text-slate-200 border border-slate-700/60 hover:bg-slate-800/80"
+                  >
+                    <HiUserCircle className="w-4 h-4" />
+                    <span>Profile</span>
+                  </Link>
+
+                  {authRole === "super_admin" && (
+                    <Link
+                      href="/super-admin"
+                      onClick={() => setMobileNavOpen(false)}
+                      className="mt-2 flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium text-slate-200 border border-slate-700/60 hover:bg-slate-800/80"
+                    >
+                      <HiPlus className="w-4 h-4" />
+                      <span>Add Admin</span>
+                    </Link>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => logoutAction()}
+                    className="mt-2 w-full text-left flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium text-slate-200 border border-slate-700/60 hover:bg-slate-800/80"
+                  >
+                    <HiLogout className="w-4 h-4" />
+                    <span>Logout</span>
+                  </button>
+                </>
+              ) : (
+                <Link
+                  href="/login"
+                  onClick={() => setMobileNavOpen(false)}
+                  className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium text-slate-200 border border-slate-700/60 hover:bg-slate-800/80"
+                >
+                  <HiUserCircle className="w-4 h-4" />
+                  <span>Login</span>
+                </Link>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </nav>
   );
 }
