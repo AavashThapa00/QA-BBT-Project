@@ -112,204 +112,313 @@ export default function ProfilePage() {
     setDeleting(null);
   };
 
+  const initials = user.name
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("");
+
+  const profileCompleteness = user.phone ? 100 : 75;
+
   return (
     <div className="min-h-screen bg-(--page-background)">
-      <div className="w-full px-4 py-6 sm:px-6 lg:px-10 lg:py-10 xl:px-12">
-        {/* Back Link */}
-        <Link
-          href="/"
-          className="group mb-8 inline-flex items-center gap-2 text-sm text-(--muted-color) transition-all duration-300 hover:translate-x-1 hover:text-(--primary-color) animate-in fade-in"
-        >
-          <HiArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-          Back to Dashboard
-        </Link>
-
-        {/* Profile Header */}
-        <div className="mb-10 animate-in fade-in-up duration-500">
-          <div className="flex items-end justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-(--heading-color)">
-                {user.name}
-              </h1>
-              <p className="mt-1 text-base text-(--muted-color)">
-                {user.email}
-              </p>
-            </div>
-            <span className="rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700">
-              {user.role === "super_admin" ? "Super Admin" : "Admin"}
-            </span>
-          </div>
+      <div className="mx-auto w-full max-w-425 px-4 py-6 sm:px-6 lg:py-10">
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+          <Link
+            href="/"
+            className="group inline-flex items-center gap-2 rounded-full border border-(--border-color) bg-(--surface) px-4 py-2 text-sm font-medium text-(--muted-color) shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-emerald-200 hover:text-(--primary-color)"
+          >
+            <HiArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
+            Back to Dashboard
+          </Link>
+          <p className="text-xs uppercase tracking-[0.14em] text-(--muted-color)">
+            Profile Workspace
+          </p>
         </div>
 
-        {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10 animate-in fade-in-up duration-500 delay-100">
-          {/* Profile Details Card */}
-          <div className="rounded-2xl border border-(--border-color) bg-(--surface) p-8 shadow-sm transition-all duration-300 hover:border-emerald-200">
-            <h2 className="mb-6 text-xl font-bold text-(--heading-color)">
-              Profile Details
-            </h2>
-            <form action={onUpdateProfile} className="space-y-5">
-              <div>
-                <label className="mb-2 block text-sm font-medium text-(--text-color)">
-                  Full Name
-                </label>
-                <input
-                  name="name"
-                  type="text"
-                  defaultValue={user.name}
-                  required
-                  className="w-full rounded-lg border border-(--border-color) bg-(--surface-soft) px-4 py-2 text-sm text-(--text-color) transition-all duration-300 focus:outline-none focus:border-(--primary-color) focus:ring-2 focus:ring-(--primary-color)/20"
-                />
-              </div>
-              <div>
-                <label className="mb-2 block text-sm font-medium text-(--text-color)">
-                  Email Address
-                </label>
-                <input
-                  name="email"
-                  type="email"
-                  defaultValue={user.email}
-                  required
-                  className="w-full rounded-lg border border-(--border-color) bg-(--surface-soft) px-4 py-2 text-sm text-(--text-color) transition-all duration-300 focus:outline-none focus:border-(--primary-color) focus:ring-2 focus:ring-(--primary-color)/20"
-                />
-              </div>
-              <div>
-                <label className="mb-2 block text-sm font-medium text-(--text-color)">
-                  Phone Number
-                </label>
-                <input
-                  name="phone"
-                  type="tel"
-                  defaultValue={user.phone || ""}
-                  className="w-full rounded-lg border border-(--border-color) bg-(--surface-soft) px-4 py-2 text-sm text-(--text-color) transition-all duration-300 focus:outline-none focus:border-(--primary-color) focus:ring-2 focus:ring-(--primary-color)/20"
-                />
-              </div>
-              {profileMessage && (
-                <div className="animate-in fade-in flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700 duration-300">
-                  <HiCheckCircle className="h-4 w-4 shrink-0" />
-                  {profileMessage}
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
+          <aside className="animate-in fade-in-up duration-500 xl:sticky xl:top-6 xl:self-start">
+            <div className="overflow-hidden rounded-3xl border border-emerald-200 bg-(--surface) shadow-[0_20px_55px_rgba(27,94,32,0.08)]">
+              <div className="h-20 bg-linear-to-r from-emerald-100 via-emerald-50 to-lime-100" />
+              <div className="-mt-10 px-6 pb-6">
+                <div className="inline-flex h-20 w-20 items-center justify-center rounded-2xl border-4 border-(--surface) bg-(--primary-color) text-2xl font-semibold text-white shadow-lg">
+                  {initials || "U"}
                 </div>
-              )}
-              <AppButton
-                type="submit"
-                variant="primary"
-                className="w-full py-3"
-              >
-                Save Changes
-              </AppButton>
-            </form>
-          </div>
-
-          {/* Security Card */}
-          <div className="rounded-2xl border border-(--border-color) bg-(--surface) p-8 shadow-sm transition-all duration-300 hover:border-emerald-200">
-            <h2 className="mb-6 text-xl font-bold text-(--heading-color)">
-              Change Password
-            </h2>
-            <form action={onChangePassword} className="space-y-5">
-              <div>
-                <label className="mb-2 block text-sm font-medium text-(--text-color)">
-                  Current Password
-                </label>
-                <input
-                  name="currentPassword"
-                  type="password"
-                  required
-                  className="w-full rounded-lg border border-(--border-color) bg-(--surface-soft) px-4 py-2 text-sm text-(--text-color) transition-all duration-300 focus:outline-none focus:border-(--primary-color) focus:ring-2 focus:ring-(--primary-color)/20"
-                />
-              </div>
-              <div>
-                <label className="mb-2 block text-sm font-medium text-(--text-color)">
-                  New Password
-                </label>
-                <input
-                  name="newPassword"
-                  type="password"
-                  required
-                  className="w-full rounded-lg border border-(--border-color) bg-(--surface-soft) px-4 py-2 text-sm text-(--text-color) transition-all duration-300 focus:outline-none focus:border-(--primary-color) focus:ring-2 focus:ring-(--primary-color)/20"
-                />
-              </div>
-              {passwordMessage && (
-                <div className="animate-in fade-in flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700 duration-300">
-                  <HiCheckCircle className="h-4 w-4 shrink-0" />
-                  {passwordMessage}
-                </div>
-              )}
-              <AppButton
-                type="submit"
-                variant="primary"
-                className="w-full py-3"
-              >
-                Update Password
-              </AppButton>
-            </form>
-          </div>
-        </div>
-
-        {/* Admin Management Section (Super Admin Only) */}
-        {user.role === "super_admin" && (
-          <div className="mb-10 animate-in fade-in-up rounded-2xl border border-emerald-200 bg-emerald-50/30 p-8 shadow-sm duration-500 delay-200">
-            <div className="flex items-start justify-between gap-6">
-              <div className="flex-1">
-                <h2 className="mb-2 text-2xl font-bold text-(--heading-color)">
-                  Admin Management
-                </h2>
-                <p className="text-sm text-(--muted-color)">
-                  Create new admin accounts, manage user roles, and view all
-                  system users.
+                <h1 className="mt-4 text-2xl font-semibold leading-tight text-(--heading-color)">
+                  {user.name}
+                </h1>
+                <p className="mt-1 wrap-break-word text-sm text-(--muted-color)">
+                  {user.email}
                 </p>
-              </div>
-              <Link
-                href="/super-admin"
-                className="shrink-0 rounded-lg bg-(--primary-color) px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-(--primary-hover-color)"
-              >
-                + Add New Admin
-              </Link>
-            </div>
-          </div>
-        )}
+                <span className="mt-4 inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-emerald-700">
+                  {user.role === "super_admin" ? "Super Admin" : "Admin"}
+                </span>
 
-        {/* Uploaded Files Section */}
-        {uploadedFiles.length > 0 && (
-          <div className="animate-in fade-in-up rounded-2xl border border-(--border-color) bg-(--surface) p-8 shadow-sm duration-500 delay-300">
-            <h2 className="mb-6 text-xl font-bold text-(--heading-color)">
-              Uploaded Files
-            </h2>
-            <div className="space-y-3">
-              {uploadedFiles.map((file) => (
-                <div
-                  key={file.name}
-                  className="group flex items-start justify-between gap-4 rounded-lg border border-(--border-color) bg-(--surface-soft) p-4 transition-all duration-300 hover:border-emerald-200 hover:bg-emerald-50/20"
-                >
-                  <div className="flex-1 min-w-0">
-                    <p className="wrap-break-word text-sm font-medium text-(--text-color) transition-colors group-hover:text-(--heading-color)">
-                      {file.name}
+                <div className="mt-6 space-y-3 rounded-2xl border border-(--border-color) bg-(--surface-soft) p-4">
+                  <div className="flex items-center justify-between text-xs uppercase tracking-wide text-(--muted-color)">
+                    <span>Profile Completion</span>
+                    <span className="font-semibold text-(--heading-color)">
+                      {profileCompleteness}%
+                    </span>
+                  </div>
+                  <div className="h-2 rounded-full bg-emerald-100">
+                    <div
+                      className="h-2 rounded-full bg-(--primary-color)"
+                      style={{ width: `${profileCompleteness}%` }}
+                    />
+                  </div>
+                  <p className="text-xs text-(--muted-color)">
+                    {user.phone
+                      ? "Your account profile is complete."
+                      : "Add your phone number to complete your profile."}
+                  </p>
+                </div>
+
+                <div className="mt-4 grid grid-cols-2 gap-3">
+                  <div className="rounded-xl border border-(--border-color) bg-(--surface-soft) px-3 py-3">
+                    <p className="text-[11px] uppercase tracking-wide text-(--muted-color)">
+                      Files
                     </p>
-                    <p className="mt-2 text-xs text-(--muted-color)">
-                      {file.count} defect{file.count !== 1 ? "s" : ""} •
-                      Uploaded by {file.uploadedBy} on {file.uploadedAt}
+                    <p className="mt-1 text-lg font-semibold text-(--heading-color)">
+                      {uploadedFiles.length}
                     </p>
                   </div>
-                  <AppButton
-                    type="button"
-                    onClick={() => onDeleteFile(file.name)}
-                    disabled={deleting === file.name}
-                    variant="dangerSoft"
-                    size="icon"
-                    title="Delete file and all its defects"
-                  >
-                    <HiTrash className="w-5 h-5" />
-                  </AppButton>
+                  <div className="rounded-xl border border-(--border-color) bg-(--surface-soft) px-3 py-3">
+                    <p className="text-[11px] uppercase tracking-wide text-(--muted-color)">
+                      Access
+                    </p>
+                    <p className="mt-1 text-lg font-semibold text-(--heading-color)">
+                      {user.role === "super_admin" ? "Full" : "Standard"}
+                    </p>
+                  </div>
                 </div>
-              ))}
-            </div>
-            {deleteMessage && (
-              <div className="mt-4 animate-in fade-in flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700 duration-300">
-                <HiCheckCircle className="h-4 w-4 shrink-0" />
-                {deleteMessage}
               </div>
+            </div>
+          </aside>
+
+          <main className="space-y-6">
+            <section className="animate-in fade-in-up rounded-3xl border border-(--border-color) bg-(--surface) p-6 shadow-sm duration-500 sm:p-7">
+              <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.14em] text-(--muted-color)">
+                    Personal Information
+                  </p>
+                  <h2 className="mt-1 text-xl font-semibold text-(--heading-color)">
+                    Profile Details
+                  </h2>
+                </div>
+                <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+                  Live account data
+                </span>
+              </div>
+
+              <form
+                action={onUpdateProfile}
+                className="grid grid-cols-1 gap-5 md:grid-cols-2"
+              >
+                <div className="md:col-span-1">
+                  <label className="mb-2 block text-sm font-medium text-(--text-color)">
+                    Full Name
+                  </label>
+                  <input
+                    name="name"
+                    type="text"
+                    defaultValue={user.name}
+                    required
+                    className="w-full rounded-xl border border-(--border-color) bg-(--surface-soft) px-4 py-2.5 text-sm text-(--text-color) transition-all duration-300 focus:border-(--primary-color) focus:outline-none focus:ring-2 focus:ring-(--primary-color)/20"
+                  />
+                </div>
+                <div className="md:col-span-1">
+                  <label className="mb-2 block text-sm font-medium text-(--text-color)">
+                    Phone Number
+                  </label>
+                  <input
+                    name="phone"
+                    type="tel"
+                    defaultValue={user.phone || ""}
+                    placeholder="Add a contact number"
+                    className="w-full rounded-xl border border-(--border-color) bg-(--surface-soft) px-4 py-2.5 text-sm text-(--text-color) transition-all duration-300 focus:border-(--primary-color) focus:outline-none focus:ring-2 focus:ring-(--primary-color)/20"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="mb-2 block text-sm font-medium text-(--text-color)">
+                    Email Address
+                  </label>
+                  <input
+                    name="email"
+                    type="email"
+                    defaultValue={user.email}
+                    required
+                    className="w-full rounded-xl border border-(--border-color) bg-(--surface-soft) px-4 py-2.5 text-sm text-(--text-color) transition-all duration-300 focus:border-(--primary-color) focus:outline-none focus:ring-2 focus:ring-(--primary-color)/20"
+                  />
+                </div>
+
+                <div className="md:col-span-2 flex flex-wrap items-center gap-3">
+                  <AppButton
+                    type="submit"
+                    variant="primary"
+                    className="px-6 py-2.5"
+                  >
+                    Save Profile
+                  </AppButton>
+                  <span className="text-xs text-(--muted-color)">
+                    Changes are applied immediately after saving.
+                  </span>
+                </div>
+
+                {profileMessage && (
+                  <div className="animate-in fade-in md:col-span-2 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700 duration-300">
+                    <HiCheckCircle className="h-4 w-4 shrink-0" />
+                    {profileMessage}
+                  </div>
+                )}
+              </form>
+            </section>
+
+            <section className="animate-in fade-in-up rounded-3xl border border-(--border-color) bg-(--surface) p-6 shadow-sm duration-500 sm:p-7">
+              <div className="mb-6">
+                <p className="text-xs uppercase tracking-[0.14em] text-(--muted-color)">
+                  Security
+                </p>
+                <h2 className="mt-1 text-xl font-semibold text-(--heading-color)">
+                  Password & Access
+                </h2>
+              </div>
+
+              <form
+                action={onChangePassword}
+                className="grid grid-cols-1 gap-5 md:grid-cols-2"
+              >
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-(--text-color)">
+                    Current Password
+                  </label>
+                  <input
+                    name="currentPassword"
+                    type="password"
+                    required
+                    className="w-full rounded-xl border border-(--border-color) bg-(--surface-soft) px-4 py-2.5 text-sm text-(--text-color) transition-all duration-300 focus:border-(--primary-color) focus:outline-none focus:ring-2 focus:ring-(--primary-color)/20"
+                  />
+                </div>
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-(--text-color)">
+                    New Password
+                  </label>
+                  <input
+                    name="newPassword"
+                    type="password"
+                    required
+                    className="w-full rounded-xl border border-(--border-color) bg-(--surface-soft) px-4 py-2.5 text-sm text-(--text-color) transition-all duration-300 focus:border-(--primary-color) focus:outline-none focus:ring-2 focus:ring-(--primary-color)/20"
+                  />
+                </div>
+
+                <div className="md:col-span-2 flex flex-wrap items-center gap-3">
+                  <AppButton
+                    type="submit"
+                    variant="primary"
+                    className="px-6 py-2.5"
+                  >
+                    Update Password
+                  </AppButton>
+                  <span className="text-xs text-(--muted-color)">
+                    Use a unique password with at least 8 characters.
+                  </span>
+                </div>
+
+                {passwordMessage && (
+                  <div className="animate-in fade-in md:col-span-2 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700 duration-300">
+                    <HiCheckCircle className="h-4 w-4 shrink-0" />
+                    {passwordMessage}
+                  </div>
+                )}
+              </form>
+            </section>
+
+            {user.role === "super_admin" && (
+              <section className="animate-in fade-in-up rounded-3xl border border-emerald-200 bg-linear-to-r from-emerald-50/70 to-lime-50/60 p-6 shadow-sm duration-500 sm:p-7">
+                <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.14em] text-emerald-700">
+                      Super Admin Tools
+                    </p>
+                    <h2 className="mt-1 text-xl font-semibold text-(--heading-color)">
+                      Admin Management
+                    </h2>
+                    <p className="mt-2 text-sm text-(--muted-color)">
+                      Create accounts, adjust roles, and maintain platform
+                      access.
+                    </p>
+                  </div>
+                  <Link
+                    href="/super-admin"
+                    className="inline-flex rounded-xl bg-(--primary-color) px-5 py-2.5 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(76,175,80,0.2)] transition-colors hover:bg-(--primary-hover-color)"
+                  >
+                    Open Admin Console
+                  </Link>
+                </div>
+              </section>
             )}
-          </div>
-        )}
+
+            {uploadedFiles.length > 0 && (
+              <section className="animate-in fade-in-up rounded-3xl border border-(--border-color) bg-(--surface) p-6 shadow-sm duration-500 sm:p-7">
+                <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.14em] text-(--muted-color)">
+                      Data History
+                    </p>
+                    <h2 className="mt-1 text-xl font-semibold text-(--heading-color)">
+                      Uploaded Files
+                    </h2>
+                  </div>
+                  <span className="rounded-full border border-(--border-color) bg-(--surface-soft) px-3 py-1 text-xs font-medium text-(--muted-color)">
+                    {uploadedFiles.length} file
+                    {uploadedFiles.length !== 1 ? "s" : ""}
+                  </span>
+                </div>
+
+                <div className="space-y-3">
+                  {uploadedFiles.map((file) => (
+                    <div
+                      key={file.name}
+                      className="group flex items-start justify-between gap-4 rounded-xl border border-(--border-color) bg-(--surface-soft) p-4 transition-all duration-300 hover:border-emerald-200 hover:bg-emerald-50/20"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="wrap-break-word text-sm font-semibold text-(--text-color) transition-colors group-hover:text-(--heading-color)">
+                          {file.name}
+                        </p>
+                        <p className="mt-1 text-xs text-(--muted-color)">
+                          {file.count} defect{file.count !== 1 ? "s" : ""}{" "}
+                          imported
+                        </p>
+                        <p className="mt-1 text-xs text-(--muted-color)">
+                          Uploaded by {file.uploadedBy} on {file.uploadedAt}
+                        </p>
+                      </div>
+                      <AppButton
+                        type="button"
+                        onClick={() => onDeleteFile(file.name)}
+                        disabled={deleting === file.name}
+                        variant="dangerSoft"
+                        size="icon"
+                        title="Delete file and all its defects"
+                      >
+                        <HiTrash className="h-5 w-5" />
+                      </AppButton>
+                    </div>
+                  ))}
+                </div>
+
+                {deleteMessage && (
+                  <div className="mt-4 animate-in fade-in flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700 duration-300">
+                    <HiCheckCircle className="h-4 w-4 shrink-0" />
+                    {deleteMessage}
+                  </div>
+                )}
+              </section>
+            )}
+          </main>
+        </div>
       </div>
     </div>
   );
