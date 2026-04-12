@@ -62,6 +62,44 @@ In spreadsheet-driven workflows, teams often face inconsistent formats, duplicat
 - **Traceability:** Ownership fields such as source file and uploaded user are preserved.
 - **Composable analytics:** Dashboards are powered by filtered, query-driven aggregates.
 
+### 3.3 Technical deep dive
+
+#### Request lifecycle (App Router + server execution)
+
+1. UI events (filter changes, form submit, upload) are handled in React components.
+2. Data operations are delegated to server-side handlers (API routes / server actions).
+3. Input payloads are validated via schema checks before any persistence.
+4. Business rules are applied (normalization, dedup checks, role checks).
+5. Database reads/writes execute in PostgreSQL, and response data is returned to the UI.
+
+#### Data model and consistency strategy
+
+- Primary entities include users, issues, source files, sessions, and roles.
+- Referential links (issue owner, uploaded by, source file) provide traceability.
+- Enum-based fields (status, severity, QC states) reduce inconsistent free-text values.
+- Script-driven schema evolution is used to roll forward new fields safely.
+
+#### Query and analytics pipeline
+
+- Dashboard metrics are generated through grouped and filtered database queries.
+- Filters are translated into server-side query predicates.
+- Visualization payloads are shaped for chart libraries with minimal client transforms.
+- Export endpoints reuse the same filter logic to avoid report/data mismatch.
+
+#### Security and access control model
+
+- Authentication creates session-bound access with protected route checks.
+- Authorization is role-aware (User/Admin/Super Admin) for privileged operations.
+- Critical operations (user management, credential control) are restricted to Super Admin paths.
+- Validation and server-side writes reduce trust in client input and prevent unsafe mutations.
+
+#### Performance and scalability considerations
+
+- Server-side filtering avoids heavy client-side data scans.
+- Aggregated analytics reduce repeated computation in UI components.
+- Pagination protects list views from excessive payload size.
+- Planned realtime sync will decouple write path from client refresh path via event delivery.
+
 ---
 
 ## 4. Overall Application Flow
@@ -186,6 +224,29 @@ This flow applies to both bulk import and structured manual entry.
 - Support filtered analytics with indexed dimensions.
 - Keep extensibility for planned dual-store evolution.
 
+### 11.1 Suggested indexing strategy (technical)
+
+To keep reporting and operational screens responsive at scale, indexing should prioritize frequent filter dimensions and timeline queries.
+
+- Composite index candidates: (`status`, `severity`), (`assignedTo`, `status`), (`issueTestDate`, `status`).
+- Time-series analytics: index reported/fixed dates used in trend charts.
+- Ownership queries: index assignee/uploader fields for team and audit pages.
+- Source lineage: index source file references for import traceability.
+
+### 11.2 Transaction and integrity guidance (technical)
+
+- Use transactional writes for multi-row import batches when strict atomicity is required.
+- Keep duplicate detection logic deterministic (stable keys + normalized text fields).
+- Enforce enum/value constraints at validation and persistence boundaries.
+- Store ingestion metadata (`uploadedBy`, source file, timestamps) for audit and rollback analysis.
+
+### 11.3 Migration direction toward MongoDB (technical)
+
+- Start with a coexistence model, not a hard cutover.
+- Keep PostgreSQL as source of truth during transition phases.
+- Migrate analytics/read models incrementally where document shape offers clear benefit.
+- Validate parity between SQL and Mongo result sets before switching critical dashboards.
+
 ---
 
 ## 12. Current Implementation Status
@@ -258,3 +319,29 @@ This flow applies to both bulk import and structured manual entry.
 ## 17. Conclusion
 
 Sheet WebApp provides a professional, scalable replacement for Excel-centric issue tracking. By combining structured ingestion, centralized lifecycle ownership, and analytics-ready reporting, it improves QA governance, reduces avoidable manual errors, and positions the organization for real-time and large-scale operational maturity.
+
+---
+
+## 18. Layman Section (Manager View)
+
+### What this system does in simple terms
+
+Sheet WebApp is a single online workspace where your team can upload issue data, track who is working on what, and instantly view progress through dashboards. Instead of handling multiple Excel files, everyone works from one centralized system.
+
+### Why this matters to management
+
+- You get one source of truth for QA issues.
+- You can see team workload and bottlenecks quickly.
+- Reports become faster and more consistent.
+- Errors from manual spreadsheet work are significantly reduced.
+
+### What outcomes to expect
+
+- Better visibility into critical issues and pending work.
+- Faster follow-up because ownership is clear.
+- Improved confidence in status reporting during reviews.
+- Stronger operational control as the system scales.
+
+### One-line summary
+
+This platform turns scattered spreadsheet tracking into a reliable, measurable, and manager-friendly QA operations system.
