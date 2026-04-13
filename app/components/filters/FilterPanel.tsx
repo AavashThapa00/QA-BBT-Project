@@ -61,14 +61,14 @@ function MultiSelectDropdown({
         disabled={disabled}
       >
         <div className="relative">
-          <ListboxButton className="flex w-full items-center justify-between rounded-lg border border-(--border-color) bg-(--surface-soft) px-3 py-2 text-left text-sm text-(--text-color) transition-colors hover:border-(--primary-color) disabled:cursor-not-allowed disabled:opacity-50">
+          <ListboxButton className="flex w-full items-center justify-between rounded-md border border-(--border-color) bg-(--surface-soft) px-3 py-2 text-left text-sm text-(--text-color) transition-colors hover:border-(--primary-color) disabled:cursor-not-allowed disabled:opacity-50">
             <span className="truncate">
               {selectedCount > 0 ? `${selectedCount} selected` : placeholder}
             </span>
             <HiChevronDown className="h-4 w-4 text-(--muted-color)" />
           </ListboxButton>
 
-          <ListboxOptions className="absolute z-30 mt-1 max-h-56 w-full overflow-auto rounded-lg border border-(--border-color) bg-(--surface) p-1 shadow-lg focus:outline-none">
+          <ListboxOptions className="absolute z-30 mt-1 max-h-56 w-full overflow-auto rounded-md border border-(--border-color) bg-(--surface) p-1 shadow-md focus:outline-none">
             {options.map((option) => (
               <ListboxOption
                 key={option.value}
@@ -76,7 +76,7 @@ function MultiSelectDropdown({
                 className={({ active }) =>
                   `cursor-pointer rounded-md px-2 py-2 text-sm ${
                     active
-                      ? "bg-emerald-50 text-(--heading-color)"
+                      ? "bg-slate-50 text-(--heading-color)"
                       : "text-(--text-color)"
                   }`
                 }
@@ -100,14 +100,14 @@ function MultiSelectDropdown({
           {selectedOptions.map((option) => (
             <span
               key={option.value}
-              className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs text-emerald-800"
+              className="inline-flex items-center gap-1 rounded-full border border-(--border-color) bg-(--surface-soft) px-2 py-0.5 text-xs text-(--text-color)"
             >
               <span className="max-w-30 truncate">{option.label}</span>
               <button
                 type="button"
                 onClick={() => removeSelectedValue(option.value)}
                 disabled={disabled}
-                className="rounded-full p-0.5 text-emerald-700 transition-colors hover:bg-emerald-200 hover:text-emerald-900 disabled:opacity-50"
+                className="rounded-full p-0.5 text-(--muted-color) transition-colors hover:bg-slate-200 hover:text-(--heading-color) disabled:opacity-50"
                 aria-label={`Remove ${option.label}`}
                 title={`Remove ${option.label}`}
               >
@@ -244,7 +244,7 @@ export default function FilterPanel({
   };
 
   return (
-    <div className="rounded-3xl border border-(--border-color) bg-(--surface) p-4 shadow-[0_10px_28px_rgba(27,94,32,0.08)]">
+    <div className="rounded-xl border border-(--border-color) bg-(--surface) p-4 shadow-sm">
       <div className="mb-4 flex items-start justify-between gap-4">
         <div>
           <h3 className="flex items-center gap-2 text-base font-semibold text-(--heading-color)">
@@ -266,7 +266,7 @@ export default function FilterPanel({
               onChange={(e) => setSearchInput(e.target.value)}
               onKeyDown={handleSearchKeyPress}
               disabled={isLoading}
-              className="w-full pl-8 placeholder:text-sm pr-2 py-2.5 border border-(--border-color) rounded-lg text-sm text-(--text-color) bg-(--surface-soft) placeholder-(--muted-color) focus:outline-none focus:ring-2 focus:ring-(--primary-color) focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed hover:border-(--primary-color) transition-colors"
+              className="w-full pl-8 placeholder:text-sm pr-2 py-2.5 border border-(--border-color) rounded-md text-sm text-(--text-color) bg-(--surface-soft) placeholder-(--muted-color) focus:outline-none focus:ring-2 focus:ring-(--primary-color) focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed hover:border-(--primary-color) transition-colors"
             />
             {searchInput && searchInput.length >= 3 && (
               <button
@@ -281,7 +281,7 @@ export default function FilterPanel({
           <button
             onClick={applyFilters}
             disabled={isLoading}
-            className="bg-(--primary-color) hover:bg-(--primary-hover-color) text-white font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2 whitespace-nowrap justify-center px-4 py-2 text-sm"
+            className="bg-(--primary-color) hover:bg-(--primary-hover-color) text-white font-medium rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2 whitespace-nowrap justify-center px-4 py-2 text-sm"
           >
             <HiSearch className="w-4 h-4" />
             <span>Search</span>
@@ -305,7 +305,7 @@ export default function FilterPanel({
               value={dateFrom}
               onChange={(e) => setDateFrom(e.target.value)}
               disabled={isLoading}
-              className="w-full px-3 py-2.5 border border-(--border-color) rounded-lg text-xs text-(--text-color) bg-(--surface-soft) focus:outline-none focus:ring-2 focus:ring-(--primary-color) focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed hover:border-(--primary-color) transition-colors"
+              className="w-full px-3 py-2.5 border border-(--border-color) rounded-md text-xs text-(--text-color) bg-(--surface-soft) focus:outline-none focus:ring-2 focus:ring-(--primary-color) focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed hover:border-(--primary-color) transition-colors"
             />
           </div>
 
@@ -318,7 +318,7 @@ export default function FilterPanel({
               value={dateTo}
               onChange={(e) => setDateTo(e.target.value)}
               disabled={isLoading}
-              className="w-full px-3 py-2.5 border border-(--border-color) rounded-lg text-xs text-(--text-color) bg-(--surface-soft) focus:outline-none focus:ring-2 focus:ring-(--primary-color) focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed hover:border-(--primary-color) transition-colors"
+              className="w-full px-3 py-2.5 border border-(--border-color) rounded-md text-xs text-(--text-color) bg-(--surface-soft) focus:outline-none focus:ring-2 focus:ring-(--primary-color) focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed hover:border-(--primary-color) transition-colors"
             />
           </div>
         </div>
@@ -361,7 +361,7 @@ export default function FilterPanel({
         <button
           onClick={clearFilters}
           disabled={!hasAnyFilter}
-          className="bg-(--surface-soft) hover:bg-emerald-50 text-(--muted-color) hover:text-(--heading-color) font-medium rounded-lg transition-colors border border-(--border-color) hover:border-(--primary-color) flex-1 px-4 py-2 text-sm"
+          className="bg-(--surface-soft) hover:bg-slate-100 text-(--muted-color) hover:text-(--heading-color) font-medium rounded-md transition-colors border border-(--border-color) hover:border-(--primary-color) flex-1 px-4 py-2 text-sm"
         >
           Reset
         </button>
@@ -371,7 +371,7 @@ export default function FilterPanel({
             isLoading ||
             (searchInput.trim().length > 0 && searchInput.trim().length < 3)
           }
-          className="bg-(--primary-color) hover:bg-(--primary-hover-color) text-white font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex-1 px-4 py-2 text-sm"
+          className="bg-(--primary-color) hover:bg-(--primary-hover-color) text-white font-medium rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex-1 px-4 py-2 text-sm"
         >
           Apply Filters ({activeFilterCount})
         </button>

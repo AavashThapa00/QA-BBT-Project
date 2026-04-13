@@ -92,9 +92,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en">
       <body
-        className={`${poppins.className} ${geistMono.variable} antialiased bg-slate-950`}
+        className={`${poppins.className} ${geistMono.variable} antialiased`}
       >
         <Script
           id="issuefixu-jsonld"

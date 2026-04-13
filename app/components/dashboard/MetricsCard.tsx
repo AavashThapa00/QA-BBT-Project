@@ -19,7 +19,7 @@ export default function MetricsCard({
 }: MetricsCardProps) {
   return (
     <div
-      className={`rounded-2xl border border-(--border-color) bg-(--surface) p-6 shadow-[0_10px_26px_rgba(27,94,32,0.08)] transition-all ${onClick ? "cursor-pointer hover:-translate-y-0.5 hover:border-(--primary-color) hover:shadow-[0_14px_30px_rgba(27,94,32,0.14)]" : ""} ${className}`}
+      className={`rounded-xl border border-(--border-color) bg-(--surface) p-5 shadow-sm transition-colors ${onClick ? "cursor-pointer hover:border-(--primary-color)" : ""} ${className}`}
       onClick={onClick}
     >
       <div className="flex items-start justify-between">
@@ -27,13 +27,13 @@ export default function MetricsCard({
           <p className="text-(--muted-color) text-xs font-semibold uppercase tracking-wide">
             {title}
           </p>
-          <p className="mt-3 text-4xl font-bold text-(--heading-color)">
+          <p className="mt-2.5 text-3xl font-semibold text-(--heading-color)">
             {value}
           </p>
-          <div className="mt-4 h-1 w-12 rounded-full bg-(--primary-color)"></div>
+          <div className="mt-3 h-0.5 w-10 rounded-full bg-(--primary-color)"></div>
         </div>
         {icon && (
-          <div className="ml-4 rounded-xl border border-emerald-100 bg-emerald-50 p-3 text-(--primary-color)">
+          <div className="ml-4 rounded-lg border border-(--border-color) bg-(--surface-soft) p-2.5 text-(--primary-color)">
             {React.isValidElement(icon)
               ? React.cloneElement(icon as any, { className: "w-6 h-6" })
               : icon}

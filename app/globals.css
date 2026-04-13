@@ -1,38 +1,38 @@
 @import "tailwindcss";
 
 :root {
-  --page-background: #F5F7F6;
-  --surface: #FFFFFF;
-  --surface-soft: #FAFBFA;
-  --border-color: #E0E0E0;
-  --heading-color: #1B5E20;
+  --page-background: #f5f7f6;
+  --surface: #ffffff;
+  --surface-soft: #fafbfa;
+  --border-color: #e0e0e0;
+  --heading-color: #1b5e20;
   --text-color: #333333;
   --muted-color: #757575;
-  --primary-color: #4CAF50;
-  --primary-hover-color: #43A047;
-  --accent-color: #A5D6A7;
-  --success-color: #4CAF50;
-  --warning-color: #FB8C00;
-  --danger-color: #E53935;
-  --info-color: #1E88E5;
-  --secondary-color: #8E24AA;
-  --chart-positive-color: #4CAF50;
-  --chart-negative-color: #E53935;
-  --chart-neutral-color: #1E88E5;
-  --chart-attention-color: #FB8C00;
-  --chart-secondary-color: #8E24AA;
+  --primary-color: #4caf50;
+  --primary-hover-color: #43a047;
+  --accent-color: #a5d6a7;
+  --success-color: #4caf50;
+  --warning-color: #fb8c00;
+  --danger-color: #e53935;
+  --info-color: #1e88e5;
+  --secondary-color: #8e24aa;
+  --chart-positive-color: #4caf50;
+  --chart-negative-color: #e53935;
+  --chart-neutral-color: #1e88e5;
+  --chart-attention-color: #fb8c00;
+  --chart-secondary-color: #8e24aa;
   --background: var(--page-background);
   --foreground: var(--text-color);
-  --focus-ring: #43A047;
-  --scrollbar-track: #E8EFE9;
-  --scrollbar-thumb: #A5D6A7;
-  --scrollbar-thumb-hover: #4CAF50;
-  --primary: #4CAF50;
-  --primary-dark: #1B5E20;
-  --accent: #A5D6A7;
-  --success: #4CAF50;
-  --warning: #FB8C00;
-  --danger: #E53935;
+  --focus-ring: #43a047;
+  --scrollbar-track: #e8efe9;
+  --scrollbar-thumb: #a5d6a7;
+  --scrollbar-thumb-hover: #4caf50;
+  --primary: #4caf50;
+  --primary-dark: #1b5e20;
+  --accent: #a5d6a7;
+  --success: #4caf50;
+  --warning: #fb8c00;
+  --danger: #e53935;
   --font-sans: "Poppins";
   --font-mono: var(--font-geist-mono);
 }
@@ -46,7 +46,11 @@ button,
 input,
 select,
 textarea {
-  transition: color 180ms ease, background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+  transition:
+    color 180ms ease,
+    background-color 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease;
 }
 
 button:not(:disabled) {
@@ -60,12 +64,23 @@ html {
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: "Poppins", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  font-family:
+    "Poppins",
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    "Helvetica Neue",
+    Arial,
+    "Noto Sans",
+    sans-serif;
   line-height: 1.5;
 }
 
 ::selection {
-  background: rgba(76, 175, 80, 0.18);
+  background: rgba(37, 99, 235, 0.18);
 }
 
 :focus-visible {
@@ -80,27 +95,6 @@ textarea:disabled {
   cursor: not-allowed;
 }
 
-/* Force dim text utilities to white for readability */
-html.dark .text-slate-300,
-html.dark .text-slate-400,
-html.dark .text-slate-500,
-html.dark .text-slate-600,
-html.dark .text-gray-300,
-html.dark .text-gray-400,
-html.dark .text-gray-500,
-html.dark .text-gray-600,
-html.dark .text-zinc-300,
-html.dark .text-zinc-400,
-html.dark .text-zinc-500,
-html.dark .text-zinc-600,
-html.dark .text-neutral-300,
-html.dark .text-neutral-400,
-html.dark .text-neutral-500,
-html.dark .text-neutral-600 {
-  color: #ffffff !important;
-}
-
-
 /* Utility: hide scrollbar but allow horizontal scroll */
 .no-scrollbar {
   -ms-overflow-style: none;
@@ -109,31 +103,6 @@ html.dark .text-neutral-600 {
 
 .no-scrollbar::-webkit-scrollbar {
   display: none;
-}
-
-@keyframes blob {
-  0%,
-  100% {
-    transform: translate(0, 0) scale(1);
-  }
-  33% {
-    transform: translate(30px, -50px) scale(1.1);
-  }
-  66% {
-    transform: translate(-20px, 20px) scale(0.9);
-  }
-}
-
-.animate-blob {
-  animation: none !important;
-}
-
-.animation-delay-2000 {
-  animation-delay: 0s !important;
-}
-
-.animation-delay-4000 {
-  animation-delay: 0s !important;
 }
 
 .animation-delay-200 {
@@ -148,17 +117,8 @@ html.dark .text-neutral-600 {
   animation-delay: 400ms;
 }
 
-/* Disable decorative blob backgrounds across the platform */
-.mix-blend-multiply.filter.blur-3xl {
-  display: none !important;
-}
-
 /* Performance guardrails for heavy visual effects */
 @media (max-width: 1024px) {
-  .mix-blend-multiply.filter.blur-3xl {
-    display: none !important;
-  }
-
   .backdrop-blur-sm,
   .backdrop-blur-md,
   .backdrop-blur-lg,
@@ -173,9 +133,5 @@ html.dark .text-neutral-600 {
     animation: none !important;
     transition: none !important;
     scroll-behavior: auto !important;
-  }
-
-  .mix-blend-multiply.filter.blur-3xl {
-    display: none !important;
   }
 }

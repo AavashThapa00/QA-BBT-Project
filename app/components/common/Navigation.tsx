@@ -37,13 +37,11 @@ const navItems: NavItem[] = [
 
 function BrandLogo() {
   return (
-    <div className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-linear-to-br from-(--heading-color) via-(--primary-color) to-(--heading-color) shadow-lg shadow-[rgba(76,175,80,0.25)] ring-1 ring-[rgba(255,255,255,0.55)] transition-all duration-300 group-hover:scale-105 sm:h-10 sm:w-10">
-      <span className="absolute inset-0.5 rounded-[9px] bg-[rgba(255,255,255,0.12)]" />
+    <div className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-(--border-color) bg-(--surface) text-(--primary-color) transition-colors group-hover:border-(--primary-color) sm:h-10 sm:w-10">
       <HiShieldCheck
-        className="relative h-5.5 w-5.5 text-white"
+        className="relative h-5.5 w-5.5 text-(--primary-color)"
         aria-hidden="true"
       />
-      <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-white/90 ring-2 ring-(--primary-color)" />
     </div>
   );
 }
@@ -144,7 +142,7 @@ export default function Navigation() {
     .join("");
 
   return (
-    <nav className="sticky top-0 z-50 border-b border-(--border-color) bg-[rgba(255,255,255,0.92)] backdrop-blur-xl shadow-[0_8px_24px_rgba(27,94,32,0.08)]">
+    <nav className="sticky top-0 z-50 border-b border-(--border-color) bg-(--surface) shadow-sm">
       <div className="w-full px-2 sm:px-4 lg:px-10 xl:px-12">
         <div className="flex items-center justify-between min-h-16 py-2.5 gap-2 sm:gap-3">
           {/* Logo/Title */}
@@ -170,11 +168,11 @@ export default function Navigation() {
                     key={item.href}
                     href={item.href}
                     className={`
-                      flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-300 whitespace-nowrap border
+                      flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap border
                       ${
                         isActive
-                          ? "bg-(--primary-color) text-white border-[rgba(76,175,80,0.28)] shadow-lg shadow-[rgba(76,175,80,0.2)]"
-                          : "text-(--text-color) border-transparent hover:bg-[rgba(165,214,167,0.14)] hover:border-[rgba(76,175,80,0.22)] hover:text-(--heading-color)"
+                          ? "bg-(--primary-color) text-white border-(--primary-color)"
+                          : "text-(--text-color) border-transparent hover:bg-slate-50 hover:border-(--border-color) hover:text-(--heading-color)"
                       }
                     `}
                   >
@@ -190,7 +188,7 @@ export default function Navigation() {
                 <button
                   type="button"
                   onClick={() => setMenuOpen((open) => !open)}
-                  className="flex items-center gap-2 rounded-xl border border-transparent px-2 py-1.5 text-sm font-medium text-(--text-color) transition-all duration-300 hover:border-[rgba(76,175,80,0.22)] hover:bg-[rgba(165,214,167,0.14)] hover:text-(--heading-color)"
+                  className="flex items-center gap-2 rounded-lg border border-transparent px-2 py-1.5 text-sm font-medium text-(--text-color) transition-colors hover:border-(--border-color) hover:bg-slate-50 hover:text-(--heading-color)"
                   aria-haspopup="menu"
                   aria-expanded={menuOpen}
                   aria-label="Open user menu"
@@ -202,11 +200,11 @@ export default function Navigation() {
                 {menuOpen && (
                   <div
                     role="menu"
-                    className="absolute right-0 mt-2 w-52 overflow-hidden rounded-xl border border-(--border-color) bg-[rgba(255,255,255,0.98)] shadow-[0_16px_36px_rgba(27,94,32,0.12)] backdrop-blur-xl"
+                    className="absolute right-0 mt-2 w-52 overflow-hidden rounded-lg border border-(--border-color) bg-(--surface) shadow-lg"
                   >
                     <Link
                       href="/profile"
-                      className="flex items-center gap-2 px-4 py-2.5 text-sm text-(--text-color) hover:bg-[rgba(165,214,167,0.16)]"
+                      className="flex items-center gap-2 px-4 py-2.5 text-sm text-(--text-color) hover:bg-slate-50"
                       role="menuitem"
                       onClick={() => setMenuOpen(false)}
                     >
@@ -216,7 +214,7 @@ export default function Navigation() {
                     {authRole === "super_admin" && (
                       <Link
                         href="/super-admin"
-                        className="flex items-center gap-2 px-4 py-2.5 text-sm text-(--text-color) hover:bg-[rgba(165,214,167,0.16)]"
+                        className="flex items-center gap-2 px-4 py-2.5 text-sm text-(--text-color) hover:bg-slate-50"
                         role="menuitem"
                         onClick={() => setMenuOpen(false)}
                       >
@@ -227,7 +225,7 @@ export default function Navigation() {
                     <button
                       type="button"
                       onClick={() => logoutAction()}
-                      className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-(--text-color) hover:bg-[rgba(229,57,53,0.09)]"
+                      className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-(--text-color) hover:bg-rose-50"
                       role="menuitem"
                     >
                       <HiLogout className="w-4 h-4" />
@@ -240,11 +238,11 @@ export default function Navigation() {
               <Link
                 href="/login"
                 className={`
-                  flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-300 border
+                  flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors border
                   ${
                     pathname === "/login"
-                      ? "bg-(--primary-color) text-white border-[rgba(76,175,80,0.28)] shadow-lg shadow-[rgba(76,175,80,0.2)]"
-                      : "text-(--text-color) border-transparent hover:bg-[rgba(165,214,167,0.14)] hover:border-[rgba(76,175,80,0.22)] hover:text-(--heading-color)"
+                      ? "bg-(--primary-color) text-white border-(--primary-color)"
+                      : "text-(--text-color) border-transparent hover:bg-slate-50 hover:border-(--border-color) hover:text-(--heading-color)"
                   }
                 `}
               >
@@ -259,7 +257,7 @@ export default function Navigation() {
             {isAuthed ? (
               <Link
                 href="/profile"
-                className="flex items-center justify-center rounded-xl border border-transparent p-1 text-(--text-color) hover:border-[rgba(76,175,80,0.22)] hover:bg-[rgba(165,214,167,0.14)] hover:text-(--heading-color)"
+                className="flex items-center justify-center rounded-lg border border-transparent p-1 text-(--text-color) hover:border-(--border-color) hover:bg-slate-50 hover:text-(--heading-color)"
                 aria-label="Open profile"
               >
                 <span className="flex h-8 w-8 items-center justify-center rounded-full bg-(--primary-color) text-xs font-semibold text-white">
@@ -269,7 +267,7 @@ export default function Navigation() {
             ) : (
               <Link
                 href="/login"
-                className="flex items-center justify-center rounded-xl border border-transparent p-2 text-(--text-color) hover:border-[rgba(76,175,80,0.22)] hover:bg-[rgba(165,214,167,0.14)] hover:text-(--heading-color)"
+                className="flex items-center justify-center rounded-lg border border-transparent p-2 text-(--text-color) hover:border-(--border-color) hover:bg-slate-50 hover:text-(--heading-color)"
                 aria-label="Open login"
               >
                 <HiUserCircle className="w-5 h-5" />
@@ -279,7 +277,7 @@ export default function Navigation() {
             <button
               type="button"
               onClick={() => setMobileNavOpen((open) => !open)}
-              className="flex items-center justify-center rounded-xl border border-transparent p-2 text-(--text-color) hover:border-[rgba(76,175,80,0.22)] hover:bg-[rgba(165,214,167,0.14)] hover:text-(--heading-color)"
+              className="flex items-center justify-center rounded-lg border border-transparent p-2 text-(--text-color) hover:border-(--border-color) hover:bg-slate-50 hover:text-(--heading-color)"
               aria-label={
                 mobileNavOpen ? "Close navigation menu" : "Open navigation menu"
               }
@@ -298,12 +296,12 @@ export default function Navigation() {
 
       {mobileNavOpen && (
         <div
-          className="fixed inset-0 z-40 bg-[rgba(27,94,32,0.28)] backdrop-blur-sm lg:hidden"
+          className="fixed inset-0 z-40 bg-[rgba(15,23,42,0.35)] lg:hidden"
           onClick={() => setMobileNavOpen(false)}
         >
           <div
             id="mobile-navigation-panel"
-            className="absolute right-0 top-0 h-full w-[min(85vw,360px)] overflow-y-auto border-l border-(--border-color) bg-(--surface) p-4 shadow-2xl"
+            className="absolute right-0 top-0 h-full w-[min(85vw,360px)] overflow-y-auto border-l border-(--border-color) bg-(--surface) p-4 shadow-xl"
             onClick={(event) => event.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-4">
