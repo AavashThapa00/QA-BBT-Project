@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Geist_Mono, Poppins } from "next/font/google";
 import Script from "next/script";
-import NextTopLoader from "nextjs-toploader";
 import "./globals.css";
 import Navigation from "./components/common/Navigation";
 import AppToaster from "./components/common/AppToaster";
@@ -99,14 +98,6 @@ export default function RootLayout({
         suppressHydrationWarning
         className={`${poppins.className} ${geistMono.variable} antialiased`}
       >
-        <NextTopLoader
-          color="var(--primary-color)"
-          height={3}
-          showSpinner={false}
-          crawlSpeed={200}
-          easing="ease"
-          speed={200}
-        />
         <Script
           id="issuefixu-jsonld"
           type="application/ld+json"
