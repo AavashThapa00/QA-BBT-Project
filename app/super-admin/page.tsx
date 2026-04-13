@@ -2,7 +2,13 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { HiArrowLeft, HiTrash } from "react-icons/hi";
+import {
+  HiArrowLeft,
+  HiTrash,
+  HiShieldCheck,
+  HiPlusCircle,
+  HiUsers,
+} from "react-icons/hi";
 import AppButton from "@/app/components/common/AppButton";
 import { getCurrentUser } from "@/app/actions/auth";
 import {
@@ -94,7 +100,7 @@ export default function SuperAdminPage() {
     return (
       <div className="min-h-screen bg-(--page-background) p-8">
         <div className="flex items-center justify-center h-96">
-          <div className="h-12 w-12 animate-spin rounded-full border-2 border-emerald-200 border-t-(--primary-color)"></div>
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-emerald-200 border-t-emerald-600"></div>
         </div>
       </div>
     );
@@ -102,169 +108,263 @@ export default function SuperAdminPage() {
 
   return (
     <div className="min-h-screen bg-(--page-background) p-4 sm:p-6 lg:p-8">
-      <div className="relative mx-auto w-full max-w-425 space-y-6">
+      <div className="relative mx-auto w-full max-w-5xl space-y-8">
+        {/* Header Section */}
         <div className="animate-in fade-in duration-500">
           <Link
             href="/"
-            className="group mb-3 inline-flex items-center gap-2 text-sm text-(--muted-color) transition-all duration-300 hover:translate-x-1 hover:text-(--primary-color)"
+            className="group mb-6 inline-flex items-center gap-2 text-sm text-(--muted-color) transition-all duration-300 hover:translate-x-1 hover:text-(--primary-color)"
           >
             <HiArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
             <span className="font-medium">Back to Dashboard</span>
           </Link>
-          <h1 className="text-3xl font-bold text-(--heading-color)">
-            Super Admin Panel
-          </h1>
-          <p className="mt-2 text-sm text-(--muted-color)">
-            Create admins and manage access
-          </p>
-          {authRole && (
-            <div className="mt-3">
-              <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-emerald-700">
-                Role: {authRole.replace("_", " ")}
-              </span>
+
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-100 p-8 shadow-sm">
+            <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-96 h-96 bg-gradient-to-b from-emerald-200/20 to-transparent rounded-full blur-3xl"></div>
+            <div className="relative z-10">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="p-3 rounded-lg bg-emerald-100">
+                  <HiShieldCheck className="w-6 h-6 text-emerald-700" />
+                </div>
+                <h1 className="text-4xl font-bold bg-gradient-to-r from-emerald-700 to-teal-700 bg-clip-text text-transparent">
+                  Super Admin
+                </h1>
+              </div>
+              <p className="text-sm text-(--muted-color) mb-4">
+                Manage admins and control system access
+              </p>
+              {authRole && (
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white px-4 py-2 text-sm font-semibold text-emerald-700 shadow-sm">
+                    <div className="w-2 h-2 rounded-full bg-emerald-600"></div>
+                    {authRole.replace("_", " ").toUpperCase()}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Create Admin Form */}
+        <div className="animate-in fade-in-up rounded-2xl border border-emerald-100 bg-(--surface) p-8 shadow-md duration-500 hover:shadow-lg transition-shadow">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2 rounded-lg bg-emerald-100">
+              <HiPlusCircle className="w-5 h-5 text-emerald-700" />
+            </div>
+            <h2 className="text-xl font-bold text-(--heading-color)">
+              Create New Admin
+            </h2>
+          </div>
+
+          <form action={onCreateUser} className="space-y-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-(--text-color)">
+                  Full Name
+                </label>
+                <input
+                  name="name"
+                  placeholder="Enter full name"
+                  className="w-full rounded-lg border border-(--border-color) bg-(--surface-soft) px-4 py-3 text-(--text-color) placeholder:text-gray-400 transition-all focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-(--text-color)">
+                  Email Address
+                </label>
+                <input
+                  name="email"
+                  type="email"
+                  placeholder="Enter email address"
+                  className="w-full rounded-lg border border-(--border-color) bg-(--surface-soft) px-4 py-3 text-(--text-color) placeholder:text-gray-400 transition-all focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-(--text-color)">
+                  Phone Number
+                </label>
+                <input
+                  name="phone"
+                  placeholder="Enter phone number"
+                  className="w-full rounded-lg border border-(--border-color) bg-(--surface-soft) px-4 py-3 text-(--text-color) placeholder:text-gray-400 transition-all focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-(--text-color)">
+                  Password
+                </label>
+                <input
+                  name="password"
+                  type="password"
+                  placeholder="Enter password"
+                  className="w-full rounded-lg border border-(--border-color) bg-(--surface-soft) px-4 py-3 text-(--text-color) placeholder:text-gray-400 transition-all focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-(--text-color)">
+                User Role
+              </label>
+              <select
+                name="role"
+                className="w-full rounded-lg border border-(--border-color) bg-(--surface-soft) px-4 py-3 text-(--text-color) transition-all focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 cursor-pointer"
+              >
+                <option value="admin">Admin</option>
+                <option value="super_admin">Super Admin</option>
+              </select>
+            </div>
+
+            <div className="pt-3">
+              <AppButton
+                type="submit"
+                variant="primary"
+                className="w-full md:w-auto px-6 py-3 font-medium"
+              >
+                Create Admin Account
+              </AppButton>
+            </div>
+          </form>
+
+          {createMessage && (
+            <div className="mt-5 animate-in fade-in rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 shadow-sm">
+              <div className="flex items-start gap-2">
+                <div className="mt-0.5 w-2 h-2 rounded-full bg-emerald-600 flex-shrink-0"></div>
+                <span>{createMessage}</span>
+              </div>
             </div>
           )}
         </div>
 
-        <div className="animate-in fade-in-up rounded-2xl border border-(--border-color) bg-(--surface) p-6 shadow-sm duration-500">
-          <h2 className="text-lg font-semibold text-(--heading-color)">
-            Create Admin
-          </h2>
-          <form
-            action={onCreateUser}
-            className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4"
-          >
-            <input
-              name="name"
-              placeholder="Full name"
-              className="rounded-lg border border-(--border-color) bg-(--surface-soft) px-3 py-2 text-(--text-color) transition-all focus:border-(--primary-color) focus:outline-none focus:ring-2 focus:ring-(--primary-color)/20"
-              required
-            />
-            <input
-              name="email"
-              type="email"
-              placeholder="Email"
-              className="rounded-lg border border-(--border-color) bg-(--surface-soft) px-3 py-2 text-(--text-color) transition-all focus:border-(--primary-color) focus:outline-none focus:ring-2 focus:ring-(--primary-color)/20"
-              required
-            />
-            <input
-              name="phone"
-              placeholder="Phone"
-              className="rounded-lg border border-(--border-color) bg-(--surface-soft) px-3 py-2 text-(--text-color) transition-all focus:border-(--primary-color) focus:outline-none focus:ring-2 focus:ring-(--primary-color)/20"
-            />
-            <input
-              name="password"
-              type="password"
-              placeholder="Password"
-              className="rounded-lg border border-(--border-color) bg-(--surface-soft) px-3 py-2 text-(--text-color) transition-all focus:border-(--primary-color) focus:outline-none focus:ring-2 focus:ring-(--primary-color)/20"
-              required
-            />
-            <select
-              name="role"
-              className="rounded-lg border border-(--border-color) bg-(--surface-soft) px-3 py-2 text-(--text-color) transition-all focus:border-(--primary-color) focus:outline-none focus:ring-2 focus:ring-(--primary-color)/20"
-            >
-              <option value="admin">Admin</option>
-              <option value="super_admin">Super Admin</option>
-            </select>
-            <AppButton type="submit" variant="primary" className="px-4 py-2">
-              Create Admin
-            </AppButton>
-          </form>
-          {createMessage && (
-            <p className="mt-3 animate-in fade-in rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700 duration-300">
-              {createMessage}
-            </p>
-          )}
-        </div>
+        {/* Users List */}
+        <div className="animate-in fade-in-up rounded-2xl border border-emerald-100 bg-(--surface) shadow-md duration-500 overflow-hidden hover:shadow-lg transition-shadow">
+          <div className="p-8 border-b border-emerald-100 bg-gradient-to-r from-emerald-50/50 to-teal-50/50">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-emerald-100">
+                <HiUsers className="w-5 h-5 text-emerald-700" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-(--heading-color)">
+                  Admin Users
+                </h2>
+                <p className="text-sm text-(--muted-color) mt-1">
+                  {users.length} {users.length === 1 ? "admin" : "admins"} in
+                  the system
+                </p>
+              </div>
+            </div>
+          </div>
 
-        <div className="animate-in fade-in-up rounded-2xl border border-(--border-color) bg-(--surface) p-6 shadow-sm duration-500">
-          <h2 className="text-lg font-semibold text-(--heading-color)">
-            Users
-          </h2>
-          <div className="overflow-x-auto mt-4">
-            <table className="w-full text-sm text-left">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-emerald-100 bg-emerald-50/60">
-                  <th className="py-3 px-4 text-xs uppercase tracking-wide text-(--heading-color)">
+                  <th className="py-4 px-6 text-left text-xs font-semibold uppercase tracking-wider text-emerald-900">
                     Name
                   </th>
-                  <th className="py-3 px-4 text-xs uppercase tracking-wide text-(--heading-color)">
+                  <th className="py-4 px-6 text-left text-xs font-semibold uppercase tracking-wider text-emerald-900">
                     Email
                   </th>
-                  <th className="py-3 px-4 text-xs uppercase tracking-wide text-(--heading-color)">
-                    Role
+                  <th className="py-4 px-6 text-left text-xs font-semibold uppercase tracking-wider text-emerald-900">
+                    Current Role
                   </th>
-                  <th className="py-3 px-4 text-xs uppercase tracking-wide text-(--heading-color)">
+                  <th className="py-4 px-6 text-left text-xs font-semibold uppercase tracking-wider text-emerald-900">
                     Change Role
                   </th>
-                  <th className="py-3 px-4 text-xs uppercase tracking-wide text-(--heading-color)">
-                    Actions
+                  <th className="py-4 px-6 text-left text-xs font-semibold uppercase tracking-wider text-emerald-900">
+                    Action
                   </th>
                 </tr>
               </thead>
               <tbody>
-                {users.map((user) => (
-                  <tr
-                    key={user.id}
-                    className="border-b border-emerald-50 transition-colors hover:bg-emerald-50/40"
-                  >
-                    <td className="py-3 px-4 text-(--text-color)">
-                      {user.name}
-                    </td>
-                    <td className="py-3 px-4 text-(--text-color)">
-                      {user.email}
-                    </td>
-                    <td className="py-3 px-4">
-                      <span
-                        className={`inline-block px-2 py-1 rounded text-xs font-medium ${
-                          user.role === "super_admin"
-                            ? "border border-emerald-300 bg-emerald-100 text-emerald-800"
-                            : "border border-slate-300 bg-slate-100 text-slate-700"
-                        }`}
-                      >
-                        {user.role === "super_admin" ? "Super Admin" : "Admin"}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4">
-                      <select
-                        value={user.role}
-                        onChange={(e) =>
-                          onRoleChange(user.id, e.target.value as UserRole)
-                        }
-                        disabled={user.id === currentUserId}
-                        className="rounded-lg border border-(--border-color) bg-(--surface-soft) px-3 py-2 text-(--text-color) transition-all disabled:cursor-not-allowed disabled:opacity-50 focus:border-(--primary-color) focus:outline-none focus:ring-2 focus:ring-(--primary-color)/20"
-                      >
-                        <option value="admin">Admin</option>
-                        <option value="super_admin">Super Admin</option>
-                      </select>
-                    </td>
-                    <td className="py-3 px-4">
-                      <AppButton
-                        onClick={() => onDeleteUser(user.id, user.name)}
-                        disabled={
-                          user.id === currentUserId || deleting === user.id
-                        }
-                        variant="dangerSoft"
-                        size="icon"
-                        className="h-9 w-9"
-                        title={
-                          user.id === currentUserId
-                            ? "Cannot delete your own account"
-                            : "Delete user account"
-                        }
-                      >
-                        <HiTrash className="w-5 h-5" />
-                      </AppButton>
+                {users.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="py-12 px-6 text-center">
+                      <p className="text-(--muted-color)">No users found</p>
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  users.map((user, idx) => (
+                    <tr
+                      key={user.id}
+                      className={`border-b border-emerald-50 transition-colors duration-200 ${
+                        idx % 2 === 0 ? "bg-white" : "bg-emerald-50/30"
+                      } hover:bg-emerald-100/40`}
+                    >
+                      <td className="py-4 px-6 font-medium text-(--text-color)">
+                        {user.name}
+                      </td>
+                      <td className="py-4 px-6 text-(--muted-color) break-all">
+                        {user.email}
+                      </td>
+                      <td className="py-4 px-6">
+                        <span
+                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${
+                            user.role === "super_admin"
+                              ? "border border-emerald-300 bg-emerald-100 text-emerald-800"
+                              : "border border-blue-300 bg-blue-100 text-blue-800"
+                          }`}
+                        >
+                          <div
+                            className={`w-1.5 h-1.5 rounded-full ${user.role === "super_admin" ? "bg-emerald-600" : "bg-blue-600"}`}
+                          ></div>
+                          {user.role === "super_admin"
+                            ? "Super Admin"
+                            : "Admin"}
+                        </span>
+                      </td>
+                      <td className="py-4 px-6">
+                        <select
+                          value={user.role}
+                          onChange={(e) =>
+                            onRoleChange(user.id, e.target.value as UserRole)
+                          }
+                          disabled={user.id === currentUserId}
+                          className="rounded-lg border border-emerald-200 bg-white px-3 py-2 text-sm text-(--text-color) transition-all disabled:cursor-not-allowed disabled:opacity-50 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                        >
+                          <option value="admin">Admin</option>
+                          <option value="super_admin">Super Admin</option>
+                        </select>
+                      </td>
+                      <td className="py-4 px-6">
+                        <AppButton
+                          onClick={() => onDeleteUser(user.id, user.name)}
+                          disabled={
+                            user.id === currentUserId || deleting === user.id
+                          }
+                          variant="dangerSoft"
+                          size="icon"
+                          className="h-9 w-9 hover:shadow-md transition-shadow"
+                          title={
+                            user.id === currentUserId
+                              ? "Cannot delete your own account"
+                              : "Delete user account"
+                          }
+                        >
+                          {deleting === user.id ? (
+                            <div className="h-4 w-4 animate-spin rounded-full border-2 border-red-200 border-t-red-600"></div>
+                          ) : (
+                            <HiTrash className="w-5 h-5" />
+                          )}
+                        </AppButton>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
+
           {message && (
-            <p className="mt-3 animate-in fade-in rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700 duration-300">
-              {message}
-            </p>
+            <div className="p-6 border-t border-emerald-100 animate-in fade-in">
+              <div className="flex items-start gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3">
+                <div className="mt-0.5 w-2 h-2 rounded-full bg-emerald-600 flex-shrink-0"></div>
+                <span className="text-sm text-emerald-800">{message}</span>
+              </div>
+            </div>
           )}
         </div>
       </div>
