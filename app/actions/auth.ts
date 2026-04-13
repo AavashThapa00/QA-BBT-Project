@@ -307,7 +307,7 @@ export async function requestPasswordResetAction(formData: FormData) {
   }
 
   const genericMessage =
-    "If an account exists, a reset link has been generated. Use the link below.";
+    "If an account with that email exists, a password reset link has been sent. Please check your email.";
 
   try {
     const users = (await mongoCollections.users()) as unknown as Collection<{

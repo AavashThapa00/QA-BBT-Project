@@ -38,30 +38,36 @@ export async function sendPasswordResetEmail(params: {
   await transport.sendMail({
     from: env.SMTP_FROM,
     to: params.to,
-    subject: "Reset your QA-BBT password",
+    subject: "Reset your IssueFixu password",
     html: `
-      <div style="font-family: Arial, sans-serif; background: #0f172a; color: #e2e8f0; padding: 24px;">
-        <h2 style="margin: 0 0 12px; color: #93c5fd;">Reset Your Password</h2>
-        <p style="line-height: 1.6; margin: 0 0 16px;">
-          We received a request to reset your password for QA-BBT.
-        </p>
-        <p style="line-height: 1.6; margin: 0 0 20px;">
-          Click the button below to set a new password. This link expires in 30 minutes.
-        </p>
-        <p style="margin: 0 0 20px;">
-          <a href="${params.resetLink}" style="display: inline-block; background: linear-gradient(90deg, #2563eb, #7c3aed); color: #ffffff; text-decoration: none; padding: 10px 16px; border-radius: 8px; font-weight: 600;">
-            Reset Password
-          </a>
-        </p>
-        <p style="font-size: 12px; color: #94a3b8; line-height: 1.6; margin: 0;">
-          If you did not request this, you can safely ignore this email.
-        </p>
-        <p style="font-size: 12px; color: #94a3b8; line-height: 1.6; margin: 8px 0 0; word-break: break-all;">
-          ${params.resetLink}
-        </p>
+      <div style="font-family: 'Poppins', 'Segoe UI', Arial, sans-serif; background: #f5f7f6; padding: 24px; color: #333333;">
+        <div style="max-width: 560px; margin: 0 auto; background: #ffffff; border: 1px solid #e0e0e0; border-radius: 16px; overflow: hidden; box-shadow: 0 12px 28px rgba(27, 94, 32, 0.08);">
+          <div style="height: 6px; background: linear-gradient(90deg, #4caf50, #a5d6a7);"></div>
+          <div style="padding: 24px;">
+            <p style="margin: 0 0 8px; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: #757575;">IssueFixu</p>
+            <h2 style="margin: 0 0 12px; color: #1b5e20; font-size: 24px; line-height: 1.3;">Reset your password</h2>
+            <p style="line-height: 1.65; margin: 0 0 14px; color: #333333;">
+              We received a request to reset your IssueFixu account password.
+            </p>
+            <p style="line-height: 1.65; margin: 0 0 20px; color: #333333;">
+              Use the button below to set a new password. This reset link expires in 30 minutes.
+            </p>
+            <p style="margin: 0 0 20px;">
+              <a href="${params.resetLink}" style="display: inline-block; background: #4caf50; color: #ffffff; text-decoration: none; padding: 11px 18px; border-radius: 10px; font-weight: 600;">
+                Reset Password
+              </a>
+            </p>
+            <p style="margin: 0; font-size: 12px; color: #757575; line-height: 1.6;">
+              If you did not request this, you can safely ignore this email.
+            </p>
+            <p style="font-size: 12px; color: #757575; line-height: 1.6; margin: 10px 0 0; word-break: break-all;">
+              ${params.resetLink}
+            </p>
+          </div>
+        </div>
       </div>
     `,
-    text: `Reset your QA-BBT password:\n\n${params.resetLink}\n\nThis link expires in 30 minutes.`,
+    text: `Reset your IssueFixu password:\n\n${params.resetLink}\n\nThis link expires in 30 minutes.`,
   });
 
   return { sent: true as const };

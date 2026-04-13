@@ -11,9 +11,35 @@ function SubmitButton() {
     <button
       type="submit"
       disabled={pending}
-      className="w-full cursor-pointer rounded-xl bg-(--primary-color) px-4 py-3 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(76,175,80,0.16)] transition-colors duration-200 hover:bg-(--primary-hover-color) disabled:cursor-not-allowed disabled:opacity-60"
+      className="relative w-full cursor-pointer rounded-xl bg-(--primary-color) px-4 py-3 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(76,175,80,0.16)] transition-colors duration-200 hover:bg-(--primary-hover-color) disabled:cursor-not-allowed disabled:opacity-60"
     >
-      {pending ? "Generating..." : "Generate reset link"}
+      <span className={pending ? "opacity-0" : "opacity-100"}>
+        Generate reset link
+      </span>
+      {pending && (
+        <span className="absolute inset-0 flex items-center justify-center gap-2">
+          <svg
+            className="h-4 w-4 animate-spin"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="3"
+              fill="none"
+            />
+            <path
+              className="opacity-90"
+              fill="currentColor"
+              d="M22 12a10 10 0 0 1-10 10v-3a7 7 0 0 0 7-7h3z"
+            />
+          </svg>
+        </span>
+      )}
     </button>
   );
 }

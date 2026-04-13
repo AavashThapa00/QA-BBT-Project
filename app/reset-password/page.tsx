@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import { Suspense, useActionState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useActionState, useEffect, useRef } from "react";
 import { useFormStatus } from "react-dom";
+import { toast } from "sonner";
 import { resetPasswordWithTokenAction } from "@/app/actions/auth";
 
 function SubmitButton() {
@@ -12,16 +13,44 @@ function SubmitButton() {
     <button
       type="submit"
       disabled={pending}
-      className="w-full cursor-pointer rounded-xl bg-(--primary-color) px-4 py-3 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(76,175,80,0.16)] transition-colors duration-200 hover:bg-(--primary-hover-color) disabled:cursor-not-allowed disabled:opacity-60"
+      className="relative w-full cursor-pointer rounded-xl bg-(--primary-color) px-4 py-3 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(76,175,80,0.16)] transition-colors duration-200 hover:bg-(--primary-hover-color) disabled:cursor-not-allowed disabled:opacity-60"
     >
-      {pending ? "Resetting..." : "Reset Password"}
+      <span className={pending ? "opacity-0" : "opacity-100"}>
+        Reset Password
+      </span>
+      {pending && (
+        <span className="absolute inset-0 flex items-center justify-center gap-2">
+          <svg
+            className="h-4 w-4 animate-spin"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="3"
+              fill="none"
+            />
+            <path
+              className="opacity-90"
+              fill="currentColor"
+              d="M22 12a10 10 0 0 1-10 10v-3a7 7 0 0 0 7-7h3z"
+            />
+          </svg>
+        </span>
+      )}
     </button>
   );
 }
 
 function ResetPasswordContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token") || "";
+  const lastToastKeyRef = useRef<string>("");
 
   const [state, formAction] = useActionState(
     async (
@@ -32,6 +61,30 @@ function ResetPasswordContent() {
     },
     null,
   );
+
+  useEffect(() => {
+    if (!state?.message) return;
+
+    const toastKey = `${state.success ? "success" : "error"}:${state.message}`;
+    if (lastToastKeyRef.current === toastKey) return;
+    lastToastKeyRef.current = toastKey;
+
+    if (state.success) {
+      toast.success(state.message);
+    } else {
+      toast.error(state.message);
+    }
+  }, [state]);
+
+  useEffect(() => {
+    if (!state?.success) return;
+
+    const timer = setTimeout(() => {
+      router.push("/login");
+    }, 1800);
+
+    return () => clearTimeout(timer);
+  }, [router, state?.success]);
 
   return (
     <div className="min-h-screen bg-(--page-background) px-6 py-10">
@@ -54,50 +107,48 @@ function ResetPasswordContent() {
               <form action={formAction} className="mt-6 space-y-4">
                 <input type="hidden" name="token" value={token} />
 
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-(--heading-color)">
-                    New password
-                  </label>
-                  <input
-                    name="password"
-                    type="password"
-                    minLength={8}
-                    required
-                    className="w-full rounded-xl border border-(--border-color) bg-(--surface-soft) px-3 py-2.5 text-(--text-color) shadow-sm transition-colors duration-200 focus:border-(--primary-color) focus:outline-none focus:ring-2 focus:ring-(--primary-color)/20"
-                  />
-                </div>
+                {!state?.success && (
+                  <>
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-(--heading-color)">
+                        New password
+                      </label>
+                      <input
+                        name="password"
+                        type="password"
+                        minLength={8}
+                        required
+                        className="w-full rounded-xl border border-(--border-color) bg-(--surface-soft) px-3 py-2.5 text-(--text-color) shadow-sm transition-colors duration-200 focus:border-(--primary-color) focus:outline-none focus:ring-2 focus:ring-(--primary-color)/20"
+                      />
+                    </div>
 
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-(--heading-color)">
-                    Confirm password
-                  </label>
-                  <input
-                    name="confirmPassword"
-                    type="password"
-                    minLength={8}
-                    required
-                    className="w-full rounded-xl border border-(--border-color) bg-(--surface-soft) px-3 py-2.5 text-(--text-color) shadow-sm transition-colors duration-200 focus:border-(--primary-color) focus:outline-none focus:ring-2 focus:ring-(--primary-color)/20"
-                  />
-                </div>
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-(--heading-color)">
+                        Confirm password
+                      </label>
+                      <input
+                        name="confirmPassword"
+                        type="password"
+                        minLength={8}
+                        required
+                        className="w-full rounded-xl border border-(--border-color) bg-(--surface-soft) px-3 py-2.5 text-(--text-color) shadow-sm transition-colors duration-200 focus:border-(--primary-color) focus:outline-none focus:ring-2 focus:ring-(--primary-color)/20"
+                      />
+                    </div>
 
-                {state?.message && (
-                  <div
-                    className={`rounded-xl border p-3 text-sm ${state.success ? "border-[rgba(76,175,80,0.18)] bg-[rgba(76,175,80,0.08)] text-(--heading-color)" : "border-[rgba(229,57,53,0.18)] bg-[rgba(229,57,53,0.08)] text-(--danger-color)"}`}
-                  >
-                    {state.message}
-                  </div>
+                    <SubmitButton />
+                  </>
                 )}
 
                 {state?.success && (
-                  <Link
-                    href="/login"
-                    className="block text-center text-sm font-medium text-(--heading-color) underline decoration-(--primary-color)/40 underline-offset-4 transition-colors hover:text-(--primary-color)"
-                  >
-                    Go to sign in
-                  </Link>
+                  <div className="rounded-xl border border-[rgba(76,175,80,0.24)] bg-[rgba(76,175,80,0.1)] p-4 text-center">
+                    <p className="text-sm font-semibold text-(--heading-color)">
+                      Password reset successful
+                    </p>
+                    <p className="mt-1 text-xs text-(--muted-color)">
+                      Redirecting you to sign in...
+                    </p>
+                  </div>
                 )}
-
-                <SubmitButton />
               </form>
             )}
 

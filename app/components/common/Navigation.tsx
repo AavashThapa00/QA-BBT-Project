@@ -115,7 +115,8 @@ export default function Navigation() {
     if (
       !mobileNavOpen ||
       pathname === "/login" ||
-      pathname === "/forgot-password"
+      pathname === "/forgot-password" ||
+      pathname === "/reset-password"
     )
       return;
 
@@ -128,7 +129,11 @@ export default function Navigation() {
   }, [mobileNavOpen]);
 
   // Keep auth screens distraction-free.
-  if (pathname === "/login" || pathname === "/forgot-password") {
+  if (
+    pathname === "/login" ||
+    pathname === "/forgot-password" ||
+    pathname === "/reset-password"
+  ) {
     return null;
   }
 
