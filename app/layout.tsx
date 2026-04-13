@@ -96,6 +96,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
+        suppressHydrationWarning
         className={`${poppins.className} ${geistMono.variable} antialiased`}
       >
         <NextTopLoader
