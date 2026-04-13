@@ -47,6 +47,7 @@ function BrandLogo() {
 export default function Navigation() {
   const pathname = usePathname();
   const [isAuthed, setIsAuthed] = useState(false);
+  const [isAuthResolved, setIsAuthResolved] = useState(false);
   const [authRole, setAuthRole] = useState<"super_admin" | "admin" | null>(
     null,
   );
@@ -57,23 +58,27 @@ export default function Navigation() {
 
   useEffect(() => {
     let mounted = true;
+    setIsAuthResolved(false);
+
     getCurrentUser()
       .then((user) => {
         if (!mounted) return;
         setIsAuthed(!!user);
         setAuthRole(user?.role ?? null);
         setUserName(user?.name ?? "");
+        setIsAuthResolved(true);
       })
       .catch(() => {
         if (!mounted) return;
         setIsAuthed(false);
         setAuthRole(null);
         setUserName("");
+        setIsAuthResolved(true);
       });
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [pathname]);
 
   useEffect(() => {
     const handleClick = (event: MouseEvent | TouchEvent) => {
@@ -187,7 +192,9 @@ export default function Navigation() {
                 })}
               </div>
 
-              {isAuthed ? (
+              {!isAuthResolved ? (
+                <div className="h-9 w-16 rounded-lg bg-[rgba(165,214,167,0.25)] animate-pulse" />
+              ) : isAuthed ? (
                 <div className="relative" ref={menuRef}>
                   <button
                     type="button"
@@ -258,7 +265,9 @@ export default function Navigation() {
 
             {/* Mobile Navigation Trigger */}
             <div className="flex lg:hidden items-center gap-1">
-              {isAuthed ? (
+              {!isAuthResolved ? (
+                <div className="h-9 w-9 rounded-full bg-[rgba(165,214,167,0.25)] animate-pulse" />
+              ) : isAuthed ? (
                 <Link
                   href="/profile"
                   className="flex items-center justify-center rounded-lg border border-transparent p-1 text-(--text-color) hover:border-(--border-color) hover:bg-slate-50 hover:text-(--heading-color)"
