@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   HiHome,
   HiChartBar,
@@ -16,6 +16,7 @@ import {
   HiMenu,
   HiX,
 } from "react-icons/hi";
+import { toast } from "sonner";
 import { getCurrentUser, logoutAction } from "@/app/actions/auth";
 
 interface NavItem {
@@ -45,6 +46,7 @@ function BrandLogo() {
 }
 
 export default function Navigation() {
+  const router = useRouter();
   const pathname = usePathname();
   const [isAuthed, setIsAuthed] = useState(false);
   const [isAuthResolved, setIsAuthResolved] = useState(false);
@@ -54,7 +56,31 @@ export default function Navigation() {
   const [userName, setUserName] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
+
+  const handleLogout = async () => {
+    if (isLoggingOut) return;
+
+    setIsLoggingOut(true);
+    setMenuOpen(false);
+    setMobileNavOpen(false);
+
+    try {
+      await toast.promise(logoutAction(), {
+        loading: "Logging out...",
+        success: (result) => result?.message || "Logged out successfully",
+        error: (error) => (error as Error)?.message || "Failed to log out",
+      });
+
+      router.push("/login");
+      router.refresh();
+    } catch (error) {
+      toast.error((error as Error)?.message || "Failed to log out");
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
 
   useEffect(() => {
     let mounted = true;
@@ -235,7 +261,8 @@ export default function Navigation() {
                       )}
                       <button
                         type="button"
-                        onClick={() => logoutAction()}
+                        onClick={handleLogout}
+                        disabled={isLoggingOut}
                         className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-(--text-color) hover:bg-rose-50"
                         role="menuitem"
                       >
@@ -385,7 +412,8 @@ export default function Navigation() {
 
                   <button
                     type="button"
-                    onClick={() => logoutAction()}
+                    onClick={handleLogout}
+                    disabled={isLoggingOut}
                     className="mt-2 flex w-full items-center gap-3 rounded-xl border border-(--border-color) px-3 py-3 text-left text-sm font-medium text-(--text-color) hover:bg-[rgba(229,57,53,0.09)]"
                   >
                     <HiLogout className="w-4 h-4" />

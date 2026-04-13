@@ -449,6 +449,7 @@ export async function logoutAction() {
     }
   } catch (error) {
     console.error("Error during logout:", error);
+    return { success: false, message: "Failed to log out" };
   }
 
   const cookieStore = await cookies();
@@ -460,7 +461,7 @@ export async function logoutAction() {
     path: "/",
   });
 
-  redirect("/login");
+  return { success: true, message: "Logged out successfully" };
 }
 
 export async function updateProfileAction(formData: FormData) {
