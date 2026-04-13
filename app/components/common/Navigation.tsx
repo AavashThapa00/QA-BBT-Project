@@ -143,31 +143,32 @@ export default function Navigation() {
 
   return (
     <nav className="sticky top-0 z-50 border-b border-(--border-color) bg-(--surface) shadow-sm">
-      <div className="w-full px-2 sm:px-4 lg:px-10 xl:px-12">
-        <div className="flex items-center justify-between min-h-16 py-2.5 gap-2 sm:gap-3">
-          {/* Logo/Title */}
-          <div className="shrink-0 min-w-0">
-            <Link
-              href="/"
-              className="group inline-flex items-center"
-              aria-label="Go to dashboard home"
-            >
-              <BrandLogo />
-            </Link>
-          </div>
+      <div className="w-full px-2 sm:px-4 lg:px-8">
+        <div className="mx-auto w-full max-w-screen-2xl">
+          <div className="flex items-center justify-between min-h-16 py-2.5 gap-2 sm:gap-3">
+            {/* Logo/Title */}
+            <div className="shrink-0 min-w-0">
+              <Link
+                href="/"
+                className="group inline-flex items-center"
+                aria-label="Go to dashboard home"
+              >
+                <BrandLogo />
+              </Link>
+            </div>
 
-          {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center gap-1 min-w-0">
-            <div className="flex items-center gap-1 overflow-x-auto no-scrollbar pr-1">
-              {navItems.map((item) => {
-                const Icon = item.icon;
-                const isActive = pathname === item.href;
+            {/* Desktop Navigation */}
+            <div className="hidden lg:flex items-center gap-1 min-w-0">
+              <div className="flex items-center gap-1 overflow-x-auto no-scrollbar pr-1">
+                {navItems.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = pathname === item.href;
 
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={`
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={`
                       flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap border
                       ${
                         isActive
@@ -175,69 +176,69 @@ export default function Navigation() {
                           : "text-(--text-color) border-transparent hover:bg-slate-50 hover:border-(--border-color) hover:text-(--heading-color)"
                       }
                     `}
-                  >
-                    <Icon className="w-4 h-4" />
-                    <span>{item.name}</span>
-                  </Link>
-                );
-              })}
-            </div>
-
-            {isAuthed ? (
-              <div className="relative" ref={menuRef}>
-                <button
-                  type="button"
-                  onClick={() => setMenuOpen((open) => !open)}
-                  className="flex items-center gap-2 rounded-lg border border-transparent px-2 py-1.5 text-sm font-medium text-(--text-color) transition-colors hover:border-(--border-color) hover:bg-slate-50 hover:text-(--heading-color)"
-                  aria-haspopup="menu"
-                  aria-expanded={menuOpen}
-                  aria-label="Open user menu"
-                >
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-(--primary-color) text-xs font-semibold text-white">
-                    {userInitials || "U"}
-                  </span>
-                </button>
-                {menuOpen && (
-                  <div
-                    role="menu"
-                    className="absolute right-0 mt-2 w-52 overflow-hidden rounded-lg border border-(--border-color) bg-(--surface) shadow-lg"
-                  >
-                    <Link
-                      href="/profile"
-                      className="flex items-center gap-2 px-4 py-2.5 text-sm text-(--text-color) hover:bg-slate-50"
-                      role="menuitem"
-                      onClick={() => setMenuOpen(false)}
                     >
-                      <HiUserCircle className="w-4 h-4" />
-                      Profile
+                      <Icon className="w-4 h-4" />
+                      <span>{item.name}</span>
                     </Link>
-                    {authRole === "super_admin" && (
+                  );
+                })}
+              </div>
+
+              {isAuthed ? (
+                <div className="relative" ref={menuRef}>
+                  <button
+                    type="button"
+                    onClick={() => setMenuOpen((open) => !open)}
+                    className="flex items-center gap-2 rounded-lg border border-transparent px-2 py-1.5 text-sm font-medium text-(--text-color) transition-colors hover:border-(--border-color) hover:bg-slate-50 hover:text-(--heading-color)"
+                    aria-haspopup="menu"
+                    aria-expanded={menuOpen}
+                    aria-label="Open user menu"
+                  >
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-(--primary-color) text-xs font-semibold text-white">
+                      {userInitials || "U"}
+                    </span>
+                  </button>
+                  {menuOpen && (
+                    <div
+                      role="menu"
+                      className="absolute right-0 mt-2 w-52 overflow-hidden rounded-lg border border-(--border-color) bg-(--surface) shadow-lg"
+                    >
                       <Link
-                        href="/super-admin"
+                        href="/profile"
                         className="flex items-center gap-2 px-4 py-2.5 text-sm text-(--text-color) hover:bg-slate-50"
                         role="menuitem"
                         onClick={() => setMenuOpen(false)}
                       >
-                        <HiPlus className="w-4 h-4" />
-                        Add Admin
+                        <HiUserCircle className="w-4 h-4" />
+                        Profile
                       </Link>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => logoutAction()}
-                      className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-(--text-color) hover:bg-rose-50"
-                      role="menuitem"
-                    >
-                      <HiLogout className="w-4 h-4" />
-                      Logout
-                    </button>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <Link
-                href="/login"
-                className={`
+                      {authRole === "super_admin" && (
+                        <Link
+                          href="/super-admin"
+                          className="flex items-center gap-2 px-4 py-2.5 text-sm text-(--text-color) hover:bg-slate-50"
+                          role="menuitem"
+                          onClick={() => setMenuOpen(false)}
+                        >
+                          <HiPlus className="w-4 h-4" />
+                          Add Admin
+                        </Link>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => logoutAction()}
+                        className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-(--text-color) hover:bg-rose-50"
+                        role="menuitem"
+                      >
+                        <HiLogout className="w-4 h-4" />
+                        Logout
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <Link
+                  href="/login"
+                  className={`
                   flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors border
                   ${
                     pathname === "/login"
@@ -245,51 +246,54 @@ export default function Navigation() {
                       : "text-(--text-color) border-transparent hover:bg-slate-50 hover:border-(--border-color) hover:text-(--heading-color)"
                   }
                 `}
-              >
-                <HiUserCircle className="w-4 h-4" />
-                <span>Login</span>
-              </Link>
-            )}
-          </div>
-
-          {/* Mobile Navigation Trigger */}
-          <div className="flex lg:hidden items-center gap-1">
-            {isAuthed ? (
-              <Link
-                href="/profile"
-                className="flex items-center justify-center rounded-lg border border-transparent p-1 text-(--text-color) hover:border-(--border-color) hover:bg-slate-50 hover:text-(--heading-color)"
-                aria-label="Open profile"
-              >
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-(--primary-color) text-xs font-semibold text-white">
-                  {userInitials || "U"}
-                </span>
-              </Link>
-            ) : (
-              <Link
-                href="/login"
-                className="flex items-center justify-center rounded-lg border border-transparent p-2 text-(--text-color) hover:border-(--border-color) hover:bg-slate-50 hover:text-(--heading-color)"
-                aria-label="Open login"
-              >
-                <HiUserCircle className="w-5 h-5" />
-              </Link>
-            )}
-
-            <button
-              type="button"
-              onClick={() => setMobileNavOpen((open) => !open)}
-              className="flex items-center justify-center rounded-lg border border-transparent p-2 text-(--text-color) hover:border-(--border-color) hover:bg-slate-50 hover:text-(--heading-color)"
-              aria-label={
-                mobileNavOpen ? "Close navigation menu" : "Open navigation menu"
-              }
-              aria-expanded={mobileNavOpen}
-              aria-controls="mobile-navigation-panel"
-            >
-              {mobileNavOpen ? (
-                <HiX className="w-5 h-5" />
-              ) : (
-                <HiMenu className="w-5 h-5" />
+                >
+                  <HiUserCircle className="w-4 h-4" />
+                  <span>Login</span>
+                </Link>
               )}
-            </button>
+            </div>
+
+            {/* Mobile Navigation Trigger */}
+            <div className="flex lg:hidden items-center gap-1">
+              {isAuthed ? (
+                <Link
+                  href="/profile"
+                  className="flex items-center justify-center rounded-lg border border-transparent p-1 text-(--text-color) hover:border-(--border-color) hover:bg-slate-50 hover:text-(--heading-color)"
+                  aria-label="Open profile"
+                >
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-(--primary-color) text-xs font-semibold text-white">
+                    {userInitials || "U"}
+                  </span>
+                </Link>
+              ) : (
+                <Link
+                  href="/login"
+                  className="flex items-center justify-center rounded-lg border border-transparent p-2 text-(--text-color) hover:border-(--border-color) hover:bg-slate-50 hover:text-(--heading-color)"
+                  aria-label="Open login"
+                >
+                  <HiUserCircle className="w-5 h-5" />
+                </Link>
+              )}
+
+              <button
+                type="button"
+                onClick={() => setMobileNavOpen((open) => !open)}
+                className="flex items-center justify-center rounded-lg border border-transparent p-2 text-(--text-color) hover:border-(--border-color) hover:bg-slate-50 hover:text-(--heading-color)"
+                aria-label={
+                  mobileNavOpen
+                    ? "Close navigation menu"
+                    : "Open navigation menu"
+                }
+                aria-expanded={mobileNavOpen}
+                aria-controls="mobile-navigation-panel"
+              >
+                {mobileNavOpen ? (
+                  <HiX className="w-5 h-5" />
+                ) : (
+                  <HiMenu className="w-5 h-5" />
+                )}
+              </button>
+            </div>
           </div>
         </div>
       </div>

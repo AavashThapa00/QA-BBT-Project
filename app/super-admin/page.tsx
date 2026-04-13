@@ -107,10 +107,10 @@ export default function SuperAdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-(--page-background) p-4 sm:p-6 lg:p-8">
-      <div className="relative mx-auto w-full max-w-5xl space-y-8">
-        {/* Header Section */}
-        <div className="animate-in fade-in duration-500">
+    <div className="min-h-screen bg-(--page-background)">
+      {/* Header - Constrained Width */}
+      <div className="w-full px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 pb-8 animate-in fade-in duration-500">
+        <div className="mx-auto w-full max-w-screen-2xl">
           <Link
             href="/"
             className="group mb-6 inline-flex items-center gap-2 text-sm text-(--muted-color) transition-all duration-300 hover:translate-x-1 hover:text-(--primary-color)"
@@ -144,228 +144,233 @@ export default function SuperAdminPage() {
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Create Admin Form */}
-        <div className="animate-in fade-in-up rounded-2xl border border-emerald-100 bg-(--surface) p-8 shadow-md duration-500 hover:shadow-lg transition-shadow">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="p-2 rounded-lg bg-emerald-100">
-              <HiPlusCircle className="w-5 h-5 text-emerald-700" />
-            </div>
-            <h2 className="text-xl font-bold text-(--heading-color)">
-              Create New Admin
-            </h2>
-          </div>
-
-          <form action={onCreateUser} className="space-y-5">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-(--text-color)">
-                  Full Name
-                </label>
-                <input
-                  name="name"
-                  placeholder="Enter full name"
-                  className="w-full rounded-lg border border-(--border-color) bg-(--surface-soft) px-4 py-3 text-(--text-color) placeholder:text-gray-400 transition-all focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-(--text-color)">
-                  Email Address
-                </label>
-                <input
-                  name="email"
-                  type="email"
-                  placeholder="Enter email address"
-                  className="w-full rounded-lg border border-(--border-color) bg-(--surface-soft) px-4 py-3 text-(--text-color) placeholder:text-gray-400 transition-all focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-(--text-color)">
-                  Phone Number
-                </label>
-                <input
-                  name="phone"
-                  placeholder="Enter phone number"
-                  className="w-full rounded-lg border border-(--border-color) bg-(--surface-soft) px-4 py-3 text-(--text-color) placeholder:text-gray-400 transition-all focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-(--text-color)">
-                  Password
-                </label>
-                <input
-                  name="password"
-                  type="password"
-                  placeholder="Enter password"
-                  className="w-full rounded-lg border border-(--border-color) bg-(--surface-soft) px-4 py-3 text-(--text-color) placeholder:text-gray-400 transition-all focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-(--text-color)">
-                User Role
-              </label>
-              <select
-                name="role"
-                className="w-full rounded-lg border border-(--border-color) bg-(--surface-soft) px-4 py-3 text-(--text-color) transition-all focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 cursor-pointer"
-              >
-                <option value="admin">Admin</option>
-                <option value="super_admin">Super Admin</option>
-              </select>
-            </div>
-
-            <div className="pt-3">
-              <AppButton
-                type="submit"
-                variant="primary"
-                className="w-full md:w-auto px-6 py-3 font-medium"
-              >
-                Create Admin Account
-              </AppButton>
-            </div>
-          </form>
-
-          {createMessage && (
-            <div className="mt-5 animate-in fade-in rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 shadow-sm">
-              <div className="flex items-start gap-2">
-                <div className="mt-0.5 w-2 h-2 rounded-full bg-emerald-600 flex-shrink-0"></div>
-                <span>{createMessage}</span>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Users List */}
-        <div className="animate-in fade-in-up rounded-2xl border border-emerald-100 bg-(--surface) shadow-md duration-500 overflow-hidden hover:shadow-lg transition-shadow">
-          <div className="p-8 border-b border-emerald-100 bg-gradient-to-r from-emerald-50/50 to-teal-50/50">
-            <div className="flex items-center gap-3">
+      {/* Main Content - Constrained Width */}
+      <div className="w-full px-4 sm:px-6 lg:px-8 pb-8">
+        <div className="relative mx-auto w-full max-w-screen-2xl space-y-8">
+          {/* Create Admin Form */}
+          <div className="animate-in fade-in-up rounded-2xl border border-emerald-100 bg-(--surface) p-8 shadow-md duration-500 hover:shadow-lg transition-shadow">
+            <div className="flex items-center gap-3 mb-6">
               <div className="p-2 rounded-lg bg-emerald-100">
-                <HiUsers className="w-5 h-5 text-emerald-700" />
+                <HiPlusCircle className="w-5 h-5 text-emerald-700" />
               </div>
-              <div>
-                <h2 className="text-xl font-bold text-(--heading-color)">
-                  Admin Users
-                </h2>
-                <p className="text-sm text-(--muted-color) mt-1">
-                  {users.length} {users.length === 1 ? "admin" : "admins"} in
-                  the system
-                </p>
-              </div>
+              <h2 className="text-xl font-bold text-(--heading-color)">
+                Create New Admin
+              </h2>
             </div>
+
+            <form action={onCreateUser} className="space-y-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-(--text-color)">
+                    Full Name
+                  </label>
+                  <input
+                    name="name"
+                    placeholder="Enter full name"
+                    className="w-full rounded-lg border border-(--border-color) bg-(--surface-soft) px-4 py-3 text-(--text-color) placeholder:text-gray-400 transition-all focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-(--text-color)">
+                    Email Address
+                  </label>
+                  <input
+                    name="email"
+                    type="email"
+                    placeholder="Enter email address"
+                    className="w-full rounded-lg border border-(--border-color) bg-(--surface-soft) px-4 py-3 text-(--text-color) placeholder:text-gray-400 transition-all focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-(--text-color)">
+                    Phone Number
+                  </label>
+                  <input
+                    name="phone"
+                    placeholder="Enter phone number"
+                    className="w-full rounded-lg border border-(--border-color) bg-(--surface-soft) px-4 py-3 text-(--text-color) placeholder:text-gray-400 transition-all focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-(--text-color)">
+                    Password
+                  </label>
+                  <input
+                    name="password"
+                    type="password"
+                    placeholder="Enter password"
+                    className="w-full rounded-lg border border-(--border-color) bg-(--surface-soft) px-4 py-3 text-(--text-color) placeholder:text-gray-400 transition-all focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-(--text-color)">
+                  User Role
+                </label>
+                <select
+                  name="role"
+                  className="w-full rounded-lg border border-(--border-color) bg-(--surface-soft) px-4 py-3 text-(--text-color) transition-all focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 cursor-pointer"
+                >
+                  <option value="admin">Admin</option>
+                  <option value="super_admin">Super Admin</option>
+                </select>
+              </div>
+
+              <div className="pt-3">
+                <AppButton
+                  type="submit"
+                  variant="primary"
+                  className="w-full md:w-auto px-6 py-3 font-medium"
+                >
+                  Create Admin Account
+                </AppButton>
+              </div>
+            </form>
+
+            {createMessage && (
+              <div className="mt-5 animate-in fade-in rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 shadow-sm">
+                <div className="flex items-start gap-2">
+                  <div className="mt-0.5 w-2 h-2 rounded-full bg-emerald-600 flex-shrink-0"></div>
+                  <span>{createMessage}</span>
+                </div>
+              </div>
+            )}
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-emerald-100 bg-emerald-50/60">
-                  <th className="py-4 px-6 text-left text-xs font-semibold uppercase tracking-wider text-emerald-900">
-                    Name
-                  </th>
-                  <th className="py-4 px-6 text-left text-xs font-semibold uppercase tracking-wider text-emerald-900">
-                    Email
-                  </th>
-                  <th className="py-4 px-6 text-left text-xs font-semibold uppercase tracking-wider text-emerald-900">
-                    Current Role
-                  </th>
-                  <th className="py-4 px-6 text-left text-xs font-semibold uppercase tracking-wider text-emerald-900">
-                    Change Role
-                  </th>
-                  <th className="py-4 px-6 text-left text-xs font-semibold uppercase tracking-wider text-emerald-900">
-                    Action
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="py-12 px-6 text-center">
-                      <p className="text-(--muted-color)">No users found</p>
-                    </td>
+          {/* Users List */}
+          <div className="animate-in fade-in-up rounded-2xl border border-emerald-100 bg-(--surface) shadow-md duration-500 overflow-hidden hover:shadow-lg transition-shadow">
+            <div className="p-8 border-b border-emerald-100 bg-gradient-to-r from-emerald-50/50 to-teal-50/50">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-emerald-100">
+                  <HiUsers className="w-5 h-5 text-emerald-700" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-(--heading-color)">
+                    Admin Users
+                  </h2>
+                  <p className="text-sm text-(--muted-color) mt-1">
+                    {users.length} {users.length === 1 ? "admin" : "admins"} in
+                    the system
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-emerald-100 bg-emerald-50/60">
+                    <th className="py-4 px-6 text-left text-xs font-semibold uppercase tracking-wider text-emerald-900">
+                      Name
+                    </th>
+                    <th className="py-4 px-6 text-left text-xs font-semibold uppercase tracking-wider text-emerald-900">
+                      Email
+                    </th>
+                    <th className="py-4 px-6 text-left text-xs font-semibold uppercase tracking-wider text-emerald-900">
+                      Current Role
+                    </th>
+                    <th className="py-4 px-6 text-left text-xs font-semibold uppercase tracking-wider text-emerald-900">
+                      Change Role
+                    </th>
+                    <th className="py-4 px-6 text-left text-xs font-semibold uppercase tracking-wider text-emerald-900">
+                      Action
+                    </th>
                   </tr>
-                ) : (
-                  users.map((user, idx) => (
-                    <tr
-                      key={user.id}
-                      className={`border-b border-emerald-50 transition-colors duration-200 ${
-                        idx % 2 === 0 ? "bg-white" : "bg-emerald-50/30"
-                      } hover:bg-emerald-100/40`}
-                    >
-                      <td className="py-4 px-6 font-medium text-(--text-color)">
-                        {user.name}
-                      </td>
-                      <td className="py-4 px-6 text-(--muted-color) break-all">
-                        {user.email}
-                      </td>
-                      <td className="py-4 px-6">
-                        <span
-                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${
-                            user.role === "super_admin"
-                              ? "border border-emerald-300 bg-emerald-100 text-emerald-800"
-                              : "border border-blue-300 bg-blue-100 text-blue-800"
-                          }`}
-                        >
-                          <div
-                            className={`w-1.5 h-1.5 rounded-full ${user.role === "super_admin" ? "bg-emerald-600" : "bg-blue-600"}`}
-                          ></div>
-                          {user.role === "super_admin"
-                            ? "Super Admin"
-                            : "Admin"}
-                        </span>
-                      </td>
-                      <td className="py-4 px-6">
-                        <select
-                          value={user.role}
-                          onChange={(e) =>
-                            onRoleChange(user.id, e.target.value as UserRole)
-                          }
-                          disabled={user.id === currentUserId}
-                          className="rounded-lg border border-emerald-200 bg-white px-3 py-2 text-sm text-(--text-color) transition-all disabled:cursor-not-allowed disabled:opacity-50 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
-                        >
-                          <option value="admin">Admin</option>
-                          <option value="super_admin">Super Admin</option>
-                        </select>
-                      </td>
-                      <td className="py-4 px-6">
-                        <AppButton
-                          onClick={() => onDeleteUser(user.id, user.name)}
-                          disabled={
-                            user.id === currentUserId || deleting === user.id
-                          }
-                          variant="dangerSoft"
-                          size="icon"
-                          className="h-9 w-9 hover:shadow-md transition-shadow"
-                          title={
-                            user.id === currentUserId
-                              ? "Cannot delete your own account"
-                              : "Delete user account"
-                          }
-                        >
-                          {deleting === user.id ? (
-                            <div className="h-4 w-4 animate-spin rounded-full border-2 border-red-200 border-t-red-600"></div>
-                          ) : (
-                            <HiTrash className="w-5 h-5" />
-                          )}
-                        </AppButton>
+                </thead>
+                <tbody>
+                  {users.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="py-12 px-6 text-center">
+                        <p className="text-(--muted-color)">No users found</p>
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {message && (
-            <div className="p-6 border-t border-emerald-100 animate-in fade-in">
-              <div className="flex items-start gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3">
-                <div className="mt-0.5 w-2 h-2 rounded-full bg-emerald-600 flex-shrink-0"></div>
-                <span className="text-sm text-emerald-800">{message}</span>
-              </div>
+                  ) : (
+                    users.map((user, idx) => (
+                      <tr
+                        key={user.id}
+                        className={`border-b border-emerald-50 transition-colors duration-200 ${
+                          idx % 2 === 0 ? "bg-white" : "bg-emerald-50/30"
+                        } hover:bg-emerald-100/40`}
+                      >
+                        <td className="py-4 px-6 font-medium text-(--text-color)">
+                          {user.name}
+                        </td>
+                        <td className="py-4 px-6 text-(--muted-color) break-all">
+                          {user.email}
+                        </td>
+                        <td className="py-4 px-6">
+                          <span
+                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${
+                              user.role === "super_admin"
+                                ? "border border-emerald-300 bg-emerald-100 text-emerald-800"
+                                : "border border-blue-300 bg-blue-100 text-blue-800"
+                            }`}
+                          >
+                            <div
+                              className={`w-1.5 h-1.5 rounded-full ${user.role === "super_admin" ? "bg-emerald-600" : "bg-blue-600"}`}
+                            ></div>
+                            {user.role === "super_admin"
+                              ? "Super Admin"
+                              : "Admin"}
+                          </span>
+                        </td>
+                        <td className="py-4 px-6">
+                          <select
+                            value={user.role}
+                            onChange={(e) =>
+                              onRoleChange(user.id, e.target.value as UserRole)
+                            }
+                            disabled={user.id === currentUserId}
+                            className="rounded-lg border border-emerald-200 bg-white px-3 py-2 text-sm text-(--text-color) transition-all disabled:cursor-not-allowed disabled:opacity-50 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                          >
+                            <option value="admin">Admin</option>
+                            <option value="super_admin">Super Admin</option>
+                          </select>
+                        </td>
+                        <td className="py-4 px-6">
+                          <AppButton
+                            onClick={() => onDeleteUser(user.id, user.name)}
+                            disabled={
+                              user.id === currentUserId || deleting === user.id
+                            }
+                            variant="dangerSoft"
+                            size="icon"
+                            className="h-9 w-9 hover:shadow-md transition-shadow"
+                            title={
+                              user.id === currentUserId
+                                ? "Cannot delete your own account"
+                                : "Delete user account"
+                            }
+                          >
+                            {deleting === user.id ? (
+                              <div className="h-4 w-4 animate-spin rounded-full border-2 border-red-200 border-t-red-600"></div>
+                            ) : (
+                              <HiTrash className="w-5 h-5" />
+                            )}
+                          </AppButton>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
             </div>
-          )}
+
+            {message && (
+              <div className="p-6 border-t border-emerald-100 animate-in fade-in">
+                <div className="flex items-start gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3">
+                  <div className="mt-0.5 w-2 h-2 rounded-full bg-emerald-600 flex-shrink-0"></div>
+                  <span className="text-sm text-emerald-800">{message}</span>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
