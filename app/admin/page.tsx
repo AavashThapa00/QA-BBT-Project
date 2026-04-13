@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { HiArrowLeft } from "react-icons/hi";
+import { toast } from "sonner";
 import AppButton from "@/app/components/common/AppButton";
 import { getCurrentUser } from "@/app/actions/auth";
 import {
@@ -25,7 +26,6 @@ export default function AdminPage() {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [authRole, setAuthRole] = useState<UserRole | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
 
   const loadUsers = async () => {
     setLoading(true);
@@ -53,8 +53,13 @@ export default function AdminPage() {
 
   const onCreateUser = async (formData: FormData) => {
     const result = await createUserAdminAction(formData);
-    setMessage(result.message);
-    await loadUsers();
+    if (result.success) {
+      toast.success(result.message || "Admin created successfully");
+      await loadUsers();
+      return;
+    }
+
+    toast.error(result.message || "Failed to create admin");
   };
 
   const onResetPassword = async (userId: string) => {
@@ -64,7 +69,13 @@ export default function AdminPage() {
     formData.set("userId", userId);
     formData.set("newPassword", newPassword);
     const result = await resetUserPasswordAction(formData);
-    setMessage(result.message);
+
+    if (result.success) {
+      toast.success(result.message || "Password reset successfully");
+      return;
+    }
+
+    toast.error(result.message || "Failed to reset password");
   };
 
   if (loading) {
@@ -150,11 +161,6 @@ export default function AdminPage() {
                 Create Admin
               </AppButton>
             </form>
-            {message && (
-              <p className="mt-3 animate-in fade-in rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700 duration-300">
-                {message}
-              </p>
-            )}
           </div>
         ) : (
           <div className="animate-in fade-in-up rounded-2xl border border-(--border-color) bg-(--surface) p-6 shadow-sm duration-500">

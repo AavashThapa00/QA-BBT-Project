@@ -9,6 +9,7 @@ import {
   HiPlusCircle,
   HiUsers,
 } from "react-icons/hi";
+import { toast } from "sonner";
 import AppButton from "@/app/components/common/AppButton";
 import { getCurrentUser } from "@/app/actions/auth";
 import {
@@ -31,8 +32,6 @@ interface AdminUser {
 export default function SuperAdminPage() {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
-  const [message, setMessage] = useState<string | null>(null);
-  const [createMessage, setCreateMessage] = useState<string | null>(null);
   const [authRole, setAuthRole] = useState<UserRole | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
@@ -67,14 +66,23 @@ export default function SuperAdminPage() {
     formData.set("userId", userId);
     formData.set("role", role);
     const result = await updateUserRoleAction(formData);
-    setMessage(result.message);
+    if (result.success) {
+      toast.success(result.message || "Role updated successfully");
+    } else {
+      toast.error(result.message || "Failed to update role");
+    }
     await loadUsers();
   };
 
   const onCreateUser = async (formData: FormData) => {
     const result = await createUserAdminAction(formData);
-    setCreateMessage(result.message);
-    await loadUsers();
+    if (result.success) {
+      toast.success(result.message || "Admin created successfully");
+      await loadUsers();
+      return;
+    }
+
+    toast.error(result.message || "Failed to create admin");
   };
 
   const onDeleteUser = async (userId: string, userName: string) => {
@@ -89,11 +97,15 @@ export default function SuperAdminPage() {
     const formData = new FormData();
     formData.set("userId", userId);
     const result = await deleteUserAction(formData);
-    setMessage(result.message);
     setDeleting(null);
+
     if (result.success) {
+      toast.success(result.message || "User deleted successfully");
       await loadUsers();
+      return;
     }
+
+    toast.error(result.message || "Failed to delete user");
   };
 
   if (loading) {
@@ -119,14 +131,14 @@ export default function SuperAdminPage() {
             <span className="font-medium">Back to Dashboard</span>
           </Link>
 
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-100 p-8 shadow-sm">
-            <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-96 h-96 bg-gradient-to-b from-emerald-200/20 to-transparent rounded-full blur-3xl"></div>
+          <div className="relative overflow-hidden rounded-2xl border border-emerald-100 bg-linear-to-r from-emerald-50 to-teal-50 p-8 shadow-sm">
+            <div className="absolute top-0 right-0 h-96 w-96 -translate-y-1/2 translate-x-1/2 rounded-full bg-linear-to-b from-emerald-200/20 to-transparent blur-3xl"></div>
             <div className="relative z-10">
               <div className="flex items-center gap-3 mb-3">
                 <div className="p-3 rounded-lg bg-emerald-100">
                   <HiShieldCheck className="w-6 h-6 text-emerald-700" />
                 </div>
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-emerald-700 to-teal-700 bg-clip-text text-transparent">
+                <h1 className="bg-linear-to-r from-emerald-700 to-teal-700 bg-clip-text text-4xl font-bold text-transparent">
                   Super Admin
                 </h1>
               </div>
@@ -232,20 +244,11 @@ export default function SuperAdminPage() {
                 </AppButton>
               </div>
             </form>
-
-            {createMessage && (
-              <div className="mt-5 animate-in fade-in rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 shadow-sm">
-                <div className="flex items-start gap-2">
-                  <div className="mt-0.5 w-2 h-2 rounded-full bg-emerald-600 flex-shrink-0"></div>
-                  <span>{createMessage}</span>
-                </div>
-              </div>
-            )}
           </div>
 
           {/* Users List */}
           <div className="animate-in fade-in-up rounded-2xl border border-emerald-100 bg-(--surface) shadow-md duration-500 overflow-hidden hover:shadow-lg transition-shadow">
-            <div className="p-8 border-b border-emerald-100 bg-gradient-to-r from-emerald-50/50 to-teal-50/50">
+            <div className="border-b border-emerald-100 bg-linear-to-r from-emerald-50/50 to-teal-50/50 p-8">
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-lg bg-emerald-100">
                   <HiUsers className="w-5 h-5 text-emerald-700" />
@@ -361,15 +364,6 @@ export default function SuperAdminPage() {
                 </tbody>
               </table>
             </div>
-
-            {message && (
-              <div className="p-6 border-t border-emerald-100 animate-in fade-in">
-                <div className="flex items-start gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3">
-                  <div className="mt-0.5 w-2 h-2 rounded-full bg-emerald-600 flex-shrink-0"></div>
-                  <span className="text-sm text-emerald-800">{message}</span>
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </div>

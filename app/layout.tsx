@@ -3,6 +3,7 @@ import { Geist_Mono, Poppins } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 import Navigation from "./components/common/Navigation";
+import AppToaster from "./components/common/AppToaster";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -112,6 +113,7 @@ export default function RootLayout({
           })}
         </Script>
         <Navigation />
+        <AppToaster />
         {children}
       </body>
     </html>

@@ -2,8 +2,8 @@
 
 import React, { useState, useRef } from "react";
 import { HiXCircle, HiClipboardList } from "react-icons/hi";
+import { toast } from "sonner";
 import { uploadCSV, UploadResult } from "@/app/actions/csv";
-import Toast from "@/app/components/common/Toast";
 
 interface CSVUploadProps {
   onUploadSuccess?: (result: UploadResult) => void;
@@ -18,7 +18,6 @@ export default function CSVUpload({
   const [publicImportLoading, setPublicImportLoading] = useState(false);
   const [publicCsvFileName, setPublicCsvFileName] = useState("");
   const [result, setResult] = useState<UploadResult | null>(null);
-  const [showToast, setShowToast] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const processCsvUpload = async (csvText: string, sourceName: string) => {
@@ -27,9 +26,10 @@ export default function CSVUpload({
 
     if (uploadResult.success) {
       onUploadSuccess?.(uploadResult);
-      setShowToast(true);
+      toast.success("Successfully uploaded the CSV file");
     } else {
       onUploadError?.(uploadResult.message);
+      toast.error(uploadResult.message || "CSV upload failed");
     }
   };
 
@@ -42,6 +42,7 @@ export default function CSVUpload({
     if (!file.name.endsWith(".csv")) {
       const error = "Please upload a CSV file";
       onUploadError?.(error);
+      toast.error(error);
       setResult(null);
       return;
     }
@@ -55,6 +56,7 @@ export default function CSVUpload({
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error occurred";
       onUploadError?.(errorMessage);
+      toast.error(errorMessage);
       setResult(null);
     } finally {
       setIsLoading(false);
@@ -67,7 +69,9 @@ export default function CSVUpload({
   const handleImportFromPublic = async () => {
     const trimmedFileName = publicCsvFileName.trim();
     if (!trimmedFileName || !trimmedFileName.toLowerCase().endsWith(".csv")) {
-      onUploadError?.("Please enter a valid CSV file name from public/");
+      const errorMessage = "Please enter a valid CSV file name from public/";
+      onUploadError?.(errorMessage);
+      toast.error(errorMessage);
       return;
     }
 
@@ -88,6 +92,7 @@ export default function CSVUpload({
       const errorMessage =
         error instanceof Error ? error.message : "Failed to import CSV";
       onUploadError?.(errorMessage);
+      toast.error(errorMessage);
       setResult(null);
     } finally {
       setPublicImportLoading(false);
@@ -175,15 +180,6 @@ export default function CSVUpload({
             Processing CSV...
           </span>
         </div>
-      )}
-
-      {showToast && result?.success && (
-        <Toast
-          message="Successfully Uploaded the CSV File"
-          type="success"
-          duration={3000}
-          onClose={() => setShowToast(false)}
-        />
       )}
 
       {result && result.success && result.errors.length > 0 && (
