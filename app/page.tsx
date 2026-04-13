@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import ExportDefectsPanel from "@/app/components/exports/ExportDefectsPanel";
@@ -9,6 +9,7 @@ import {
   HiClipboardList,
   HiChartBar,
   HiExclamationCircle,
+  HiFilter,
 } from "react-icons/hi";
 import MetricsCard from "@/app/components/dashboard/MetricsCard";
 import FilterPanel from "@/app/components/filters/FilterPanel";
@@ -61,6 +62,7 @@ interface DashboardState {
   defectsTrend: DefectTrend[];
   defects: Defect[];
   averageResolutionTime: number;
+  totalRecords: number;
   currentPage: number;
   totalPages: number;
   isLoading: boolean;
@@ -72,6 +74,10 @@ interface DashboardState {
 export default function Home() {
   const router = useRouter();
   const [filters, setFilters] = useState<DefectFilters>({});
+  const [metricQuickFilter, setMetricQuickFilter] = useState<{
+    label: string;
+    filters: DefectFilters;
+  } | null>(null);
   const [state, setState] = useState<DashboardState>({
     metrics: null,
     defectsByModule: [],
@@ -79,6 +85,7 @@ export default function Home() {
     defectsTrend: [],
     defects: [],
     averageResolutionTime: 0,
+    totalRecords: 0,
     currentPage: 1,
     totalPages: 1,
     isLoading: true,
@@ -90,6 +97,14 @@ export default function Home() {
   const [isExportPanelOpen, setIsExportPanelOpen] = useState(false);
   const [moduleSeverityLoaded, setModuleSeverityLoaded] = useState(false);
   const defectsTableRef = React.useRef<HTMLDivElement>(null);
+
+  const tableFilters = useMemo(
+    () =>
+      metricQuickFilter
+        ? { ...filters, ...metricQuickFilter.filters }
+        : filters,
+    [filters, metricQuickFilter],
+  );
 
   const loadStaticChartData = useCallback(async () => {
     try {
@@ -135,6 +150,7 @@ export default function Home() {
           metrics: metricsData,
           defectsTrend: trendData,
           defects: defectsResponse.defects,
+          totalRecords: defectsResponse.total,
           currentPage: defectsResponse.page,
           totalPages: defectsResponse.totalPages,
           averageResolutionTime: avgResolutionTime,
@@ -162,10 +178,11 @@ export default function Home() {
       pageNum = 1,
       sortBy: "date" | "severity" | "status" = state.sortBy || "date",
       sortOrder: "asc" | "desc" = state.sortOrder || "desc",
+      activeFilters: DefectFilters = tableFilters,
     ) => {
       setTableLoading(true);
       try {
-        const defectsResponse = await getDefects(filters, {
+        const defectsResponse = await getDefects(activeFilters, {
           page: pageNum,
           pageSize: 10,
           sortBy,
@@ -175,6 +192,7 @@ export default function Home() {
         setState((prev) => ({
           ...prev,
           defects: defectsResponse.defects,
+          totalRecords: defectsResponse.total,
           currentPage: defectsResponse.page,
           totalPages: defectsResponse.totalPages,
         }));
@@ -184,7 +202,7 @@ export default function Home() {
         setTableLoading(false);
       }
     },
-    [filters, state.sortBy, state.sortOrder],
+    [tableFilters, state.sortBy, state.sortOrder],
   );
 
   const handlePageChange = (newPage: number) => {
@@ -218,31 +236,99 @@ export default function Home() {
     filterType: "all" | "open" | "closed" | "critical",
   ) => {
     if (filterType === "all") {
-      // Navigate to all-defects page
-      router.push("/all-defects");
+      // Clear quick metric filter and restore table to the main dashboard filters.
+      setMetricQuickFilter(null);
+      fetchTableData(
+        1,
+        state.sortBy || "date",
+        state.sortOrder || "desc",
+        filters,
+      );
+      scrollToDefectsTable();
       return;
     }
 
     let newFilters: DefectFilters = {};
+    let filterLabel = "";
 
     switch (filterType) {
       case "open":
         // Show all open defects: Open, In Progress, On Hold (Pending)
         newFilters = { status: ["OPEN", "IN_PROGRESS", "ON_HOLD"] };
+        filterLabel = "Open Defects";
         break;
       case "closed":
         // Show closed defects: Fixed (Closed) and As it is
         newFilters = { status: ["CLOSED", "AS_IT_IS"] };
+        filterLabel = "Closed Defects";
         break;
       case "critical":
         // Show only major severity defects (regardless of status)
         newFilters = { severity: ["MAJOR"] };
+        filterLabel = "Critical Priority Issues";
         break;
     }
 
-    setFilters(newFilters);
+    setMetricQuickFilter({
+      label: filterLabel,
+      filters: newFilters,
+    });
+    fetchTableData(
+      1,
+      state.sortBy || "date",
+      state.sortOrder || "desc",
+      { ...filters, ...newFilters },
+    );
     scrollToDefectsTable();
   };
+
+  const handleFiltersChange = (newFilters: DefectFilters) => {
+    // Reset quick metric drill-down whenever sidebar filters change.
+    setMetricQuickFilter(null);
+    setFilters(newFilters);
+  };
+
+  const activeFilterChips = useMemo(() => {
+    const chips: string[] = [];
+
+    if (metricQuickFilter?.label) {
+      chips.push(`Metric: ${metricQuickFilter.label}`);
+    }
+
+    if (tableFilters.searchTerm?.trim()) {
+      chips.push(`Search: ${tableFilters.searchTerm.trim()}`);
+    }
+
+    if (tableFilters.dateFrom) {
+      chips.push(`From: ${new Date(tableFilters.dateFrom).toLocaleDateString()}`);
+    }
+
+    if (tableFilters.dateTo) {
+      chips.push(`To: ${new Date(tableFilters.dateTo).toLocaleDateString()}`);
+    }
+
+    if (tableFilters.severity?.length) {
+      chips.push(`Severity: ${tableFilters.severity.join(", ")}`);
+    }
+
+    if (tableFilters.status?.length) {
+      chips.push(`Status: ${tableFilters.status.join(", ")}`);
+    }
+
+    if (tableFilters.module?.length) {
+      const moduleLabel =
+        tableFilters.module.length > 3
+          ? `${tableFilters.module.slice(0, 3).join(", ")} +${
+              tableFilters.module.length - 3
+            } more`
+          : tableFilters.module.join(", ");
+      chips.push(`Modules: ${moduleLabel}`);
+    }
+
+    return chips;
+  }, [tableFilters, metricQuickFilter]);
+
+  const hasActiveTableFilters = activeFilterChips.length > 0;
 
   return (
     <div className="min-h-screen bg-(--page-background)">
@@ -262,7 +348,7 @@ export default function Home() {
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[320px_minmax(0,1fr)] xl:grid-cols-[340px_minmax(0,1fr)]">
           <aside className="lg:sticky lg:top-24 lg:self-start">
             <FilterPanel
-              onFiltersChange={setFilters}
+              onFiltersChange={handleFiltersChange}
               availableModules={state.availableModules}
               isLoading={state.isLoading || !moduleSeverityLoaded}
             />
@@ -332,6 +418,28 @@ export default function Home() {
               </div>
             ) : null}
 
+            {metricQuickFilter ? (
+              <div className="flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+                <p className="text-sm font-medium text-emerald-800">
+                  Quick filter active: {metricQuickFilter.label}
+                </p>
+                <button
+                  onClick={() => {
+                    setMetricQuickFilter(null);
+                    fetchTableData(
+                      1,
+                      state.sortBy || "date",
+                      state.sortOrder || "desc",
+                      filters,
+                    );
+                  }}
+                  className="rounded-lg border border-emerald-300 bg-white px-3 py-1.5 text-xs font-semibold text-emerald-700 transition-colors hover:bg-emerald-100"
+                >
+                  Back to Main Dashboard
+                </button>
+              </div>
+            ) : null}
+
             <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
               {state.isLoading ? (
                 <>
@@ -374,21 +482,56 @@ export default function Home() {
             {/* Data Table */}
             <div
               ref={defectsTableRef}
-              className="rounded-3xl border border-(--border-color) bg-(--surface) p-3.5 shadow-[0_12px_30px_rgba(27,94,32,0.07)] sm:p-4"
+              className={`rounded-3xl border bg-(--surface) p-3.5 shadow-[0_12px_30px_rgba(27,94,32,0.07)] sm:p-4 ${
+                hasActiveTableFilters
+                  ? "border-emerald-300 ring-1 ring-emerald-200"
+                  : "border-(--border-color)"
+              }`}
             >
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="flex items-center gap-2 text-lg font-semibold text-(--heading-color)">
-                  <HiClipboardList className="h-5 w-5 text-(--primary-color)" />
-                  Defects List
-                </h2>
-                <button
-                  onClick={handleExportCSV}
-                  disabled={state.isLoading}
-                  className="flex items-center gap-2 rounded-lg bg-(--primary-color) px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:bg-(--primary-hover-color) hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <HiDownload className="h-4 w-4" />
-                  <span>Export All</span>
-                </button>
+              <div className="mb-4 space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <h2 className="flex items-center gap-2 text-lg font-semibold text-(--heading-color)">
+                      <HiClipboardList className="h-5 w-5 text-(--primary-color)" />
+                      Defects List
+                    </h2>
+                    <p className="mt-1 text-xs text-(--muted-color)">
+                      Showing {state.defects.length} on this page • {state.totalRecords} total results
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={handleExportCSV}
+                    disabled={state.isLoading}
+                    className="flex items-center gap-2 rounded-lg bg-(--primary-color) px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:bg-(--primary-hover-color) hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <HiDownload className="h-4 w-4" />
+                    <span>Export All</span>
+                  </button>
+                </div>
+
+                {hasActiveTableFilters ? (
+                  <div className="rounded-xl border border-emerald-200 bg-emerald-50/80 px-3 py-2.5">
+                    <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-emerald-700">
+                      <HiFilter className="h-3.5 w-3.5" />
+                      Active Filters ({activeFilterChips.length})
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {activeFilterChips.map((chip) => (
+                        <span
+                          key={chip}
+                          className="rounded-full border border-emerald-200 bg-white px-2.5 py-1 text-xs font-medium text-emerald-800"
+                        >
+                          {chip}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="rounded-xl border border-(--border-color) bg-slate-50 px-3 py-2 text-xs text-(--muted-color)">
+                    No active filters. You are viewing the full defects list.
+                  </div>
+                )}
               </div>
               {state.isLoading ? (
                 <SkeletonTable />
