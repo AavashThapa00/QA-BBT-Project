@@ -273,12 +273,10 @@ export default function Home() {
       label: filterLabel,
       filters: newFilters,
     });
-    fetchTableData(
-      1,
-      state.sortBy || "date",
-      state.sortOrder || "desc",
-      { ...filters, ...newFilters },
-    );
+    fetchTableData(1, state.sortBy || "date", state.sortOrder || "desc", {
+      ...filters,
+      ...newFilters,
+    });
     scrollToDefectsTable();
   };
 
@@ -300,7 +298,9 @@ export default function Home() {
     }
 
     if (tableFilters.dateFrom) {
-      chips.push(`From: ${new Date(tableFilters.dateFrom).toLocaleDateString()}`);
+      chips.push(
+        `From: ${new Date(tableFilters.dateFrom).toLocaleDateString()}`,
+      );
     }
 
     if (tableFilters.dateTo) {
@@ -496,7 +496,8 @@ export default function Home() {
                       Defects List
                     </h2>
                     <p className="mt-1 text-xs text-(--muted-color)">
-                      Showing {state.defects.length} on this page • {state.totalRecords} total results
+                      Showing {state.defects.length} on this page •{" "}
+                      {state.totalRecords} total results
                     </p>
                   </div>
 
