@@ -50,6 +50,12 @@ const STATUS_LABELS: Record<string, string> = {
   AS_IT_IS: "As it is",
 };
 
+const moduleCellClampStyle: React.CSSProperties = {
+  display: "-webkit-box",
+  WebkitBoxOrient: "vertical",
+  overflow: "hidden",
+};
+
 function SortButton({
   column,
   label,
@@ -321,19 +327,22 @@ export default function DefectsTable({
                   onClick={() => router.push(`/defects/${defect.id}`)}
                   className="cursor-pointer transition-colors hover:bg-emerald-50/70"
                 >
-                  <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-(--heading-color)">
+                  <td className="whitespace-nowrap px-6 py-4 text-[13px] font-medium text-(--heading-color)">
                     {defect.dateReported
                       ? formatDate(defect.dateReported)
                       : "N/A"}
                   </td>
                   <td className="whitespace-nowrap px-6 py-4 text-sm text-(--text-color)">
-                    <span className="rounded-lg bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-800 ring-1 ring-emerald-100">
+                    <div
+                      className="max-w-55 whitespace-normal wrap-break-word rounded-md bg-emerald-50 px-2 py-1 text-[12px] font-medium leading-4 text-emerald-800 ring-1 ring-emerald-100"
+                      style={moduleCellClampStyle}
+                    >
                       {defect.module}
-                    </span>
+                    </div>
                   </td>
                   <td className="whitespace-nowrap px-6 py-4">
                     <span
-                      className={`inline-flex items-center rounded-lg px-3 py-1.5 text-xs font-semibold uppercase ${
+                      className={`inline-flex items-center rounded-md px-2 py-1 text-[11px] font-semibold uppercase leading-4 ${
                         SEVERITY_COLORS[defect.severity]
                       }`}
                     >
@@ -342,7 +351,7 @@ export default function DefectsTable({
                   </td>
                   <td className="whitespace-nowrap px-6 py-4">
                     <span
-                      className={`inline-flex items-center rounded-lg px-3 py-1.5 text-xs font-semibold uppercase ${
+                      className={`inline-flex items-center rounded-md px-2 py-1 text-[11px] font-semibold uppercase leading-4 ${
                         PRIORITY_COLORS[defect.priority] ||
                         "bg-slate-100 text-slate-700 ring-1 ring-slate-200"
                       }`}
@@ -352,14 +361,14 @@ export default function DefectsTable({
                   </td>
                   <td className="whitespace-nowrap px-6 py-4">
                     <span
-                      className={`inline-flex items-center rounded-lg px-3 py-1.5 text-xs font-semibold ${
+                      className={`inline-flex items-center rounded-md px-2 py-1 text-[11px] font-semibold leading-4 ${
                         STATUS_COLORS[defect.status]
                       }`}
                     >
                       {STATUS_LABELS[defect.status] ?? defect.status}
                     </span>
                   </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-(--text-color)">
+                  <td className="whitespace-nowrap px-6 py-4 text-[13px] text-(--text-color)">
                     {defect.dateFixed ? (
                       formatDate(defect.dateFixed)
                     ) : (
