@@ -280,7 +280,7 @@ export default function ManualEntryPage() {
           <div className="mx-auto w-full max-w-screen-2xl space-y-6">
             {/* CSV Upload */}
             <div
-              className={`rounded-2xl border border-(--border-color) bg-(--surface) p-6 shadow-[0_12px_32px_rgba(27,94,32,0.08)] transition-all duration-1000 transform ${
+              className={`rounded-2xl border border-(--border-color) bg-(--surface) p-6 shadow-card transition-all duration-1000 transform ${
                 pageLoaded
                   ? "opacity-100 translate-y-0"
                   : "opacity-0 translate-y-10"
@@ -309,7 +309,7 @@ export default function ManualEntryPage() {
 
             {/* Add Issue Form */}
             <div
-              className={`rounded-2xl border border-(--border-color) bg-(--surface) p-6 shadow-[0_12px_32px_rgba(27,94,32,0.08)] transition-all duration-1000 transform ${
+              className={`rounded-2xl border border-(--border-color) bg-(--surface) p-6 shadow-card transition-all duration-1000 transform ${
                 pageLoaded
                   ? "opacity-100 translate-y-0"
                   : "opacity-0 translate-y-10"
@@ -628,7 +628,7 @@ export default function ManualEntryPage() {
 
             {/* Issue Sheet Table */}
             <div
-              className={`overflow-hidden rounded-2xl border border-(--border-color) bg-(--surface) shadow-[0_12px_32px_rgba(27,94,32,0.08)] transition-all duration-1000 transform ${
+              className={`overflow-hidden rounded-2xl border border-(--border-color) bg-(--surface) shadow-card transition-all duration-1000 transform ${
                 pageLoaded
                   ? "opacity-100 translate-y-0"
                   : "opacity-0 translate-y-10"
@@ -851,7 +851,7 @@ export default function ManualEntryPage() {
       </div>
 
       {selectedDefect && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 overlay-backdrop-strong backdrop-blur-sm flex items-center justify-center p-4">
           <div className="w-full max-w-3xl overflow-hidden rounded-2xl border border-(--border-color) bg-(--surface) shadow-2xl">
             <div className="flex items-center justify-between border-b border-(--border-color) bg-(--surface-soft) px-6 py-4">
               <div>

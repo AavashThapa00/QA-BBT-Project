@@ -1113,7 +1113,7 @@ export default function TestCaseExecutionPage() {
             <span>{message.text}</span>
             <button
               onClick={() => setMessage(null)}
-              className="inline-flex shrink-0 items-center justify-center rounded p-1 transition-colors hover:bg-black/5"
+              className="inline-flex shrink-0 items-center justify-center rounded p-1 transition-colors hover:bg-(--surface-soft)"
               aria-label="Dismiss message"
               title="Dismiss"
             >
@@ -1763,7 +1763,7 @@ export default function TestCaseExecutionPage() {
 
       {/* New Test Cycle Modal */}
       {isNewCycleModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center overlay-backdrop p-4 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-2xl border border-emerald-100 bg-white p-8 shadow-xl animate-in fade-in zoom-in">
             <h3 className="mb-2 text-lg font-bold text-(--heading-color)">
               Save Snapshot & Reset Cycle
@@ -1815,7 +1815,7 @@ export default function TestCaseExecutionPage() {
 
       {/* Fail Modal */}
       {failModal.isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center overlay-backdrop p-4 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-2xl border border-emerald-100 bg-white p-8 shadow-xl animate-in fade-in zoom-in">
             <h3 className="mb-4 text-lg font-bold text-(--heading-color)">
               Mark Test Case as Failed

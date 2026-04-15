@@ -10,11 +10,11 @@ interface ToastProps {
   onClose?: () => void;
 }
 
-export default function Toast({ 
-  message, 
-  type = "success", 
+export default function Toast({
+  message,
+  type = "success",
   duration = 3000,
-  onClose 
+  onClose,
 }: ToastProps) {
   const [isVisible, setIsVisible] = useState(true);
 
@@ -31,34 +31,42 @@ export default function Toast({
 
   if (!isVisible) return null;
 
-  const bgColor = {
-    success: "bg-green-900/40 border-green-800",
-    error: "bg-red-900/40 border-red-800",
-    info: "bg-blue-900/40 border-blue-800",
-  }[type];
-
-  const iconColor = {
-    success: "text-green-400",
-    error: "text-red-400",
-    info: "text-blue-400",
-  }[type];
-
-  const textColor = {
-    success: "text-green-200",
-    error: "text-red-200",
-    info: "text-blue-200",
+  const styles = {
+    success: {
+      borderColor: "var(--success-color)",
+      iconColor: "var(--success-color)",
+    },
+    error: {
+      borderColor: "var(--danger-color)",
+      iconColor: "var(--danger-color)",
+    },
+    info: {
+      borderColor: "var(--info-color)",
+      iconColor: "var(--info-color)",
+    },
   }[type];
 
   return (
-    <div className={`fixed top-4 right-4 z-50 flex items-center gap-3 px-4 py-3 rounded-lg border ${bgColor} shadow-lg animate-in fade-in slide-in-from-top-2 duration-300`}>
-      {type === "success" && <HiCheckCircle className={`w-5 h-5 flex-shrink-0 ${iconColor}`} />}
-      <span className={`text-sm font-medium ${textColor}`}>{message}</span>
+    <div
+      className="fixed right-4 top-4 z-50 flex items-center gap-3 rounded-lg border bg-(--surface-elevated) px-4 py-3 shadow-card animate-in fade-in slide-in-from-top-2 duration-300"
+      style={{ borderColor: styles.borderColor }}
+    >
+      {type === "success" && (
+        <HiCheckCircle
+          className="h-5 w-5 shrink-0"
+          style={{ color: styles.iconColor }}
+        />
+      )}
+      <span className="text-sm font-medium text-(--heading-color)">
+        {message}
+      </span>
       <button
         onClick={() => {
           setIsVisible(false);
           onClose?.();
         }}
-        className={`ml-2 flex-shrink-0 hover:opacity-70 transition-opacity ${iconColor}`}
+        className="ml-2 shrink-0 transition-opacity hover:opacity-70"
+        style={{ color: styles.iconColor }}
       >
         <HiX className="w-4 h-4" />
       </button>

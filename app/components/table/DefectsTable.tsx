@@ -196,7 +196,7 @@ export default function DefectsTable({
   const skeletonRows = Array.from({ length: 8 });
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-(--border-color) bg-(--surface) shadow-[0_10px_26px_rgba(27,94,32,0.08)]">
+    <div className="overflow-hidden rounded-2xl border border-(--border-color) bg-(--surface) shadow-card">
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-(--border-color)">
           <thead className="border-b border-(--border-color) bg-(--surface-soft)">

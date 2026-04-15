@@ -139,7 +139,7 @@ export default function ProfilePage() {
 
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
           <aside className="animate-in fade-in-up duration-500 xl:sticky xl:top-6 xl:self-start">
-            <div className="overflow-hidden rounded-3xl border border-emerald-200 bg-(--surface) shadow-[0_20px_55px_rgba(27,94,32,0.08)]">
+            <div className="overflow-hidden rounded-3xl border border-emerald-200 bg-(--surface) shadow-card">
               <div className="h-20 bg-linear-to-r from-emerald-100 via-emerald-50 to-lime-100" />
               <div className="-mt-10 px-6 pb-6">
                 <div className="inline-flex h-20 w-20 items-center justify-center rounded-2xl border-4 border-(--surface) bg-(--primary-color) text-2xl font-semibold text-white shadow-lg">
@@ -352,7 +352,7 @@ export default function ProfilePage() {
                   </div>
                   <Link
                     href="/super-admin"
-                    className="inline-flex rounded-xl bg-(--primary-color) px-5 py-2.5 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(76,175,80,0.2)] transition-colors hover:bg-(--primary-hover-color)"
+                    className="inline-flex rounded-xl bg-(--primary-color) px-5 py-2.5 text-sm font-semibold text-(--on-primary) shadow-glow transition-colors hover:bg-(--primary-hover-color)"
                   >
                     Open Admin Console
                   </Link>

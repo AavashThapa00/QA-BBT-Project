@@ -19,7 +19,7 @@ export default function MetricsCard({
 }: MetricsCardProps) {
   return (
     <div
-      className={`rounded-xl border border-(--border-color) bg-(--surface) p-5 shadow-sm transition-colors ${onClick ? "cursor-pointer hover:border-(--primary-color)" : ""} ${className}`}
+      className={`rounded-xl border border-(--border-color) bg-(--surface) p-5 shadow-card transition-colors ${onClick ? "cursor-pointer hover:border-(--primary-color) hover:shadow-glow" : ""} ${className}`}
       onClick={onClick}
     >
       <div className="flex items-start justify-between">

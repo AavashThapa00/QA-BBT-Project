@@ -808,7 +808,7 @@ export default function AnalyticsPage() {
         </div>
 
         {isModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 p-4 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="fixed inset-0 z-50 flex items-center justify-center overlay-backdrop p-4 backdrop-blur-sm animate-in fade-in duration-300">
             <div className="max-h-200 w-full max-w-4xl overflow-hidden rounded-2xl border border-(--border-color) bg-(--surface) shadow-xl animate-in zoom-in duration-300">
               <div className="flex items-center justify-between border-b border-(--border-color) bg-(--surface-soft) px-6 py-4">
                 <div>

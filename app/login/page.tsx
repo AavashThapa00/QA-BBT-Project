@@ -31,7 +31,7 @@ function RequestCodeSubmitButton() {
     <button
       type="submit"
       disabled={pending}
-      className="relative w-full cursor-pointer rounded-xl bg-(--primary-color) px-4 py-3 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(76,175,80,0.16)] transition-colors duration-200 hover:bg-(--primary-hover-color) disabled:cursor-not-allowed disabled:opacity-60"
+      className="relative w-full cursor-pointer rounded-xl bg-(--primary-color) px-4 py-3 text-sm font-semibold text-(--on-primary) shadow-glow transition-colors duration-200 hover:bg-(--primary-hover-color) disabled:cursor-not-allowed disabled:opacity-60"
     >
       <span className={pending ? "opacity-0" : "opacity-100"}>Log in</span>
       {pending && (
@@ -69,7 +69,7 @@ function VerifyCodeSubmitButton() {
     <button
       type="submit"
       disabled={pending}
-      className="relative w-full cursor-pointer rounded-xl bg-(--primary-color) px-4 py-3 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(76,175,80,0.16)] transition-colors duration-200 hover:bg-(--primary-hover-color) disabled:cursor-not-allowed disabled:opacity-60"
+      className="relative w-full cursor-pointer rounded-xl bg-(--primary-color) px-4 py-3 text-sm font-semibold text-(--on-primary) shadow-glow transition-colors duration-200 hover:bg-(--primary-hover-color) disabled:cursor-not-allowed disabled:opacity-60"
     >
       <span className={pending ? "opacity-0" : "opacity-100"}>
         Verify and sign in
@@ -132,7 +132,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-(--page-background) px-6 py-10">
       <div className="mx-auto flex min-h-[calc(100vh-5rem)] w-full max-w-md items-center justify-center">
-        <div className="w-full overflow-hidden rounded-4xl border border-(--border-color) bg-[rgba(255,255,255,0.96)] shadow-[0_22px_60px_rgba(27,94,32,0.08)]">
+        <div className="w-full overflow-hidden rounded-4xl border border-(--border-color) bg-(--surface-elevated) shadow-dialog">
           <div className="h-1 bg-(--primary-color)" />
           <div className="px-8 py-7">
             <h1 className="mt-4 text-3xl font-semibold tracking-tight text-(--heading-color)">

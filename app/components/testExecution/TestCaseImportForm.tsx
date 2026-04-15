@@ -245,7 +245,7 @@ export default function TestCaseImportForm({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 p-4 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center overlay-backdrop p-4 backdrop-blur-sm">
       <div className="w-full max-w-lg rounded-2xl border border-emerald-100 bg-white p-8 shadow-xl animate-in fade-in zoom-in">
         <h3 className="mb-6 text-lg font-bold text-(--heading-color)">
           Import Test Cases from CSV/XLSX

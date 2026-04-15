@@ -26,10 +26,10 @@ interface DefectsBySeverityChartProps {
 }
 
 const COLORS: Record<string, string> = {
-  [SeverityEnum.MAJOR]: "#dc2626",
-  [SeverityEnum.HIGH]: "#ea580c",
-  [SeverityEnum.MEDIUM]: "#ca8a04",
-  [SeverityEnum.LOW]: "#16a34a",
+  [SeverityEnum.MAJOR]: "var(--danger-color)",
+  [SeverityEnum.HIGH]: "var(--warning-color)",
+  [SeverityEnum.MEDIUM]: "var(--chart-attention-color)",
+  [SeverityEnum.LOW]: "var(--success-color)",
 };
 
 const SEVERITY_ORDER: Record<Severity, number> = {
@@ -60,10 +60,11 @@ export default function DefectsBySeverityChart({
       : null;
 
   // Get color based on severity
-  const getBarColor = (severity: string) => COLORS[severity] || "#4CAF50";
+  const getBarColor = (severity: string) =>
+    COLORS[severity] || "var(--success-color)";
 
   return (
-    <div className="rounded-2xl border border-(--border-color) bg-(--surface) p-5 shadow-[0_10px_24px_rgba(27,94,32,0.08)] transition-all duration-300 hover:shadow-[0_14px_30px_rgba(27,94,32,0.12)]">
+    <div className="rounded-2xl border border-(--border-color) bg-(--surface) p-5 shadow-card transition-all duration-300 hover:shadow-glow">
       <div className="mb-4 flex items-center justify-between">
         <div>
           <h3 className="text-lg font-semibold text-(--heading-color) flex items-center gap-2">
@@ -106,45 +107,61 @@ export default function DefectsBySeverityChart({
           >
             <defs>
               <linearGradient id="severityBarGlow" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0%" stopColor="#FBC02D" stopOpacity={0.95} />
-                <stop offset="100%" stopColor="#E53935" stopOpacity={0.95} />
+                <stop
+                  offset="0%"
+                  stopColor="var(--warning-color)"
+                  stopOpacity={0.95}
+                />
+                <stop
+                  offset="100%"
+                  stopColor="var(--danger-color)"
+                  stopOpacity={0.95}
+                />
               </linearGradient>
             </defs>
             <CartesianGrid
               strokeDasharray="3 3"
-              stroke="#E5EDE6"
+              stroke="var(--border-color)"
               vertical={false}
             />
             <XAxis
               type="number"
-              tick={{ fontSize: 12, fill: "#6B7A6D" }}
-              axisLine={{ stroke: "#D7E1D8" }}
+              tick={{ fontSize: 12, fill: "var(--muted-color)" }}
+              axisLine={{ stroke: "var(--border-color)" }}
             />
             <YAxis
               type="category"
               dataKey="severity"
-              tick={{ fontSize: 12, fill: "#1B5E20", fontWeight: 600 }}
-              axisLine={{ stroke: "#D7E1D8" }}
+              tick={{
+                fontSize: 12,
+                fill: "var(--heading-color)",
+                fontWeight: 600,
+              }}
+              axisLine={{ stroke: "var(--border-color)" }}
               width={90}
             />
             <Tooltip
               contentStyle={{
-                backgroundColor: "rgba(255, 255, 255, 0.97)",
-                border: "1px solid #D7E1D8",
+                backgroundColor: "var(--surface-elevated)",
+                border: "1px solid var(--border-color)",
                 borderRadius: "12px",
-                boxShadow: "0 8px 24px rgba(27, 94, 32, 0.12)",
+                boxShadow: "var(--shadow-card)",
                 padding: "10px 12px",
               }}
-              labelStyle={{ color: "#1B5E20", fontSize: 12, fontWeight: 600 }}
+              labelStyle={{
+                color: "var(--heading-color)",
+                fontSize: 12,
+                fontWeight: 600,
+              }}
               formatter={(value) => [value, "Issues"]}
-              cursor={{ fill: "rgba(76, 175, 80, 0.12)" }}
+              cursor={{ fill: "rgba(45, 212, 191, 0.12)" }}
             />
             <Bar
               dataKey="count"
               name="Issues"
               radius={[0, 8, 8, 0]}
               barSize={16}
-              background={{ fill: "rgba(224, 233, 225, 0.8)", radius: 8 }}
+              background={{ fill: "rgba(148, 163, 184, 0.14)", radius: 8 }}
               isAnimationActive={true}
             >
               {chartData.map((entry, index) => (

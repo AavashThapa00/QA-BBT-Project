@@ -107,14 +107,14 @@ export default function ExportDefectsPanel({
       >
         {/* Blurred Background Overlay */}
         <div
-          className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+          className="absolute inset-0 overlay-backdrop backdrop-blur-sm"
           onClick={onClose}
         />
 
         {/* Modal Dialog */}
         <div className="absolute inset-0 flex items-center justify-center p-4">
           <div
-            className={`w-full max-w-md transform rounded-2xl border border-(--border-color) bg-(--surface) shadow-[0_24px_60px_rgba(27,94,32,0.2)] transition-all duration-400 ${
+            className={`w-full max-w-md transform rounded-2xl border border-(--border-color) bg-(--surface) shadow-dialog transition-all duration-400 ${
               isOpen ? "scale-100 opacity-100" : "scale-95 opacity-0"
             }`}
           >
