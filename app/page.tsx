@@ -106,24 +106,19 @@ export default function Home() {
     [filters, metricQuickFilter],
   );
 
-  const loadStaticChartData = useCallback(async () => {
+  const loadAvailableModules = useCallback(async () => {
     try {
-      const [moduleData, severityData] = await Promise.all([
-        getDefectsByModule(),
-        getDefectsBySeverity(),
-      ]);
+      const moduleData = await getDefectsByModule();
 
       const modules = moduleData.map((m) => m.module).sort();
 
       setState((prev) => ({
         ...prev,
-        defectsByModule: moduleData,
-        defectsBySeverity: severityData,
         availableModules: modules,
       }));
       setModuleSeverityLoaded(true);
     } catch (error) {
-      console.error("Failed to load static chart data:", error);
+      console.error("Failed to load available modules:", error);
     }
   }, []);
 
@@ -132,22 +127,32 @@ export default function Home() {
       setState((prev) => ({ ...prev, isLoading: true }));
 
       try {
-        const [metricsData, trendData, defectsResponse, avgResolutionTime] =
-          await Promise.all([
-            getDefectMetrics(filters),
-            getDefectsTrend(filters, "day"),
-            getDefects(filters, {
-              page: pageNum,
-              pageSize: 10,
-              sortBy: state.sortBy,
-              sortOrder: state.sortOrder,
-            }),
-            getAverageResolutionTime(filters),
-          ]);
+        const [
+          metricsData,
+          trendData,
+          defectsResponse,
+          avgResolutionTime,
+          moduleData,
+          severityData,
+        ] = await Promise.all([
+          getDefectMetrics(filters),
+          getDefectsTrend(filters, "day"),
+          getDefects(filters, {
+            page: pageNum,
+            pageSize: 10,
+            sortBy: state.sortBy,
+            sortOrder: state.sortOrder,
+          }),
+          getAverageResolutionTime(filters),
+          getDefectsByModule(filters),
+          getDefectsBySeverity(filters),
+        ]);
 
         setState((prev) => ({
           ...prev,
           metrics: metricsData,
+          defectsByModule: moduleData,
+          defectsBySeverity: severityData,
           defectsTrend: trendData,
           defects: defectsResponse.defects,
           totalRecords: defectsResponse.total,
@@ -165,8 +170,8 @@ export default function Home() {
   );
 
   useEffect(() => {
-    loadStaticChartData();
-  }, [loadStaticChartData]);
+    loadAvailableModules();
+  }, [loadAvailableModules]);
 
   useEffect(() => {
     loadDashboardData();
