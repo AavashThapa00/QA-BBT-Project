@@ -21,7 +21,7 @@ import {
 import {
   getDefectMetrics,
   getDefectsByModule,
-  getDefectsBySeverity,
+  getDefectsByPriority,
   getDefectsTrend,
   getDefects,
   getAverageResolutionTime,
@@ -30,7 +30,7 @@ import {
   DefectFilters,
   DashboardMetrics,
   DefectByModule,
-  DefectBySeverity,
+  DefectByPriority,
   DefectTrend,
   Defect,
 } from "@/lib/types";
@@ -40,8 +40,8 @@ const DefectsByModuleChart = dynamic(
   { ssr: false, loading: () => <SkeletonChart /> },
 );
 
-const DefectsBySeverityChart = dynamic(
-  () => import("@/app/components/dashboard/DefectsBySeverityChart"),
+const DefectsByPriorityChart = dynamic(
+  () => import("@/app/components/dashboard/DefectsByPriorityChart"),
   { ssr: false, loading: () => <SkeletonChart /> },
 );
 
@@ -58,7 +58,7 @@ const DefectsTable = dynamic(
 interface DashboardState {
   metrics: DashboardMetrics | null;
   defectsByModule: DefectByModule[];
-  defectsBySeverity: DefectBySeverity[];
+  defectsByPriority: DefectByPriority[];
   defectsTrend: DefectTrend[];
   defects: Defect[];
   averageResolutionTime: number;
@@ -81,7 +81,7 @@ export default function Home() {
   const [state, setState] = useState<DashboardState>({
     metrics: null,
     defectsByModule: [],
-    defectsBySeverity: [],
+    defectsByPriority: [],
     defectsTrend: [],
     defects: [],
     averageResolutionTime: 0,
@@ -133,7 +133,7 @@ export default function Home() {
           defectsResponse,
           avgResolutionTime,
           moduleData,
-          severityData,
+          priorityData,
         ] = await Promise.all([
           getDefectMetrics(filters),
           getDefectsTrend(filters, "day"),
@@ -145,14 +145,14 @@ export default function Home() {
           }),
           getAverageResolutionTime(filters),
           getDefectsByModule(filters),
-          getDefectsBySeverity(filters),
+          getDefectsByPriority(filters),
         ]);
 
         setState((prev) => ({
           ...prev,
           metrics: metricsData,
           defectsByModule: moduleData,
-          defectsBySeverity: severityData,
+          defectsByPriority: priorityData,
           defectsTrend: trendData,
           defects: defectsResponse.defects,
           totalRecords: defectsResponse.total,
@@ -312,8 +312,8 @@ export default function Home() {
       chips.push(`To: ${new Date(tableFilters.dateTo).toLocaleDateString()}`);
     }
 
-    if (tableFilters.severity?.length) {
-      chips.push(`Severity: ${tableFilters.severity.join(", ")}`);
+    if (tableFilters.priority?.length) {
+      chips.push(`Priority: ${tableFilters.priority.join(", ")}`);
     }
 
     if (tableFilters.status?.length) {
@@ -454,7 +454,7 @@ export default function Home() {
               ) : (
                 <>
                   <DefectsByModuleChart data={state.defectsByModule} />
-                  <DefectsBySeverityChart data={state.defectsBySeverity} />
+                  <DefectsByPriorityChart data={state.defectsByPriority} />
                 </>
               )}
             </div>

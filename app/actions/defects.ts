@@ -154,6 +154,67 @@ export async function getDefectsBySeverity(filters?: DefectFilters): Promise<
   }
 }
 
+function normalizePriorityLabel(priority: string | null): string {
+  const normalized = (priority || "").trim().toUpperCase();
+  return normalized || "UNKNOWN";
+}
+
+const PRIORITY_ORDER: Record<string, number> = {
+  P0: 1,
+  P1: 2,
+  P2: 3,
+  P3: 4,
+  P4: 5,
+  CRITICAL: 6,
+  HIGH: 7,
+  MEDIUM: 8,
+  LOW: 9,
+  UNKNOWN: 10,
+};
+
+export async function getDefectsByPriority(filters?: DefectFilters): Promise<
+  Array<{
+    priority: string;
+    count: number;
+  }>
+> {
+  const defects = await getDefectsCollection();
+  const filter = buildDefectMongoFilter(filters);
+
+  try {
+    const result = await defects
+      .aggregate<{
+        _id: string | null;
+        count: number;
+      }>([
+        { $match: filter },
+        { $group: { _id: "$priority", count: { $sum: 1 } } },
+      ])
+      .toArray();
+
+    const priorityMap: Record<string, number> = {};
+
+    result.forEach((row) => {
+      const priority = normalizePriorityLabel(row._id);
+      priorityMap[priority] = (priorityMap[priority] || 0) + row.count;
+    });
+
+    return Object.entries(priorityMap)
+      .map(([priority, count]) => ({ priority, count }))
+      .sort((a, b) => {
+        const rankA = PRIORITY_ORDER[a.priority] ?? Number.MAX_SAFE_INTEGER;
+        const rankB = PRIORITY_ORDER[b.priority] ?? Number.MAX_SAFE_INTEGER;
+
+        if (rankA !== rankB) return rankA - rankB;
+        if (b.count !== a.count) return b.count - a.count;
+        return a.priority.localeCompare(b.priority);
+      });
+  } catch (error) {
+    console.error("Error fetching defects by priority:", error);
+    throw error;
+  }
+}
+
 export async function getDefectsTrend(
   filters?: DefectFilters,
   groupBy: "day" | "month" = "day",

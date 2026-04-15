@@ -14,8 +14,8 @@ import {
   HiSearch,
   HiX,
 } from "react-icons/hi";
-import type { Severity, Status } from "@/lib/types";
-import { SeverityEnum, StatusEnum, type DefectFilters } from "@/lib/types";
+import type { Status } from "@/lib/types";
+import { StatusEnum, type DefectFilters } from "@/lib/types";
 
 interface FilterPanelProps {
   onFiltersChange: (filters: DefectFilters) => void;
@@ -129,14 +129,16 @@ export default function FilterPanel({
   const [searchInput, setSearchInput] = useState<string>("");
   const [dateFrom, setDateFrom] = useState<string>("");
   const [dateTo, setDateTo] = useState<string>("");
-  const [severities, setSeverities] = useState<string[]>([]);
+  const [priorities, setPriorities] = useState<string[]>([]);
   const [modules, setModules] = useState<string[]>([]);
   const [statuses, setStatuses] = useState<string[]>([]);
 
-  const severityOptions = Object.values(SeverityEnum).map((severity) => ({
-    value: severity,
-    label: severity.charAt(0) + severity.slice(1).toLowerCase(),
-  }));
+  const priorityOptions = ["CRITICAL", "HIGH", "MEDIUM", "LOW"].map(
+    (priority) => ({
+      value: priority,
+      label: priority,
+    }),
+  );
 
   const statusOptions = [
     { value: StatusEnum.OPEN, label: "Open" },
@@ -156,14 +158,14 @@ export default function FilterPanel({
     hasSearch ||
     Boolean(dateFrom) ||
     Boolean(dateTo) ||
-    severities.length > 0 ||
+    priorities.length > 0 ||
     modules.length > 0 ||
     statuses.length > 0;
   const activeFilterCount =
     (hasSearch ? 1 : 0) +
     (dateFrom ? 1 : 0) +
     (dateTo ? 1 : 0) +
-    (severities.length > 0 ? 1 : 0) +
+    (priorities.length > 0 ? 1 : 0) +
     (modules.length > 0 ? 1 : 0) +
     (statuses.length > 0 ? 1 : 0);
 
@@ -205,7 +207,7 @@ export default function FilterPanel({
       filters.searchTerm = searchInput;
     if (dateFrom) filters.dateFrom = new Date(dateFrom);
     if (dateTo) filters.dateTo = new Date(dateTo);
-    if (severities.length > 0) filters.severity = severities as Severity[];
+    if (priorities.length > 0) filters.priority = priorities;
     if (modules.length > 0) filters.module = modules;
     if (statuses.length > 0) filters.status = statuses as Status[];
 
@@ -220,7 +222,7 @@ export default function FilterPanel({
 
     onFiltersChange({
       ...(hasSearch ? { searchTerm: searchInput } : {}),
-      ...(severities.length > 0 ? { severity: severities as Severity[] } : {}),
+      ...(priorities.length > 0 ? { priority: priorities } : {}),
       ...(modules.length > 0 ? { module: modules } : {}),
       ...(statuses.length > 0 ? { status: statuses as Status[] } : {}),
       dateFrom: new Date(fromValue),
@@ -237,7 +239,7 @@ export default function FilterPanel({
     setSearchInput("");
     setDateFrom("");
     setDateTo("");
-    setSeverities([]);
+    setPriorities([]);
     setModules([]);
     setStatuses([]);
     onFiltersChange({});
@@ -324,11 +326,11 @@ export default function FilterPanel({
         </div>
 
         <MultiSelectDropdown
-          label="Severity"
-          placeholder="Select severity"
-          options={severityOptions}
-          selectedValues={severities}
-          onChange={setSeverities}
+          label="Priority"
+          placeholder="Select priority"
+          options={priorityOptions}
+          selectedValues={priorities}
+          onChange={setPriorities}
           disabled={isLoading}
         />
 

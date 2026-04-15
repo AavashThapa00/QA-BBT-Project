@@ -58,6 +58,12 @@ export function buildDefectMongoFilter(
     } as Filter<DefectDoc>);
   }
 
+  if (filters?.priority?.length) {
+    andClauses.push({
+      priority: { $in: filters.priority },
+    } as Filter<DefectDoc>);
+  }
+
   if (filters?.status?.length) {
     andClauses.push({ status: { $in: filters.status } } as Filter<DefectDoc>);
   }

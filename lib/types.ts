@@ -53,6 +53,7 @@ export interface DefectFilters {
     dateFrom?: Date;
     dateTo?: Date;
     severity?: Severity[];
+    priority?: string[];
     module?: string[];
     status?: Status[];
     searchTerm?: string;
@@ -72,6 +73,11 @@ export interface DefectByModule {
 
 export interface DefectBySeverity {
     severity: Severity;
+    count: number;
+}
+
+export interface DefectByPriority {
+    priority: string;
     count: number;
 }
 
