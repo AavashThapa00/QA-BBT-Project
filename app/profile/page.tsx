@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { HiArrowLeft, HiTrash, HiCheckCircle } from "react-icons/hi";
 import AppButton from "@/app/components/common/AppButton";
+import { PageSkeleton } from "@/app/components/common/SkeletonLoader";
 import {
   getCurrentUser,
   updateProfileAction,
@@ -53,13 +54,7 @@ export default function ProfilePage() {
   }, []);
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-(--page-background) p-8">
-        <div className="flex items-center justify-center h-96">
-          <div className="h-12 w-12 animate-spin rounded-full border-2 border-emerald-200 border-t-(--primary-color)"></div>
-        </div>
-      </div>
-    );
+    return <PageSkeleton variant="detail" />;
   }
 
   if (!user) {

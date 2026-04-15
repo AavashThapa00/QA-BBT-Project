@@ -10,6 +10,7 @@ import {
   HiTrash,
 } from "react-icons/hi";
 import AppButton from "@/app/components/common/AppButton";
+import { PageSkeleton } from "@/app/components/common/SkeletonLoader";
 import { Defect } from "@/lib/types";
 import {
   deleteDefectById,
@@ -164,9 +165,7 @@ export default function AllDefectsPage() {
 
           {/* Defects List */}
           {isLoading ? (
-            <div className="flex items-center justify-center py-20">
-              <div className="h-12 w-12 animate-spin rounded-full border-2 border-emerald-200 border-t-(--primary-color)"></div>
-            </div>
+            <PageSkeleton variant="table" />
           ) : filteredDefects.length === 0 ? (
             <div className="text-center py-20">
               <p className="text-(--muted-color)">No defects found</p>

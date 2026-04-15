@@ -12,6 +12,7 @@ import {
   HiClock,
 } from "react-icons/hi";
 import AppButton from "@/app/components/common/AppButton";
+import { PageSkeleton } from "@/app/components/common/SkeletonLoader";
 
 const STATUS_LABELS: Record<string, string> = {
   OPEN: "Open",
@@ -88,14 +89,7 @@ export default function DefectDetailPage() {
   }, [id]);
 
   if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-(--page-background)">
-        <div className="text-center">
-          <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-2 border-emerald-200 border-t-(--primary-color)"></div>
-          <p className="text-(--muted-color)">Loading defect details...</p>
-        </div>
-      </div>
-    );
+    return <PageSkeleton variant="detail" />;
   }
 
   if (error || !defect) {

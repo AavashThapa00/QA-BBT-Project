@@ -689,10 +689,13 @@ export default function ManualEntryPage() {
                           className="px-4 py-8 text-center text-(--muted-color)"
                           colSpan={10}
                         >
-                          <div className="flex items-center justify-center gap-2">
-                            <div className="w-2 h-2 rounded-full bg-blue-500 animate-bounce"></div>
-                            <div className="w-2 h-2 rounded-full bg-blue-500 animate-bounce animation-delay-200"></div>
-                            <div className="w-2 h-2 rounded-full bg-blue-500 animate-bounce animation-delay-400"></div>
+                          <div className="space-y-3 animate-pulse">
+                            {[...Array(5)].map((_, index) => (
+                              <div
+                                key={index}
+                                className="h-12 rounded-lg bg-(--surface-soft)"
+                              />
+                            ))}
                           </div>
                         </td>
                       </tr>

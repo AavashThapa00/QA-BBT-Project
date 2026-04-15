@@ -6,6 +6,7 @@ import { Suspense, useActionState, useEffect, useRef } from "react";
 import { useFormStatus } from "react-dom";
 import { toast } from "sonner";
 import { resetPasswordWithTokenAction } from "@/app/actions/auth";
+import { PageSkeleton } from "@/app/components/common/SkeletonLoader";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -169,13 +170,7 @@ function ResetPasswordContent() {
 
 export default function ResetPasswordPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="flex min-h-screen items-center justify-center bg-(--page-background) p-6">
-          <div className="h-10 w-10 animate-spin rounded-full border-2 border-emerald-200 border-t-(--primary-color)"></div>
-        </div>
-      }
-    >
+    <Suspense fallback={<PageSkeleton variant="auth" />}>
       <ResetPasswordContent />
     </Suspense>
   );

@@ -11,6 +11,7 @@ import {
 } from "react-icons/hi";
 import Link from "next/link";
 import AppButton from "@/app/components/common/AppButton";
+import { PageSkeleton } from "@/app/components/common/SkeletonLoader";
 import {
   TestCycle,
   TestCaseWithExecution,
@@ -1073,14 +1074,7 @@ export default function TestCaseExecutionPage() {
   );
 
   if (loading && cycles.length === 0) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-(--page-background) p-8">
-        <div className="text-center">
-          <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full "></div>
-          <p className="text-(--muted-color)">Loading test cycles...</p>
-        </div>
-      </div>
-    );
+    return <PageSkeleton variant="form" />;
   }
 
   return (
@@ -1474,10 +1468,7 @@ export default function TestCaseExecutionPage() {
             </div>
 
             {loadingTestCases || !hasLoadedTestCases ? (
-              <div className="text-center py-12">
-                <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-2 border-emerald-200 border-t-(--primary-color)"></div>
-                <p className="text-(--muted-color)">Loading test cases...</p>
-              </div>
+              <PageSkeleton variant="table" />
             ) : testCases.length === 0 ? (
               <div className="text-center py-12">
                 <HiExclamationCircle className="mx-auto mb-3 h-12 w-12 text-(--muted-color)" />

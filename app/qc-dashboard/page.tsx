@@ -8,6 +8,7 @@ import {
   HiClock,
   HiCheckCircle,
 } from "react-icons/hi";
+import { PageSkeleton } from "@/app/components/common/SkeletonLoader";
 import {
   getQCStatusCounts,
   getQCSummary,
@@ -97,13 +98,7 @@ export default function QCDashboardPage() {
   }, []);
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-(--page-background) p-8">
-        <div className="flex items-center justify-center h-96">
-          <div className="h-12 w-12 animate-spin rounded-full"></div>
-        </div>
-      </div>
-    );
+    return <PageSkeleton variant="dashboard" />;
   }
 
   return (
