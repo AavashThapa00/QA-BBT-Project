@@ -1132,7 +1132,7 @@ export default function TestCaseExecutionPage() {
         />
 
         {/* Hierarchy Flow */}
-        <div className="rounded-2xl border border-emerald-200 bg-linear-to-r from-white to-emerald-50/50 p-6 shadow-sm">
+        <div className="rounded-2xl border border-emerald-200 bg-(--surface) p-6 shadow-sm">
           <h2 className="mb-2 text-lg font-bold text-(--heading-color)">
             Test Cycle Hierarchy
           </h2>
@@ -1143,7 +1143,7 @@ export default function TestCaseExecutionPage() {
           </p>
 
           <div className="grid gap-4 lg:grid-cols-2">
-            <div className="rounded-xl border border-emerald-200 bg-white p-4">
+            <div className="rounded-xl border border-emerald-200 bg-(--surface-soft) p-4">
               <h3 className="mb-3 text-sm font-semibold text-(--heading-color)">
                 Main Title (Folder)
               </h3>
@@ -1153,7 +1153,7 @@ export default function TestCaseExecutionPage() {
               <select
                 value={selectedMainFolder}
                 onChange={(e) => setSelectedMainFolder(e.target.value)}
-                className="mb-3 w-full rounded-lg border border-emerald-200 bg-emerald-50/40 px-3 py-2 text-sm text-(--text-color) focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="mb-3 w-full rounded-lg border border-emerald-200 bg-(--surface-elevated) px-3 py-2 text-sm text-(--text-color) focus:outline-none focus:ring-2 focus:ring-emerald-500"
               >
                 {mainFolders.length === 0 ? (
                   <option value="">No main titles yet</option>
@@ -1172,7 +1172,7 @@ export default function TestCaseExecutionPage() {
                   value={newMainFolderName}
                   onChange={(e) => setNewMainFolderName(e.target.value)}
                   placeholder="Create main title e.g., HSA Cycle"
-                  className="w-full rounded-lg border border-emerald-200 bg-emerald-50/40 px-3 py-2 text-sm text-(--text-color) focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full rounded-lg border border-emerald-200 bg-(--surface-elevated) px-3 py-2 text-sm text-(--text-color) focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
                 <AppButton
                   onClick={handleCreateMainFolder}
@@ -1185,7 +1185,7 @@ export default function TestCaseExecutionPage() {
               </div>
             </div>
 
-            <div className="rounded-xl border border-emerald-200 bg-white p-4">
+            <div className="rounded-xl border border-emerald-200 bg-(--surface-soft) p-4">
               <h3 className="mb-3 text-sm font-semibold text-(--heading-color)">
                 Child Test Cycles
               </h3>
@@ -1199,7 +1199,7 @@ export default function TestCaseExecutionPage() {
               <select
                 value={selectedCycle}
                 onChange={(e) => setSelectedCycle(e.target.value)}
-                className="mb-3 w-full rounded-lg border border-emerald-200 bg-emerald-50/40 px-3 py-2 text-sm text-(--text-color) focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="mb-3 w-full rounded-lg border border-emerald-200 bg-(--surface-elevated) px-3 py-2 text-sm text-(--text-color) focus:outline-none focus:ring-2 focus:ring-emerald-500"
               >
                 {childCycles.length === 0 ? (
                   <option value="">No child cycles yet</option>
@@ -1237,7 +1237,7 @@ export default function TestCaseExecutionPage() {
                 <select
                   value={selectedScopeId}
                   onChange={(e) => setSelectedScopeId(e.target.value)}
-                  className="mb-3 w-full rounded-lg border border-emerald-200 bg-emerald-50/40 px-3 py-2 text-sm text-(--text-color) focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="mb-3 w-full rounded-lg border border-emerald-200 bg-(--surface-elevated) px-3 py-2 text-sm text-(--text-color) focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 >
                   {scopeNodes.length === 0 ? (
                     <option value="">No scope yet</option>
