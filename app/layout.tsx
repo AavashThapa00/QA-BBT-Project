@@ -4,6 +4,7 @@ import Script from "next/script";
 import "./globals.css";
 import Navigation from "./components/common/Navigation";
 import AppToaster from "./components/common/AppToaster";
+import AuthSessionGuard from "./components/common/AuthSessionGuard";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -114,6 +115,7 @@ export default function RootLayout({
           })}
         </Script>
         <Navigation />
+        <AuthSessionGuard />
         <AppToaster />
         {children}
       </body>

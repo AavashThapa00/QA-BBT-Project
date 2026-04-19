@@ -1,10 +1,26 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
+const SESSION_COOKIE = "bbt_session";
+const SESSION_EXPIRES_COOKIE = "bbt_session_expires_at";
+
+function hasValidSession(request: NextRequest) {
+  const session = request.cookies.get(SESSION_COOKIE)?.value;
+  if (!session) return false;
+
+  const expiresAtRaw = request.cookies.get(SESSION_EXPIRES_COOKIE)?.value;
+  if (!expiresAtRaw) return true;
+
+  const expiresAt = Number(expiresAtRaw);
+  if (!Number.isFinite(expiresAt)) return false;
+
+  return expiresAt > Date.now();
+}
+
 export function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const userAgent = request.headers.get("user-agent") || "";
-  const session = request.cookies.get("bbt_session");
+  const hasSession = hasValidSession(request);
   const isLogin = pathname.startsWith("/login");
   const isForgotPassword = pathname.startsWith("/forgot-password");
   const isResetPassword = pathname.startsWith("/reset-password");
@@ -22,7 +38,7 @@ export function middleware(request: NextRequest) {
   const isPublicAuthRoute = isLogin || isForgotPassword || isResetPassword;
 
   if (
-    !session &&
+    !hasSession &&
     !isPublicAuthRoute &&
     !isNext &&
     !isApi &&
@@ -37,10 +53,25 @@ export function middleware(request: NextRequest) {
 
     const url = request.nextUrl.clone();
     url.pathname = "/login";
-    return NextResponse.redirect(url);
+    const response = NextResponse.redirect(url);
+    response.cookies.set(SESSION_COOKIE, "", {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      expires: new Date(0),
+      path: "/",
+    });
+    response.cookies.set(SESSION_EXPIRES_COOKIE, "", {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      expires: new Date(0),
+      path: "/",
+    });
+    return response;
   }
 
-  if (isPublicAuthRoute && session) {
+  if (isPublicAuthRoute && hasSession) {
     const url = request.nextUrl.clone();
     url.pathname = "/profile";
     return NextResponse.redirect(url);

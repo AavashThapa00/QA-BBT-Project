@@ -17,6 +17,7 @@ import {
 } from "@/lib/email";
 
 const SESSION_COOKIE = "bbt_session";
+const SESSION_EXPIRES_COOKIE = "bbt_session_expires_at";
 const SESSION_DAYS = 7;
 const PASSWORD_RESET_MINUTES = 30;
 const LOGIN_CODE_MINUTES = 10;
@@ -82,6 +83,13 @@ const createSession = async (userId: string) => {
 const setSessionCookie = async (sessionId: string, expiresAt: Date) => {
   const cookieStore = await cookies();
   cookieStore.set(SESSION_COOKIE, sessionId, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    expires: expiresAt,
+    path: "/",
+  });
+  cookieStore.set(SESSION_EXPIRES_COOKIE, String(expiresAt.getTime()), {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
@@ -427,6 +435,22 @@ export async function resetPasswordWithTokenAction(formData: FormData) {
     );
     await sessions.deleteMany({ userId });
 
+    const cookieStore = await cookies();
+    cookieStore.set(SESSION_COOKIE, "", {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      expires: new Date(0),
+      path: "/",
+    });
+    cookieStore.set(SESSION_EXPIRES_COOKIE, "", {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      expires: new Date(0),
+      path: "/",
+    });
+
     return {
       success: true,
       message: "Password has been reset. Please sign in.",
@@ -454,6 +478,13 @@ export async function logoutAction() {
 
   const cookieStore = await cookies();
   cookieStore.set(SESSION_COOKIE, "", {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    expires: new Date(0),
+    path: "/",
+  });
+  cookieStore.set(SESSION_EXPIRES_COOKIE, "", {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
