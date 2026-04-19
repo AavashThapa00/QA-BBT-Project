@@ -64,6 +64,7 @@ const SEVERITY_OPTIONS = ["LOW", "MEDIUM", "HIGH", "MAJOR"] as const;
 const PRIORITY_OPTIONS = ["LOW", "MEDIUM", "HIGH", "MAJOR"] as const;
 
 export default function TestCaseExecutionPage() {
+  const [pageMode, setPageMode] = useState<"view" | "add">("view");
   const [cycles, setCycles] = useState<TestCycle[]>([]);
   const [selectedMainFolder, setSelectedMainFolder] = useState<string>("");
   const [selectedCycle, setSelectedCycle] = useState<string>("");
@@ -1072,6 +1073,7 @@ export default function TestCaseExecutionPage() {
   const filteredRuns = runs.filter((run) =>
     run.name.toLowerCase().includes(runSearch.trim().toLowerCase()),
   );
+  const isAddMode = pageMode === "add";
 
   if (loading && cycles.length === 0) {
     return <PageSkeleton variant="form" />;
@@ -1094,8 +1096,28 @@ export default function TestCaseExecutionPage() {
               Test Cycle Execution
             </h1>
             <p className="mt-1 text-sm text-(--muted-color)">
-              Execute and track test cases for selected cycles.
+              {isAddMode
+                ? "Add and execute test data for selected cycles."
+                : "View and track test case data for selected cycles."}
             </p>
+          </div>
+          <div className="rounded-xl border border-emerald-200 bg-white p-1 shadow-sm">
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setPageMode("view")}
+                className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${!isAddMode ? "bg-emerald-600 text-white" : "text-(--muted-color) hover:bg-emerald-50"}`}
+              >
+                View Data
+              </button>
+              <button
+                type="button"
+                onClick={() => setPageMode("add")}
+                className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${isAddMode ? "bg-emerald-600 text-white" : "text-(--muted-color) hover:bg-emerald-50"}`}
+              >
+                Add Data
+              </button>
+            </div>
           </div>
         </div>
 
@@ -1117,23 +1139,25 @@ export default function TestCaseExecutionPage() {
         )}
 
         {/* Import Form */}
-        <TestCaseImportForm
-          onImportSuccess={handleImportSuccess}
-          onImportError={handleImportError}
-          cycleNodes={cycles}
-          defaultParentId={selectedMainFolder}
-          defaultCycleName={selectedCycleName}
-        />
+        {isAddMode && (
+          <TestCaseImportForm
+            onImportSuccess={handleImportSuccess}
+            onImportError={handleImportError}
+            cycleNodes={cycles}
+            defaultParentId={selectedMainFolder}
+            defaultCycleName={selectedCycleName}
+          />
+        )}
 
         {/* Hierarchy Flow */}
         <div className="rounded-2xl border border-emerald-200 bg-(--surface) p-6 shadow-sm">
           <h2 className="mb-2 text-lg font-bold text-(--heading-color)">
-            Test Cycle Hierarchy
+            {isAddMode ? "Test Cycle Hierarchy" : "Cycle Selection"}
           </h2>
           <p className="mb-5 text-xs text-(--muted-color)">
-            1) Create main title (example: HSA Cycle) → 2) Create child cycles
-            (Test Cycle 1, 2, 3) → 3) Create testing scope (Authentication,
-            Discover, Challenges, Dojos) → 4) Add test cases under headings.
+            {isAddMode
+              ? "1) Create main title (example: HSA Cycle) → 2) Create child cycles (Test Cycle 1, 2, 3) → 3) Create testing scope (Authentication, Discover, Challenges, Dojos) → 4) Add test cases under headings."
+              : "Select main title, child cycle, and scope to view execution data."}
           </p>
 
           <div className="grid gap-4 lg:grid-cols-2">
@@ -1160,23 +1184,25 @@ export default function TestCaseExecutionPage() {
                 )}
               </select>
 
-              <div className="flex flex-col gap-2 sm:flex-row">
-                <input
-                  type="text"
-                  value={newMainFolderName}
-                  onChange={(e) => setNewMainFolderName(e.target.value)}
-                  placeholder="Create main title e.g., HSA Cycle"
-                  className="w-full rounded-lg border border-emerald-200 bg-(--surface-elevated) px-3 py-2 text-sm text-(--text-color) focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                />
-                <AppButton
-                  onClick={handleCreateMainFolder}
-                  disabled={creatingNode}
-                  variant="primary"
-                  size="sm"
-                >
-                  {creatingNode ? "Creating..." : "Create"}
-                </AppButton>
-              </div>
+              {isAddMode && (
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <input
+                    type="text"
+                    value={newMainFolderName}
+                    onChange={(e) => setNewMainFolderName(e.target.value)}
+                    placeholder="Create main title e.g., HSA Cycle"
+                    className="w-full rounded-lg border border-emerald-200 bg-(--surface-elevated) px-3 py-2 text-sm text-(--text-color) focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                  <AppButton
+                    onClick={handleCreateMainFolder}
+                    disabled={creatingNode}
+                    variant="primary"
+                    size="sm"
+                  >
+                    {creatingNode ? "Creating..." : "Create"}
+                  </AppButton>
+                </div>
+              )}
             </div>
 
             <div className="rounded-xl border border-emerald-200 bg-(--surface-soft) p-4">
@@ -1206,23 +1232,25 @@ export default function TestCaseExecutionPage() {
                 )}
               </select>
 
-              <div className="flex flex-col gap-2 sm:flex-row">
-                <input
-                  type="text"
-                  value={newChildCycleName}
-                  onChange={(e) => setNewChildCycleName(e.target.value)}
-                  placeholder="Create child cycle e.g., Test Cycle 2"
-                  className="w-full rounded-lg border border-emerald-200 bg-emerald-50/40 px-3 py-2 text-sm text-(--text-color) focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                />
-                <AppButton
-                  onClick={handleCreateChildCycle}
-                  disabled={creatingNode || !selectedMainFolder}
-                  variant="primary"
-                  size="sm"
-                >
-                  {creatingNode ? "Creating..." : "Create Child"}
-                </AppButton>
-              </div>
+              {isAddMode && (
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <input
+                    type="text"
+                    value={newChildCycleName}
+                    onChange={(e) => setNewChildCycleName(e.target.value)}
+                    placeholder="Create child cycle e.g., Test Cycle 2"
+                    className="w-full rounded-lg border border-emerald-200 bg-emerald-50/40 px-3 py-2 text-sm text-(--text-color) focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                  <AppButton
+                    onClick={handleCreateChildCycle}
+                    disabled={creatingNode || !selectedMainFolder}
+                    variant="primary"
+                    size="sm"
+                  >
+                    {creatingNode ? "Creating..." : "Create Child"}
+                  </AppButton>
+                </div>
+              )}
 
               <div className="mt-4 border-t border-emerald-100 pt-4">
                 <label className="mb-2 block text-xs font-medium text-(--muted-color)">
@@ -1244,153 +1272,159 @@ export default function TestCaseExecutionPage() {
                   )}
                 </select>
 
-                <div className="flex flex-col gap-2 sm:flex-row">
-                  <input
-                    type="text"
-                    value={newScopeName}
-                    onChange={(e) => setNewScopeName(e.target.value)}
-                    placeholder="Create scope e.g., Authentication"
-                    className="w-full rounded-lg border border-emerald-200 bg-emerald-50/40 px-3 py-2 text-sm text-(--text-color) focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  />
-                  <AppButton
-                    onClick={handleCreateScope}
-                    disabled={creatingNode || !selectedCycle}
-                    variant="primary"
-                    size="sm"
-                  >
-                    {creatingNode ? "Creating..." : "Create Scope"}
-                  </AppButton>
-                </div>
+                {isAddMode && (
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    <input
+                      type="text"
+                      value={newScopeName}
+                      onChange={(e) => setNewScopeName(e.target.value)}
+                      placeholder="Create scope e.g., Authentication"
+                      className="w-full rounded-lg border border-emerald-200 bg-emerald-50/40 px-3 py-2 text-sm text-(--text-color) focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    />
+                    <AppButton
+                      onClick={handleCreateScope}
+                      disabled={creatingNode || !selectedCycle}
+                      variant="primary"
+                      size="sm"
+                    >
+                      {creatingNode ? "Creating..." : "Create Scope"}
+                    </AppButton>
+                  </div>
+                )}
               </div>
             </div>
           </div>
         </div>
 
         {/* Manual Test Case Creation */}
-        <div className="rounded-2xl border border-emerald-200 bg-white p-6 shadow-sm">
-          <h2 className="mb-2 text-lg font-bold text-(--heading-color)">
-            Create Test Case
-          </h2>
-          <p className="mb-4 text-xs text-(--muted-color)">
-            Main Title: {selectedMainFolderPath} • Child Cycle:{" "}
-            {selectedCycle
-              ? getNodePath(selectedCycle)
-              : "Select a child cycle"}{" "}
-            • Scope: {selectedScopeName || "Select/create a scope"}
-          </p>
+        {isAddMode && (
+          <div className="rounded-2xl border border-emerald-200 bg-white p-6 shadow-sm">
+            <h2 className="mb-2 text-lg font-bold text-(--heading-color)">
+              Create Test Case
+            </h2>
+            <p className="mb-4 text-xs text-(--muted-color)">
+              Main Title: {selectedMainFolderPath} • Child Cycle:{" "}
+              {selectedCycle
+                ? getNodePath(selectedCycle)
+                : "Select a child cycle"}{" "}
+              • Scope: {selectedScopeName || "Select/create a scope"}
+            </p>
 
-          <div className="grid gap-3 md:grid-cols-2">
-            <div>
-              <label className="mb-2 block text-xs font-semibold text-(--heading-color)">
-                Testing Scope
-              </label>
-              <select
-                value={selectedScopeId}
-                onChange={(e) => setSelectedScopeId(e.target.value)}
-                className="w-full rounded-lg border border-emerald-200 bg-emerald-50/40 px-3 py-2 text-sm text-(--text-color) focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              >
-                {scopeNodes.length === 0 ? (
-                  <option value="">No scope yet</option>
-                ) : (
-                  scopeNodes.map((scope) => (
-                    <option key={scope.id} value={scope.id}>
-                      {scope.name}
-                    </option>
-                  ))
-                )}
-              </select>
-            </div>
+            <div className="grid gap-3 md:grid-cols-2">
+              <div>
+                <label className="mb-2 block text-xs font-semibold text-(--heading-color)">
+                  Testing Scope
+                </label>
+                <select
+                  value={selectedScopeId}
+                  onChange={(e) => setSelectedScopeId(e.target.value)}
+                  className="w-full rounded-lg border border-emerald-200 bg-emerald-50/40 px-3 py-2 text-sm text-(--text-color) focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                >
+                  {scopeNodes.length === 0 ? (
+                    <option value="">No scope yet</option>
+                  ) : (
+                    scopeNodes.map((scope) => (
+                      <option key={scope.id} value={scope.id}>
+                        {scope.name}
+                      </option>
+                    ))
+                  )}
+                </select>
+              </div>
 
-            <div>
-              <label className="mb-2 block text-xs font-semibold text-(--heading-color)">
-                Test Case ID
-              </label>
-              <div className="rounded-lg border border-emerald-200 bg-emerald-50/40 px-3 py-2 text-sm text-(--muted-color)">
-                Auto-generated (TC-001, TC-002...)
+              <div>
+                <label className="mb-2 block text-xs font-semibold text-(--heading-color)">
+                  Test Case ID
+                </label>
+                <div className="rounded-lg border border-emerald-200 bg-emerald-50/40 px-3 py-2 text-sm text-(--muted-color)">
+                  Auto-generated (TC-001, TC-002...)
+                </div>
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="mb-2 block text-xs font-semibold text-(--heading-color)">
+                  Section / Heading (e.g., Login Test Cases)
+                </label>
+                <input
+                  type="text"
+                  value={newCaseSectionName}
+                  onChange={(e) => setNewCaseSectionName(e.target.value)}
+                  placeholder="Login Test Cases"
+                  className="w-full rounded-lg border border-emerald-200 bg-emerald-50/40 px-3 py-2 text-sm text-(--text-color) focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-xs font-semibold text-(--heading-color)">
+                  STATUS
+                </label>
+                <select
+                  value={newCaseStatus}
+                  onChange={(e) =>
+                    setNewCaseStatus(e.target.value as TestExecutionStatus)
+                  }
+                  className="w-full rounded-lg border border-emerald-200 bg-emerald-50/40 px-3 py-2 text-sm text-(--text-color) focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                >
+                  <option value="NOT_RUN">PENDING</option>
+                  <option value="PASS">PASS</option>
+                  <option value="FAIL">FAIL</option>
+                </select>
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="mb-2 block text-xs font-semibold text-(--heading-color)">
+                  TITLE
+                </label>
+                <input
+                  type="text"
+                  value={newCaseTitle}
+                  onChange={(e) => setNewCaseTitle(e.target.value)}
+                  placeholder="User can login with valid credentials"
+                  className="w-full rounded-lg border border-emerald-200 bg-emerald-50/40 px-3 py-2 text-sm text-(--text-color) focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="mb-2 block text-xs font-semibold text-(--heading-color)">
+                  STEPS
+                </label>
+                <textarea
+                  value={newCaseSteps}
+                  onChange={(e) => setNewCaseSteps(e.target.value)}
+                  placeholder="1. Open app\n2. Enter username/password\n3. Click Login"
+                  className="h-28 w-full resize-none rounded-lg border border-emerald-200 bg-emerald-50/40 px-3 py-2 text-sm text-(--text-color) focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="mb-2 block text-xs font-semibold text-(--heading-color)">
+                  REMARKS
+                </label>
+                <input
+                  type="text"
+                  value={newCaseRemarks}
+                  onChange={(e) => setNewCaseRemarks(e.target.value)}
+                  placeholder="Optional initial remarks"
+                  className="w-full rounded-lg border border-emerald-200 bg-emerald-50/40 px-3 py-2 text-sm text-(--text-color) focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                />
               </div>
             </div>
 
-            <div className="md:col-span-2">
-              <label className="mb-2 block text-xs font-semibold text-(--heading-color)">
-                Section / Heading (e.g., Login Test Cases)
-              </label>
-              <input
-                type="text"
-                value={newCaseSectionName}
-                onChange={(e) => setNewCaseSectionName(e.target.value)}
-                placeholder="Login Test Cases"
-                className="w-full rounded-lg border border-emerald-200 bg-emerald-50/40 px-3 py-2 text-sm text-(--text-color) focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              />
-            </div>
-
-            <div>
-              <label className="mb-2 block text-xs font-semibold text-(--heading-color)">
-                STATUS
-              </label>
-              <select
-                value={newCaseStatus}
-                onChange={(e) =>
-                  setNewCaseStatus(e.target.value as TestExecutionStatus)
+            <div className="mt-4 flex justify-end">
+              <AppButton
+                onClick={handleCreateTestCase}
+                disabled={
+                  creatingTestCase || !selectedCycle || !selectedScopeId
                 }
-                className="w-full rounded-lg border border-emerald-200 bg-emerald-50/40 px-3 py-2 text-sm text-(--text-color) focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                variant="primary"
+                size="sm"
+                title="Create test case"
               >
-                <option value="NOT_RUN">PENDING</option>
-                <option value="PASS">PASS</option>
-                <option value="FAIL">FAIL</option>
-              </select>
-            </div>
-
-            <div className="md:col-span-2">
-              <label className="mb-2 block text-xs font-semibold text-(--heading-color)">
-                TITLE
-              </label>
-              <input
-                type="text"
-                value={newCaseTitle}
-                onChange={(e) => setNewCaseTitle(e.target.value)}
-                placeholder="User can login with valid credentials"
-                className="w-full rounded-lg border border-emerald-200 bg-emerald-50/40 px-3 py-2 text-sm text-(--text-color) focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              />
-            </div>
-
-            <div className="md:col-span-2">
-              <label className="mb-2 block text-xs font-semibold text-(--heading-color)">
-                STEPS
-              </label>
-              <textarea
-                value={newCaseSteps}
-                onChange={(e) => setNewCaseSteps(e.target.value)}
-                placeholder="1. Open app\n2. Enter username/password\n3. Click Login"
-                className="h-28 w-full resize-none rounded-lg border border-emerald-200 bg-emerald-50/40 px-3 py-2 text-sm text-(--text-color) focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              />
-            </div>
-
-            <div className="md:col-span-2">
-              <label className="mb-2 block text-xs font-semibold text-(--heading-color)">
-                REMARKS
-              </label>
-              <input
-                type="text"
-                value={newCaseRemarks}
-                onChange={(e) => setNewCaseRemarks(e.target.value)}
-                placeholder="Optional initial remarks"
-                className="w-full rounded-lg border border-emerald-200 bg-emerald-50/40 px-3 py-2 text-sm text-(--text-color) focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              />
+                {creatingTestCase ? "Creating..." : "Create Test Case"}
+              </AppButton>
             </div>
           </div>
-
-          <div className="mt-4 flex justify-end">
-            <AppButton
-              onClick={handleCreateTestCase}
-              disabled={creatingTestCase || !selectedCycle || !selectedScopeId}
-              variant="primary"
-              size="sm"
-              title="Create test case"
-            >
-              {creatingTestCase ? "Creating..." : "Create Test Case"}
-            </AppButton>
-          </div>
-        </div>
+        )}
 
         {/* Test Cases Table */}
         <div className="w-full overflow-hidden rounded-2xl border border-emerald-100 bg-white shadow-sm">
@@ -1504,7 +1538,7 @@ export default function TestCaseExecutionPage() {
                         Remarks
                       </th>
                       <th className="px-4 py-3 text-center font-semibold text-(--heading-color)">
-                        Actions
+                        {isAddMode ? "Actions" : "Mode"}
                       </th>
                     </tr>
                   </thead>
@@ -1548,66 +1582,83 @@ export default function TestCaseExecutionPage() {
                             </div>
                           </td>
                           <td className="px-4 py-3">
-                            <input
-                              type="text"
-                              value={
-                                remarks[testCase.id] ||
-                                testCase.executionRemarks ||
-                                ""
-                              }
-                              onChange={(e) =>
-                                handleRemarkChange(testCase.id, e.target.value)
-                              }
-                              placeholder="Add remarks..."
-                              className="w-full rounded border border-emerald-200 bg-emerald-50/40 px-2 py-1 text-xs text-(--text-color) focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                            />
+                            {isAddMode ? (
+                              <input
+                                type="text"
+                                value={
+                                  remarks[testCase.id] ||
+                                  testCase.executionRemarks ||
+                                  ""
+                                }
+                                onChange={(e) =>
+                                  handleRemarkChange(
+                                    testCase.id,
+                                    e.target.value,
+                                  )
+                                }
+                                placeholder="Add remarks..."
+                                className="w-full rounded border border-emerald-200 bg-emerald-50/40 px-2 py-1 text-xs text-(--text-color) focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                              />
+                            ) : (
+                              <p className="max-w-md wrap-break-word text-xs text-(--text-color)">
+                                {testCase.executionRemarks || "—"}
+                              </p>
+                            )}
                           </td>
                           <td className="px-4 py-3">
-                            <div className="flex flex-wrap items-center justify-center gap-2">
-                              <AppButton
-                                onClick={() => handlePass(testCase.id)}
-                                disabled={savingId === testCase.id}
-                                title="Mark as Pass"
-                                aria-label="Mark as Pass"
-                                variant="successSoft"
-                                size="sm"
-                                className="py-1"
-                              >
-                                {savingId === testCase.id ? (
-                                  "..."
-                                ) : (
-                                  <HiCheckCircle className="w-4 h-4" />
-                                )}
-                              </AppButton>
-                              <AppButton
-                                onClick={() => handleFailClick(testCase)}
-                                disabled={savingId === testCase.id}
-                                title="Mark as Fail"
-                                aria-label="Mark as Fail"
-                                variant="dangerSoft"
-                                size="sm"
-                                className="py-1"
-                              >
-                                {savingId === testCase.id ? (
-                                  "..."
-                                ) : (
-                                  <HiXCircle className="w-4 h-4" />
-                                )}
-                              </AppButton>
-                              {testCase.executionStatus !== "NOT_RUN" && (
+                            {isAddMode ? (
+                              <div className="flex flex-wrap items-center justify-center gap-2">
                                 <AppButton
-                                  onClick={() =>
-                                    handleRevertToPending(testCase.id)
-                                  }
+                                  onClick={() => handlePass(testCase.id)}
                                   disabled={savingId === testCase.id}
-                                  variant="secondary"
+                                  title="Mark as Pass"
+                                  aria-label="Mark as Pass"
+                                  variant="successSoft"
                                   size="sm"
                                   className="py-1"
                                 >
-                                  {savingId === testCase.id ? "..." : "Revert"}
+                                  {savingId === testCase.id ? (
+                                    "..."
+                                  ) : (
+                                    <HiCheckCircle className="w-4 h-4" />
+                                  )}
                                 </AppButton>
-                              )}
-                            </div>
+                                <AppButton
+                                  onClick={() => handleFailClick(testCase)}
+                                  disabled={savingId === testCase.id}
+                                  title="Mark as Fail"
+                                  aria-label="Mark as Fail"
+                                  variant="dangerSoft"
+                                  size="sm"
+                                  className="py-1"
+                                >
+                                  {savingId === testCase.id ? (
+                                    "..."
+                                  ) : (
+                                    <HiXCircle className="w-4 h-4" />
+                                  )}
+                                </AppButton>
+                                {testCase.executionStatus !== "NOT_RUN" && (
+                                  <AppButton
+                                    onClick={() =>
+                                      handleRevertToPending(testCase.id)
+                                    }
+                                    disabled={savingId === testCase.id}
+                                    variant="secondary"
+                                    size="sm"
+                                    className="py-1"
+                                  >
+                                    {savingId === testCase.id
+                                      ? "..."
+                                      : "Revert"}
+                                  </AppButton>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-xs font-medium text-(--muted-color)">
+                                Read only
+                              </span>
+                            )}
                           </td>
                         </tr>
                       )),
