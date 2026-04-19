@@ -23,16 +23,16 @@
   --color-gray-800: #c8d2e1;
   --color-gray-900: #edf2f8;
 
-  --color-emerald-50: #0d1f1c;
-  --color-emerald-100: #113028;
-  --color-emerald-200: #174337;
-  --color-emerald-300: #1e5a49;
-  --color-emerald-400: #2a735d;
-  --color-emerald-500: #3c9679;
-  --color-emerald-600: #54b195;
-  --color-emerald-700: #85d0bc;
-  --color-emerald-800: #b7eadb;
-  --color-emerald-900: #e1fbf4;
+  --color-emerald-50: #081722;
+  --color-emerald-100: #0e2235;
+  --color-emerald-200: #14304b;
+  --color-emerald-300: #1b4270;
+  --color-emerald-400: #2362a3;
+  --color-emerald-500: #3080d0;
+  --color-emerald-600: #4aa1f1;
+  --color-emerald-700: #7bc0fb;
+  --color-emerald-800: #addafc;
+  --color-emerald-900: #dcebfe;
 
   --color-teal-50: #0b1f21;
   --color-teal-100: #102e31;
@@ -147,12 +147,12 @@
   --primary-color: #60a5fa;
   --primary-hover-color: #3b82f6;
   --accent-color: #22d3ee;
-  --success-color: #34d399;
+  --success-color: #38bdf8;
   --warning-color: #f59e0b;
   --danger-color: #fb7185;
   --info-color: #38bdf8;
   --secondary-color: #94a3b8;
-  --chart-positive-color: #22d3ee;
+  --chart-positive-color: #38bdf8;
   --chart-negative-color: #fb7185;
   --chart-neutral-color: #38bdf8;
   --chart-attention-color: #f59e0b;
@@ -166,7 +166,7 @@
   --primary: #60a5fa;
   --primary-dark: #2563eb;
   --accent: #22d3ee;
-  --success: #34d399;
+  --success: #38bdf8;
   --warning: #f59e0b;
   --danger: #fb7185;
   --surface-contrast: #02050f;
@@ -342,6 +342,7 @@ textarea:disabled {
 
 /* Performance guardrails for heavy visual effects */
 @media (max-width: 1024px) {
+
   .backdrop-blur-sm,
   .backdrop-blur-md,
   .backdrop-blur-lg,
@@ -357,4 +358,17 @@ textarea:disabled {
     transition: none !important;
     scroll-behavior: auto !important;
   }
+}
+
+
+/* Hacks */
+
+.recharts-wrapper *:focus {
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+.recharts-tooltip-item {
+  color: white !important;
 }
