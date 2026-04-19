@@ -294,7 +294,7 @@ export async function verifyLoginCodeAction(formData: FormData) {
   const { sessionId, expiresAt } = await createSession(userId);
   await setSessionCookie(sessionId, expiresAt);
 
-  redirect("/");
+  return { success: true, message: "Signed in successfully" };
 }
 
 export async function requestPasswordResetAction(formData: FormData) {

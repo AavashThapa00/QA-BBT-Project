@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
+import { toast } from "sonner";
 import {
   requestLoginCodeAction,
   verifyLoginCodeAction,
@@ -103,9 +105,15 @@ function VerifyCodeSubmitButton() {
 }
 
 export default function LoginPage() {
+  const router = useRouter();
   const [challengeId, setChallengeId] = useState("");
   const [email, setEmail] = useState("");
   const [devCode, setDevCode] = useState("");
+  const requestToastKeyRef = useRef("");
+  const verifyToastKeyRef = useRef("");
+  const verifyRedirectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
 
   const [requestState, requestCodeFormAction] = useActionState<
     RequestCodeState | null,
@@ -126,6 +134,44 @@ export default function LoginPage() {
     VerifyCodeState | null,
     FormData
   >(async (_prevState, formData) => verifyLoginCodeAction(formData), null);
+
+  useEffect(() => {
+    if (!requestState?.message) return;
+
+    const toastKey = `${requestState.success ? "success" : "error"}:${requestState.message}`;
+    if (requestToastKeyRef.current === toastKey) return;
+    requestToastKeyRef.current = toastKey;
+
+    if (requestState.success) {
+      toast.success(requestState.message);
+    } else {
+      toast.error(requestState.message);
+    }
+  }, [requestState]);
+
+  useEffect(() => {
+    if (!verifyState?.message) return;
+
+    const toastKey = `${verifyState.success ? "success" : "error"}:${verifyState.message}`;
+    if (verifyToastKeyRef.current === toastKey) return;
+    verifyToastKeyRef.current = toastKey;
+
+    if (verifyState.success) {
+      toast.success(verifyState.message);
+      verifyRedirectTimerRef.current = setTimeout(() => {
+        router.replace("/");
+      }, 1200);
+    } else {
+      toast.error(verifyState.message);
+    }
+
+    return () => {
+      if (verifyRedirectTimerRef.current) {
+        clearTimeout(verifyRedirectTimerRef.current);
+        verifyRedirectTimerRef.current = null;
+      }
+    };
+  }, [router, verifyState]);
 
   const inVerificationStep = !!challengeId;
 
@@ -172,12 +218,6 @@ export default function LoginPage() {
                   />
                 </div>
 
-                {requestState?.message && !requestState.success && (
-                  <div className="rounded-xl border border-[rgba(229,57,53,0.18)] bg-[rgba(229,57,53,0.08)] p-3 text-sm text-(--danger-color)">
-                    {requestState.message}
-                  </div>
-                )}
-
                 <div className="flex justify-end">
                   <Link
                     href="/forgot-password"
@@ -209,12 +249,6 @@ export default function LoginPage() {
                     placeholder="Enter 6-digit code"
                   />
                 </div>
-
-                {verifyState?.message && !verifyState.success && (
-                  <div className="rounded-xl border border-[rgba(229,57,53,0.18)] bg-[rgba(229,57,53,0.08)] p-3 text-sm text-(--danger-color)">
-                    {verifyState.message}
-                  </div>
-                )}
 
                 {devCode && (
                   <div className="rounded-xl border border-[rgba(30,136,229,0.22)] bg-[rgba(30,136,229,0.08)] p-3 text-sm text-(--info-color)">
