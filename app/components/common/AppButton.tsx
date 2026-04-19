@@ -17,7 +17,7 @@ const VARIANT_CLASSES: Record<AppButtonVariant, string> = {
   primary:
     "bg-(--primary-color) text-white hover:bg-(--primary-hover-color) disabled:cursor-not-allowed disabled:opacity-50",
   secondary:
-    "border border-(--border-color) bg-(--surface-soft) text-(--muted-color) hover:border-(--primary-color) hover:bg-emerald-50 hover:text-(--heading-color) disabled:cursor-not-allowed disabled:opacity-50",
+    "border border-emerald-300 bg-emerald-100 text-emerald-800 shadow-sm hover:border-emerald-400 hover:bg-emerald-200 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0",
   danger:
     "bg-(--danger-color) text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50",
   successSoft:
