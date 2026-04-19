@@ -84,7 +84,6 @@ export default function Navigation() {
 
   useEffect(() => {
     let mounted = true;
-    setIsAuthResolved(false);
 
     getCurrentUser()
       .then((user) => {
