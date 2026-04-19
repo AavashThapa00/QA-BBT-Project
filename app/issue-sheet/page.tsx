@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import Link from "next/link";
+import { Dialog, DialogPanel, DialogTitle, Transition, TransitionChild } from "@headlessui/react";
 import {
   HiArrowLeft,
   HiPlus,
@@ -138,7 +139,7 @@ function mapDefectToRow(defect: Defect): EditableRow {
   };
 }
 
-export default function ManualEntryPage() {
+export default function IssueSheetPage() {
   const [rows, setRows] = useState<EditableRow[]>([]);
   const [newIssue, setNewIssue] =
     useState<ManualDefectInput>(DEFAULT_NEW_ISSUE);
@@ -150,6 +151,8 @@ export default function ManualEntryPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pageLoaded, setPageLoaded] = useState(false);
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   const loadRows = async () => {
     setLoading(true);
@@ -158,7 +161,7 @@ export default function ManualEntryPage() {
       const defects = await getManualDefects(250);
       setRows(defects.map(mapDefectToRow));
     } catch {
-      setError("Failed to load manual issue sheet");
+      setError("Failed to load issue sheet");
     } finally {
       setLoading(false);
     }
@@ -199,6 +202,7 @@ export default function ManualEntryPage() {
 
     setMessage(result.message);
     setNewIssue(DEFAULT_NEW_ISSUE);
+    setIsCreateModalOpen(false);
     await loadRows();
     setCreating(false);
   };
@@ -265,11 +269,11 @@ export default function ManualEntryPage() {
             </Link>
             <div className="space-y-1">
               <h1 className="text-2xl font-bold text-(--heading-color) sm:text-3xl lg:text-4xl">
-                Manual Issue Sheet
+                Issue Sheet
               </h1>
               <p className="max-w-2xl text-xs text-(--muted-color) sm:text-sm">
-                Enter issues directly in-platform and update status, priority,
-                severity, QC status, issue test date, and fixed date.
+                Track and manage issues in one place. Import from CSV, or add
+                issues manually from the quick action panel.
               </p>
             </div>
           </div>
@@ -278,333 +282,448 @@ export default function ManualEntryPage() {
         {/* Main Content - Scrollable */}
         <div className="flex-1 w-full overflow-y-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 scroll-smooth">
           <div className="mx-auto w-full max-w-screen-2xl space-y-6">
-            {/* CSV Upload */}
             <div
-              className={`rounded-2xl border border-(--border-color) bg-(--surface) p-6 shadow-card transition-all duration-1000 transform ${
+              className={`rounded-2xl border border-(--border-color) bg-(--surface) p-4 sm:p-5 shadow-card transition-all duration-1000 transform ${
                 pageLoaded
                   ? "opacity-100 translate-y-0"
                   : "opacity-0 translate-y-10"
               }`}
             >
-              <h2 className="mb-2 text-lg font-bold text-(--heading-color) sm:text-xl">
-                Upload CSV
-              </h2>
-              <p className="mb-5 text-xs text-(--muted-color) sm:text-sm">
-                Upload issue sheets from CSV. Imported defects will appear in
-                the table below.
-              </p>
-
-              <CSVUpload
-                onUploadSuccess={(result) => {
-                  setMessage(result.message);
-                  setError(null);
-                  void loadRows();
-                }}
-                onUploadError={(uploadError) => {
-                  setError(uploadError);
-                  setMessage(null);
-                }}
-              />
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h2 className="text-base font-semibold text-(--heading-color) sm:text-lg">
+                    Quick Actions
+                  </h2>
+                  <p className="text-xs text-(--muted-color) sm:text-sm">
+                    Add new issues manually or import from CSV.
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <AppButton
+                    onClick={() => setIsImportDialogOpen(true)}
+                    variant="secondary"
+                    className="px-4 py-2"
+                  >
+                    Import CSV
+                  </AppButton>
+                  <AppButton
+                    onClick={() => setIsCreateModalOpen(true)}
+                    variant="primary"
+                    className="px-4 py-2"
+                  >
+                    <HiPlus className="w-4 h-4" />
+                    Add Issue Manually
+                  </AppButton>
+                </div>
+              </div>
             </div>
 
-            {/* Add Issue Form */}
-            <div
-              className={`rounded-2xl border border-(--border-color) bg-(--surface) p-6 shadow-card transition-all duration-1000 transform ${
-                pageLoaded
-                  ? "opacity-100 translate-y-0"
-                  : "opacity-0 translate-y-10"
-              } group`}
-            >
-              <h2 className="mb-5 flex items-center gap-3 text-lg font-bold text-(--heading-color) sm:text-xl">
-                <div className="rounded-lg bg-(--primary-color) p-2">
-                  <HiPlus className="w-5 h-5 text-white" />
-                </div>
-                Add New Issue
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
-                <div>
-                  <label className="block text-xs text-slate-300 mb-1.5">
-                    Test Type
-                  </label>
-                  <select
-                    value={(newIssue.testType as TestType) || "smoke"}
-                    onChange={(e) => {
-                      const testType = e.target.value as TestType;
-                      setNewIssue((prev) => ({
-                        ...prev,
-                        testType,
-                        testScenario:
-                          testType === "cycle" ? prev.testScenario || "" : "",
-                        testSteps:
-                          testType === "cycle" ? prev.testSteps || "" : "",
-                        sheetType:
-                          testType === "smoke"
-                            ? "Smoke Testing Sheet"
-                            : prev.sheetType || "KFQ Cycle",
-                      }));
-                    }}
-                    className="w-full rounded-lg border border-(--border-color) bg-(--surface-soft) px-4 py-2.5 text-sm text-(--text-color) transition-all duration-200 focus:border-(--primary-color) focus:outline-none focus:ring-2 focus:ring-(--primary-color)/20"
-                  >
-                    <option value="smoke">Smoke Test</option>
-                    <option value="cycle">Cycle Test</option>
-                  </select>
-                </div>
+            <Transition show={isImportDialogOpen} as={Fragment}>
+              <Dialog
+                as="div"
+                className="relative z-60"
+                onClose={() => setIsImportDialogOpen(false)}
+              >
+                <TransitionChild
+                  as={Fragment}
+                  enter="ease-out duration-200"
+                  enterFrom="opacity-0"
+                  enterTo="opacity-100"
+                  leave="ease-in duration-150"
+                  leaveFrom="opacity-100"
+                  leaveTo="opacity-0"
+                >
+                  <div className="fixed inset-0 bg-slate-950/35 backdrop-blur-sm" />
+                </TransitionChild>
 
-                {[
-                  {
-                    label: "Test Case ID",
-                    placeholder: "ST-01",
-                    value: newIssue.testCaseId,
-                    key: "testCaseId",
-                  },
-                  {
-                    label: "Fork and Module",
-                    placeholder: "KFQ - Home",
-                    value: newIssue.module,
-                    key: "module",
-                  },
-                ].map((field, idx) => (
-                  <div key={idx}>
-                    <label className="block text-xs text-slate-300 mb-1.5">
-                      {field.label}
-                    </label>
-                    <input
-                      placeholder={field.placeholder}
-                      value={field.value}
+                <div className="fixed inset-0 overflow-y-auto p-4">
+                  <div className="flex min-h-full items-center justify-center">
+                    <TransitionChild
+                      as={Fragment}
+                      enter="ease-out duration-200"
+                      enterFrom="opacity-0 scale-95"
+                      enterTo="opacity-100 scale-100"
+                      leave="ease-in duration-150"
+                      leaveFrom="opacity-100 scale-100"
+                      leaveTo="opacity-0 scale-95"
+                    >
+                      <DialogPanel className="w-full max-w-3xl rounded-2xl border border-(--border-color) bg-(--surface) p-6 shadow-2xl">
+                        <div className="mb-4 flex items-start justify-between gap-3">
+                          <div>
+                            <DialogTitle className="text-lg font-bold text-(--heading-color) sm:text-xl">
+                              Upload CSV
+                            </DialogTitle>
+                            <p className="mt-1 text-xs text-(--muted-color) sm:text-sm">
+                              Upload issue sheets from CSV. Imported defects will appear in the table.
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setIsImportDialogOpen(false)}
+                            className="rounded-lg p-2 text-(--muted-color) transition-colors hover:bg-emerald-50 hover:text-(--heading-color)"
+                            aria-label="Close import dialog"
+                          >
+                            <HiX className="w-5 h-5" />
+                          </button>
+                        </div>
+
+                        <CSVUpload
+                          onUploadSuccess={(result) => {
+                            setMessage(result.message);
+                            setError(null);
+                            setIsImportDialogOpen(false);
+                            void loadRows();
+                          }}
+                          onUploadError={(uploadError) => {
+                            setError(uploadError);
+                            setMessage(null);
+                          }}
+                        />
+                      </DialogPanel>
+                    </TransitionChild>
+                  </div>
+                </div>
+              </Dialog>
+            </Transition>
+
+            <Transition show={isCreateModalOpen} as={Fragment}>
+              <Dialog
+                as="div"
+                className="relative z-60"
+                onClose={() => {
+                  if (!creating) setIsCreateModalOpen(false);
+                }}
+              >
+                <TransitionChild
+                  as={Fragment}
+                  enter="ease-out duration-200"
+                  enterFrom="opacity-0"
+                  enterTo="opacity-100"
+                  leave="ease-in duration-150"
+                  leaveFrom="opacity-100"
+                  leaveTo="opacity-0"
+                >
+                  <div className="fixed inset-0 bg-slate-950/35 backdrop-blur-sm" />
+                </TransitionChild>
+
+                <div className="fixed inset-0 overflow-y-auto p-4">
+                  <div className="flex min-h-full items-center justify-center">
+                    <TransitionChild
+                      as={Fragment}
+                      enter="ease-out duration-200"
+                      enterFrom="opacity-0 scale-95"
+                      enterTo="opacity-100 scale-100"
+                      leave="ease-in duration-150"
+                      leaveFrom="opacity-100 scale-100"
+                      leaveTo="opacity-0 scale-95"
+                    >
+                      <DialogPanel className="w-full max-w-6xl max-h-[90vh] overflow-y-auto rounded-2xl border border-(--border-color) bg-(--surface) p-6 shadow-2xl">
+                        <DialogTitle className="mb-5 flex items-center gap-3 text-lg font-bold text-(--heading-color) sm:text-xl">
+                    <div className="rounded-lg bg-(--primary-color) p-2">
+                      <HiPlus className="w-5 h-5 text-white" />
+                    </div>
+                    Add New Issue
+                    <button
+                      type="button"
+                      onClick={() => setIsCreateModalOpen(false)}
+                      disabled={creating}
+                      className="ml-auto rounded-lg p-2 text-(--muted-color) transition-colors hover:bg-emerald-50 hover:text-(--heading-color)"
+                      aria-label="Close manual entry"
+                    >
+                      <HiX className="w-5 h-5" />
+                    </button>
+                        </DialogTitle>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
+                    <div>
+                      <label className="block text-xs text-slate-300 mb-1.5">
+                        Test Type
+                      </label>
+                      <select
+                        value={(newIssue.testType as TestType) || "smoke"}
+                        onChange={(e) => {
+                          const testType = e.target.value as TestType;
+                          setNewIssue((prev) => ({
+                            ...prev,
+                            testType,
+                            testScenario:
+                              testType === "cycle"
+                                ? prev.testScenario || ""
+                                : "",
+                            testSteps:
+                              testType === "cycle" ? prev.testSteps || "" : "",
+                            sheetType:
+                              testType === "smoke"
+                                ? "Smoke Testing Sheet"
+                                : prev.sheetType || "KFQ Cycle",
+                          }));
+                        }}
+                        className="w-full rounded-lg border border-(--border-color) bg-(--surface-soft) px-4 py-2.5 text-sm text-(--text-color) transition-all duration-200 focus:border-(--primary-color) focus:outline-none focus:ring-2 focus:ring-(--primary-color)/20"
+                      >
+                        <option value="smoke">Smoke Test</option>
+                        <option value="cycle">Cycle Test</option>
+                      </select>
+                    </div>
+
+                    {[
+                      {
+                        label: "Test Case ID",
+                        placeholder: "ST-01",
+                        value: newIssue.testCaseId,
+                        key: "testCaseId",
+                      },
+                      {
+                        label: "Fork and Module",
+                        placeholder: "KFQ - Home",
+                        value: newIssue.module,
+                        key: "module",
+                      },
+                    ].map((field, idx) => (
+                      <div key={idx}>
+                        <label className="block text-xs text-slate-300 mb-1.5">
+                          {field.label}
+                        </label>
+                        <input
+                          placeholder={field.placeholder}
+                          value={field.value}
+                          onChange={(e) =>
+                            setNewIssue((prev) => ({
+                              ...prev,
+                              [field.key]: e.target.value,
+                            }))
+                          }
+                          className="w-full rounded-lg border border-(--border-color) bg-(--surface-soft) px-4 py-2.5 text-sm text-(--text-color) placeholder-(--muted-color) transition-all duration-200 focus:border-(--primary-color) focus:outline-none focus:ring-2 focus:ring-(--primary-color)/20"
+                        />
+                      </div>
+                    ))}
+                    <div>
+                      <label className="block text-xs text-slate-300 mb-1.5">
+                        Priority
+                      </label>
+                      <select
+                        value={newIssue.priority}
+                        onChange={(e) =>
+                          setNewIssue((prev) => ({
+                            ...prev,
+                            priority: e.target.value,
+                          }))
+                        }
+                        className="w-full rounded-lg border border-(--border-color) bg-(--surface-soft) px-4 py-2.5 text-sm text-(--text-color) transition-all duration-200 focus:border-(--primary-color) focus:outline-none focus:ring-2 focus:ring-(--primary-color)/20"
+                      >
+                        {PRIORITY_OPTIONS.map((priority) => (
+                          <option key={priority} value={priority}>
+                            {priority}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs text-slate-300 mb-1.5">
+                        {(newIssue.testType || "smoke") === "smoke"
+                          ? "Sheet"
+                          : "Cycle"}
+                      </label>
+                      <select
+                        value={newIssue.sheetType || "Smoke Testing Sheet"}
+                        onChange={(e) =>
+                          setNewIssue((prev) => ({
+                            ...prev,
+                            sheetType: e.target.value,
+                          }))
+                        }
+                        className="w-full rounded-lg border border-(--border-color) bg-(--surface-soft) px-4 py-2.5 text-sm text-(--text-color) transition-all duration-200 focus:border-(--primary-color) focus:outline-none focus:ring-2 focus:ring-(--primary-color)/20"
+                      >
+                        {(newIssue.testType || "smoke") === "smoke" ? (
+                          <option value="Smoke Testing Sheet">
+                            Smoke Testing Sheet
+                          </option>
+                        ) : (
+                          SHEET_TYPES.filter(
+                            (sheetType) => sheetType !== "Smoke Testing Sheet",
+                          ).map((sheetType) => (
+                            <option key={sheetType} value={sheetType}>
+                              {sheetType}
+                            </option>
+                          ))
+                        )}
+                      </select>
+                    </div>
+                    <select
+                      value={newIssue.severity}
                       onChange={(e) =>
                         setNewIssue((prev) => ({
                           ...prev,
-                          [field.key]: e.target.value,
+                          severity: e.target.value as Severity,
+                        }))
+                      }
+                      className="rounded-lg border border-(--border-color) bg-(--surface-soft) px-4 py-2.5 text-sm text-(--text-color) transition-all duration-200 focus:border-(--primary-color) focus:outline-none focus:ring-2 focus:ring-(--primary-color)/20"
+                    >
+                      {Object.values(SeverityEnum).map((severity) => (
+                        <option key={severity} value={severity}>
+                          {severity}
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      value={newIssue.status}
+                      onChange={(e) =>
+                        setNewIssue((prev) => ({
+                          ...prev,
+                          status: e.target.value as Status,
+                        }))
+                      }
+                      className="rounded-lg border border-(--border-color) bg-(--surface-soft) px-4 py-2.5 text-sm text-(--text-color) transition-all duration-200 focus:border-(--primary-color) focus:outline-none focus:ring-2 focus:ring-(--primary-color)/20"
+                    >
+                      {Object.values(StatusEnum).map((status) => (
+                        <option key={status} value={status}>
+                          {status}
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      value={newIssue.qcStatusBbt}
+                      onChange={(e) =>
+                        setNewIssue((prev) => ({
+                          ...prev,
+                          qcStatusBbt: e.target.value as QCStatusBBT,
+                        }))
+                      }
+                      className="rounded-lg border border-(--border-color) bg-(--surface-soft) px-4 py-2.5 text-sm text-(--text-color) transition-all duration-200 focus:border-(--primary-color) focus:outline-none focus:ring-2 focus:ring-(--primary-color)/20"
+                    >
+                      {Object.values(QCStatusBBTEnum).map((qcStatus) => (
+                        <option key={qcStatus} value={qcStatus}>
+                          {qcStatus}
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      type="date"
+                      value={newIssue.issueTestDate}
+                      onChange={(e) =>
+                        setNewIssue((prev) => ({
+                          ...prev,
+                          issueTestDate: e.target.value,
+                        }))
+                      }
+                      className="rounded-lg border border-(--border-color) bg-(--surface-soft) px-4 py-2.5 text-sm text-(--text-color) transition-all duration-200 focus:border-(--primary-color) focus:outline-none focus:ring-2 focus:ring-(--primary-color)/20"
+                    />
+                    <input
+                      type="date"
+                      value={newIssue.fixedDate || ""}
+                      onChange={(e) =>
+                        setNewIssue((prev) => ({
+                          ...prev,
+                          fixedDate: e.target.value,
+                        }))
+                      }
+                      className="rounded-lg border border-(--border-color) bg-(--surface-soft) px-4 py-2.5 text-sm text-(--text-color) transition-all duration-200 focus:border-(--primary-color) focus:outline-none focus:ring-2 focus:ring-(--primary-color)/20"
+                    />
+                  </div>
+                  <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <textarea
+                      placeholder="Description / Steps to Reproduce"
+                      value={newIssue.descriptionSteps || ""}
+                      onChange={(e) =>
+                        setNewIssue((prev) => ({
+                          ...prev,
+                          descriptionSteps: e.target.value,
+                        }))
+                      }
+                      className="min-h-25 resize-none rounded-lg border border-(--border-color) bg-(--surface-soft) px-4 py-2.5 text-sm text-(--text-color) placeholder-(--muted-color) transition-all duration-200 focus:border-(--primary-color) focus:outline-none focus:ring-2 focus:ring-(--primary-color)/20"
+                    />
+                    <textarea
+                      placeholder="Expected Result"
+                      value={newIssue.expectedResult}
+                      onChange={(e) =>
+                        setNewIssue((prev) => ({
+                          ...prev,
+                          expectedResult: e.target.value,
+                        }))
+                      }
+                      className="min-h-25 resize-none rounded-lg border border-(--border-color) bg-(--surface-soft) px-4 py-2.5 text-sm text-(--text-color) placeholder-(--muted-color) transition-all duration-200 focus:border-(--primary-color) focus:outline-none focus:ring-2 focus:ring-(--primary-color)/20"
+                    />
+                    <textarea
+                      placeholder="Actual Result"
+                      value={newIssue.actualResult}
+                      onChange={(e) =>
+                        setNewIssue((prev) => ({
+                          ...prev,
+                          actualResult: e.target.value,
+                        }))
+                      }
+                      className="min-h-25 resize-none rounded-lg border border-(--border-color) bg-(--surface-soft) px-4 py-2.5 text-sm text-(--text-color) placeholder-(--muted-color) transition-all duration-200 focus:border-(--primary-color) focus:outline-none focus:ring-2 focus:ring-(--primary-color)/20"
+                    />
+                    <textarea
+                      placeholder="Remarks / Notes"
+                      value={newIssue.remarks || ""}
+                      onChange={(e) =>
+                        setNewIssue((prev) => ({
+                          ...prev,
+                          remarks: e.target.value,
+                        }))
+                      }
+                      className="min-h-25 resize-none rounded-lg border border-(--border-color) bg-(--surface-soft) px-4 py-2.5 text-sm text-(--text-color) placeholder-(--muted-color) transition-all duration-200 focus:border-(--primary-color) focus:outline-none focus:ring-2 focus:ring-(--primary-color)/20"
+                    />
+                  </div>
+
+                  {(newIssue.testType || "smoke") === "cycle" && (
+                    <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <textarea
+                        placeholder="Test Scenario (for cycle test)"
+                        value={newIssue.testScenario || ""}
+                        onChange={(e) =>
+                          setNewIssue((prev) => ({
+                            ...prev,
+                            testScenario: e.target.value,
+                          }))
+                        }
+                        className="min-h-25 resize-none rounded-lg border border-(--border-color) bg-(--surface-soft) px-4 py-2.5 text-sm text-(--text-color) placeholder-(--muted-color) transition-all duration-200 focus:border-(--primary-color) focus:outline-none focus:ring-2 focus:ring-(--primary-color)/20"
+                      />
+                      <textarea
+                        placeholder="Test Steps (for cycle test)"
+                        value={newIssue.testSteps || ""}
+                        onChange={(e) =>
+                          setNewIssue((prev) => ({
+                            ...prev,
+                            testSteps: e.target.value,
+                          }))
+                        }
+                        className="min-h-25 resize-none rounded-lg border border-(--border-color) bg-(--surface-soft) px-4 py-2.5 text-sm text-(--text-color) placeholder-(--muted-color) transition-all duration-200 focus:border-(--primary-color) focus:outline-none focus:ring-2 focus:ring-(--primary-color)/20"
+                      />
+                    </div>
+                  )}
+
+                  <div className="mt-3">
+                    <label className="block text-xs text-slate-300 mb-1.5">
+                      Summary / Title (optional)
+                    </label>
+                    <input
+                      placeholder="Summary / Title"
+                      value={newIssue.summary || ""}
+                      onChange={(e) =>
+                        setNewIssue((prev) => ({
+                          ...prev,
+                          summary: e.target.value,
                         }))
                       }
                       className="w-full rounded-lg border border-(--border-color) bg-(--surface-soft) px-4 py-2.5 text-sm text-(--text-color) placeholder-(--muted-color) transition-all duration-200 focus:border-(--primary-color) focus:outline-none focus:ring-2 focus:ring-(--primary-color)/20"
                     />
                   </div>
-                ))}
-                <div>
-                  <label className="block text-xs text-slate-300 mb-1.5">
-                    Priority
-                  </label>
-                  <select
-                    value={newIssue.priority}
-                    onChange={(e) =>
-                      setNewIssue((prev) => ({
-                        ...prev,
-                        priority: e.target.value,
-                      }))
-                    }
-                    className="w-full rounded-lg border border-(--border-color) bg-(--surface-soft) px-4 py-2.5 text-sm text-(--text-color) transition-all duration-200 focus:border-(--primary-color) focus:outline-none focus:ring-2 focus:ring-(--primary-color)/20"
+
+                  <AppButton
+                    onClick={onCreateIssue}
+                    disabled={creating}
+                    variant="primary"
+                    className="mt-5 px-6 py-3"
                   >
-                    {PRIORITY_OPTIONS.map((priority) => (
-                      <option key={priority} value={priority}>
-                        {priority}
-                      </option>
-                    ))}
-                  </select>
+                    <HiPlus className="w-5 h-5" />
+                    {creating ? "Adding..." : "Add Issue"}
+                  </AppButton>
+                      </DialogPanel>
+                    </TransitionChild>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-xs text-slate-300 mb-1.5">
-                    {(newIssue.testType || "smoke") === "smoke"
-                      ? "Sheet"
-                      : "Cycle"}
-                  </label>
-                  <select
-                    value={newIssue.sheetType || "Smoke Testing Sheet"}
-                    onChange={(e) =>
-                      setNewIssue((prev) => ({
-                        ...prev,
-                        sheetType: e.target.value,
-                      }))
-                    }
-                    className="w-full rounded-lg border border-(--border-color) bg-(--surface-soft) px-4 py-2.5 text-sm text-(--text-color) transition-all duration-200 focus:border-(--primary-color) focus:outline-none focus:ring-2 focus:ring-(--primary-color)/20"
-                  >
-                    {(newIssue.testType || "smoke") === "smoke" ? (
-                      <option value="Smoke Testing Sheet">
-                        Smoke Testing Sheet
-                      </option>
-                    ) : (
-                      SHEET_TYPES.filter(
-                        (sheetType) => sheetType !== "Smoke Testing Sheet",
-                      ).map((sheetType) => (
-                        <option key={sheetType} value={sheetType}>
-                          {sheetType}
-                        </option>
-                      ))
-                    )}
-                  </select>
-                </div>
-                <select
-                  value={newIssue.severity}
-                  onChange={(e) =>
-                    setNewIssue((prev) => ({
-                      ...prev,
-                      severity: e.target.value as Severity,
-                    }))
-                  }
-                  className="rounded-lg border border-(--border-color) bg-(--surface-soft) px-4 py-2.5 text-sm text-(--text-color) transition-all duration-200 focus:border-(--primary-color) focus:outline-none focus:ring-2 focus:ring-(--primary-color)/20"
-                >
-                  {Object.values(SeverityEnum).map((severity) => (
-                    <option key={severity} value={severity}>
-                      {severity}
-                    </option>
-                  ))}
-                </select>
-                <select
-                  value={newIssue.status}
-                  onChange={(e) =>
-                    setNewIssue((prev) => ({
-                      ...prev,
-                      status: e.target.value as Status,
-                    }))
-                  }
-                  className="rounded-lg border border-(--border-color) bg-(--surface-soft) px-4 py-2.5 text-sm text-(--text-color) transition-all duration-200 focus:border-(--primary-color) focus:outline-none focus:ring-2 focus:ring-(--primary-color)/20"
-                >
-                  {Object.values(StatusEnum).map((status) => (
-                    <option key={status} value={status}>
-                      {status}
-                    </option>
-                  ))}
-                </select>
-                <select
-                  value={newIssue.qcStatusBbt}
-                  onChange={(e) =>
-                    setNewIssue((prev) => ({
-                      ...prev,
-                      qcStatusBbt: e.target.value as QCStatusBBT,
-                    }))
-                  }
-                  className="rounded-lg border border-(--border-color) bg-(--surface-soft) px-4 py-2.5 text-sm text-(--text-color) transition-all duration-200 focus:border-(--primary-color) focus:outline-none focus:ring-2 focus:ring-(--primary-color)/20"
-                >
-                  {Object.values(QCStatusBBTEnum).map((qcStatus) => (
-                    <option key={qcStatus} value={qcStatus}>
-                      {qcStatus}
-                    </option>
-                  ))}
-                </select>
-                <input
-                  type="date"
-                  value={newIssue.issueTestDate}
-                  onChange={(e) =>
-                    setNewIssue((prev) => ({
-                      ...prev,
-                      issueTestDate: e.target.value,
-                    }))
-                  }
-                  className="rounded-lg border border-(--border-color) bg-(--surface-soft) px-4 py-2.5 text-sm text-(--text-color) transition-all duration-200 focus:border-(--primary-color) focus:outline-none focus:ring-2 focus:ring-(--primary-color)/20"
-                />
-                <input
-                  type="date"
-                  value={newIssue.fixedDate || ""}
-                  onChange={(e) =>
-                    setNewIssue((prev) => ({
-                      ...prev,
-                      fixedDate: e.target.value,
-                    }))
-                  }
-                  className="rounded-lg border border-(--border-color) bg-(--surface-soft) px-4 py-2.5 text-sm text-(--text-color) transition-all duration-200 focus:border-(--primary-color) focus:outline-none focus:ring-2 focus:ring-(--primary-color)/20"
-                />
-              </div>
-              <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
-                <textarea
-                  placeholder="Description / Steps to Reproduce"
-                  value={newIssue.descriptionSteps || ""}
-                  onChange={(e) =>
-                    setNewIssue((prev) => ({
-                      ...prev,
-                      descriptionSteps: e.target.value,
-                    }))
-                  }
-                  className="min-h-25 resize-none rounded-lg border border-(--border-color) bg-(--surface-soft) px-4 py-2.5 text-sm text-(--text-color) placeholder-(--muted-color) transition-all duration-200 focus:border-(--primary-color) focus:outline-none focus:ring-2 focus:ring-(--primary-color)/20"
-                />
-                <textarea
-                  placeholder="Expected Result"
-                  value={newIssue.expectedResult}
-                  onChange={(e) =>
-                    setNewIssue((prev) => ({
-                      ...prev,
-                      expectedResult: e.target.value,
-                    }))
-                  }
-                  className="min-h-25 resize-none rounded-lg border border-(--border-color) bg-(--surface-soft) px-4 py-2.5 text-sm text-(--text-color) placeholder-(--muted-color) transition-all duration-200 focus:border-(--primary-color) focus:outline-none focus:ring-2 focus:ring-(--primary-color)/20"
-                />
-                <textarea
-                  placeholder="Actual Result"
-                  value={newIssue.actualResult}
-                  onChange={(e) =>
-                    setNewIssue((prev) => ({
-                      ...prev,
-                      actualResult: e.target.value,
-                    }))
-                  }
-                  className="min-h-25 resize-none rounded-lg border border-(--border-color) bg-(--surface-soft) px-4 py-2.5 text-sm text-(--text-color) placeholder-(--muted-color) transition-all duration-200 focus:border-(--primary-color) focus:outline-none focus:ring-2 focus:ring-(--primary-color)/20"
-                />
-                <textarea
-                  placeholder="Remarks / Notes"
-                  value={newIssue.remarks || ""}
-                  onChange={(e) =>
-                    setNewIssue((prev) => ({
-                      ...prev,
-                      remarks: e.target.value,
-                    }))
-                  }
-                  className="min-h-25 resize-none rounded-lg border border-(--border-color) bg-(--surface-soft) px-4 py-2.5 text-sm text-(--text-color) placeholder-(--muted-color) transition-all duration-200 focus:border-(--primary-color) focus:outline-none focus:ring-2 focus:ring-(--primary-color)/20"
-                />
-              </div>
-
-              {(newIssue.testType || "smoke") === "cycle" && (
-                <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <textarea
-                    placeholder="Test Scenario (for cycle test)"
-                    value={newIssue.testScenario || ""}
-                    onChange={(e) =>
-                      setNewIssue((prev) => ({
-                        ...prev,
-                        testScenario: e.target.value,
-                      }))
-                    }
-                    className="min-h-25 resize-none rounded-lg border border-(--border-color) bg-(--surface-soft) px-4 py-2.5 text-sm text-(--text-color) placeholder-(--muted-color) transition-all duration-200 focus:border-(--primary-color) focus:outline-none focus:ring-2 focus:ring-(--primary-color)/20"
-                  />
-                  <textarea
-                    placeholder="Test Steps (for cycle test)"
-                    value={newIssue.testSteps || ""}
-                    onChange={(e) =>
-                      setNewIssue((prev) => ({
-                        ...prev,
-                        testSteps: e.target.value,
-                      }))
-                    }
-                    className="min-h-25 resize-none rounded-lg border border-(--border-color) bg-(--surface-soft) px-4 py-2.5 text-sm text-(--text-color) placeholder-(--muted-color) transition-all duration-200 focus:border-(--primary-color) focus:outline-none focus:ring-2 focus:ring-(--primary-color)/20"
-                  />
-                </div>
-              )}
-
-              <div className="mt-3">
-                <label className="block text-xs text-slate-300 mb-1.5">
-                  Summary / Title (optional)
-                </label>
-                <input
-                  placeholder="Summary / Title"
-                  value={newIssue.summary || ""}
-                  onChange={(e) =>
-                    setNewIssue((prev) => ({
-                      ...prev,
-                      summary: e.target.value,
-                    }))
-                  }
-                  className="w-full rounded-lg border border-(--border-color) bg-(--surface-soft) px-4 py-2.5 text-sm text-(--text-color) placeholder-(--muted-color) transition-all duration-200 focus:border-(--primary-color) focus:outline-none focus:ring-2 focus:ring-(--primary-color)/20"
-                />
-              </div>
-
-              <AppButton
-                onClick={onCreateIssue}
-                disabled={creating}
-                variant="primary"
-                className="mt-5 px-6 py-3"
-              >
-                <HiPlus className="w-5 h-5" />
-                {creating ? "Adding..." : "Add Issue"}
-              </AppButton>
-            </div>
+              </Dialog>
+            </Transition>
 
             {/* Messages */}
             {message && (
@@ -705,7 +824,8 @@ export default function ManualEntryPage() {
                           className="px-4 py-8 text-center text-(--muted-color)"
                           colSpan={10}
                         >
-                          No issues yet. Add your first issue above.
+                          No issues yet. Add your first issue from Add Issue
+                          Manually.
                         </td>
                       </tr>
                     ) : (
