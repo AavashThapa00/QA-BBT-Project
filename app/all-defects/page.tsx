@@ -7,7 +7,10 @@ import {
   HiCheckCircle,
   HiClock,
   HiExclamationCircle,
+  HiFilter,
+  HiSearch,
   HiTrash,
+  HiX,
 } from "react-icons/hi";
 import AppButton from "@/app/components/common/AppButton";
 import { PageSkeleton } from "@/app/components/common/SkeletonLoader";
@@ -54,36 +57,98 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 const MODULES = ["ALL", "HSA", "KFQ", "GMST", "NMST", "Innovatetech"];
+const STATUS_OPTIONS = ["ALL", "OPEN", "IN_PROGRESS", "CLOSED", "ON_HOLD", "AS_IT_IS"];
+const SEVERITY_OPTIONS = ["ALL", "MAJOR", "HIGH", "MEDIUM", "LOW"];
+
+function toTitleCase(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
 
 export default function AllDefectsPage() {
   const router = useRouter();
   const [defects, setDefects] = useState<Defect[]>([]);
   const [filteredDefects, setFilteredDefects] = useState<Defect[]>([]);
   const [selectedModule, setSelectedModule] = useState("ALL");
+  const [selectedStatus, setSelectedStatus] = useState("ALL");
+  const [selectedSeverity, setSelectedSeverity] = useState("ALL");
+  const [selectedPriority, setSelectedPriority] = useState("ALL");
+  const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const priorityOptions = [
+    "ALL",
+    ...Array.from(
+      new Set(defects.map((defect) => defect.priority?.trim()).filter(Boolean)),
+    ),
+  ];
 
   useEffect(() => {
     loadDefects();
   }, []);
 
   useEffect(() => {
-    if (selectedModule === "ALL") {
-      setFilteredDefects(defects);
-    } else {
-      const filtered = defects.filter((defect) =>
-        defect.module.toLowerCase().includes(selectedModule.toLowerCase()),
+    const normalizedSearch = searchTerm.trim().toLowerCase();
+
+    const filtered = defects.filter((defect) => {
+      const matchesModule =
+        selectedModule === "ALL" ||
+        defect.module.toLowerCase().includes(selectedModule.toLowerCase());
+
+      const matchesStatus =
+        selectedStatus === "ALL" || defect.status === selectedStatus;
+
+      const matchesSeverity =
+        selectedSeverity === "ALL" || defect.severity === selectedSeverity;
+
+      const matchesPriority =
+        selectedPriority === "ALL" ||
+        defect.priority?.toLowerCase() === selectedPriority.toLowerCase();
+
+      const searchableText = [
+        defect.summary,
+        defect.module,
+        defect.testCaseId,
+        defect.expectedResult,
+        defect.actualResult,
+        defect.priority,
+        defect.severity,
+        STATUS_LABELS[defect.status],
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+
+      const matchesSearch =
+        normalizedSearch.length === 0 || searchableText.includes(normalizedSearch);
+
+      return (
+        matchesModule &&
+        matchesStatus &&
+        matchesSeverity &&
+        matchesPriority &&
+        matchesSearch
       );
-      setFilteredDefects(filtered);
-    }
-  }, [selectedModule, defects]);
+    });
+
+    setFilteredDefects(filtered);
+  }, [
+    selectedModule,
+    selectedStatus,
+    selectedSeverity,
+    selectedPriority,
+    searchTerm,
+    defects,
+  ]);
 
   const loadDefects = async () => {
     setIsLoading(true);
     try {
       const data = await getAllDefectsSorted();
       setDefects(data);
-      setFilteredDefects(data);
     } catch (error) {
       console.error("Error loading defects:", error);
     } finally {
@@ -106,13 +171,27 @@ export default function AllDefectsPage() {
       }
 
       setDefects((prev) => prev.filter((defect) => defect.id !== id));
-      setFilteredDefects((prev) => prev.filter((defect) => defect.id !== id));
     } catch (error) {
       console.error("Error deleting issue:", error);
       window.alert("Failed to remove issue");
     } finally {
       setDeletingId(null);
     }
+  };
+
+  const hasActiveFilters =
+    selectedModule !== "ALL" ||
+    selectedStatus !== "ALL" ||
+    selectedSeverity !== "ALL" ||
+    selectedPriority !== "ALL" ||
+    searchTerm.trim().length > 0;
+
+  const clearFilters = () => {
+    setSelectedModule("ALL");
+    setSelectedStatus("ALL");
+    setSelectedSeverity("ALL");
+    setSelectedPriority("ALL");
+    setSearchTerm("");
   };
 
   return (
@@ -161,6 +240,98 @@ export default function AllDefectsPage() {
                 {module}
               </button>
             ))}
+          </div>
+
+          <div className="mb-6 rounded-xl border border-(--border-color) bg-(--surface) p-4 shadow-sm">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <h2 className="flex items-center gap-2 text-sm font-semibold text-(--heading-color)">
+                <HiFilter className="h-4 w-4 text-(--primary-color)" />
+                Refine Results
+              </h2>
+              {hasActiveFilters && (
+                <button
+                  type="button"
+                  onClick={clearFilters}
+                  className="inline-flex items-center gap-1 rounded-lg border border-(--border-color) bg-(--surface-soft) px-2.5 py-1.5 text-xs font-medium text-(--muted-color) transition-colors hover:border-(--primary-color) hover:text-(--heading-color)"
+                >
+                  <HiX className="h-3.5 w-3.5" />
+                  Clear filters
+                </button>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+              <label className="block">
+                <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-(--muted-color)">
+                  Search
+                </span>
+                <div className="relative">
+                  <HiSearch className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-(--muted-color)" />
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="Issue, module, testcase..."
+                    className="w-full rounded-lg border border-(--border-color) bg-(--surface-soft) py-2 pl-9 pr-3 text-sm text-(--text-color) placeholder-(--muted-color) focus:border-(--primary-color) focus:outline-none focus:ring-2 focus:ring-(--primary-color)/20"
+                  />
+                </div>
+              </label>
+
+              <label className="block">
+                <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-(--muted-color)">
+                  Status
+                </span>
+                <select
+                  value={selectedStatus}
+                  onChange={(e) => setSelectedStatus(e.target.value)}
+                  className="w-full rounded-lg border border-(--border-color) bg-(--surface-soft) px-3 py-2 text-sm text-(--text-color) focus:border-(--primary-color) focus:outline-none focus:ring-2 focus:ring-(--primary-color)/20"
+                >
+                  {STATUS_OPTIONS.map((status) => (
+                    <option key={status} value={status}>
+                      {status === "ALL"
+                        ? "All statuses"
+                        : STATUS_LABELS[status] || toTitleCase(status)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="block">
+                <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-(--muted-color)">
+                  Severity
+                </span>
+                <select
+                  value={selectedSeverity}
+                  onChange={(e) => setSelectedSeverity(e.target.value)}
+                  className="w-full rounded-lg border border-(--border-color) bg-(--surface-soft) px-3 py-2 text-sm text-(--text-color) focus:border-(--primary-color) focus:outline-none focus:ring-2 focus:ring-(--primary-color)/20"
+                >
+                  {SEVERITY_OPTIONS.map((severity) => (
+                    <option key={severity} value={severity}>
+                      {severity === "ALL"
+                        ? "All severities"
+                        : toTitleCase(severity)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="block">
+                <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-(--muted-color)">
+                  Priority
+                </span>
+                <select
+                  value={selectedPriority}
+                  onChange={(e) => setSelectedPriority(e.target.value)}
+                  className="w-full rounded-lg border border-(--border-color) bg-(--surface-soft) px-3 py-2 text-sm text-(--text-color) focus:border-(--primary-color) focus:outline-none focus:ring-2 focus:ring-(--primary-color)/20"
+                >
+                  {priorityOptions.map((priority) => (
+                    <option key={priority} value={priority}>
+                      {priority === "ALL" ? "All priorities" : priority}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
           </div>
 
           {/* Defects List */}
