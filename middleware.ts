@@ -9,7 +9,7 @@ function hasValidSession(request: NextRequest) {
   if (!session) return false;
 
   const expiresAtRaw = request.cookies.get(SESSION_EXPIRES_COOKIE)?.value;
-  if (!expiresAtRaw) return true;
+  if (!expiresAtRaw) return false;
 
   const expiresAt = Number(expiresAtRaw);
   if (!Number.isFinite(expiresAt)) return false;

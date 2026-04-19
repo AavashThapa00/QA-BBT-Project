@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { HiArrowLeft, HiTrash, HiCheckCircle } from "react-icons/hi";
 import AppButton from "@/app/components/common/AppButton";
 import { PageSkeleton } from "@/app/components/common/SkeletonLoader";
@@ -28,6 +29,7 @@ interface UploadedFile {
 }
 
 export default function ProfilePage() {
+  const router = useRouter();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [profileMessage, setProfileMessage] = useState<string | null>(null);
@@ -53,31 +55,18 @@ export default function ProfilePage() {
     loadUser();
   }, []);
 
+  useEffect(() => {
+    if (!loading && !user) {
+      router.replace("/login");
+    }
+  }, [loading, router, user]);
+
   if (loading) {
     return <PageSkeleton variant="detail" />;
   }
 
   if (!user) {
-    return (
-      <div className="min-h-screen bg-(--page-background) p-8">
-        <div className="max-w-lg mx-auto">
-          <div className="rounded-lg border border-(--border-color) bg-(--surface) p-8 text-center">
-            <h1 className="text-2xl font-bold text-(--heading-color)">
-              Not signed in
-            </h1>
-            <p className="mt-3 text-sm text-(--muted-color)">
-              Please sign in to view your profile.
-            </p>
-            <Link
-              href="/login"
-              className="mt-6 inline-flex rounded-lg bg-(--primary-color) px-6 py-2 font-semibold text-white transition-colors hover:bg-(--primary-hover-color)"
-            >
-              Go to Login
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
+    return <PageSkeleton variant="detail" />;
   }
 
   const onUpdateProfile = async (formData: FormData) => {
