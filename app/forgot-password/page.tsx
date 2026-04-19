@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
+import { toast } from "sonner";
 import { requestPasswordResetAction } from "@/app/actions/auth";
 
 function SubmitButton() {
@@ -14,7 +15,7 @@ function SubmitButton() {
       className="relative w-full cursor-pointer rounded-xl bg-(--primary-color) px-4 py-3 text-sm font-semibold text-(--on-primary) shadow-glow transition-colors duration-200 hover:bg-(--primary-hover-color) disabled:cursor-not-allowed disabled:opacity-60"
     >
       <span className={pending ? "opacity-0" : "opacity-100"}>
-        Generate reset link
+        Send Password Reset Link
       </span>
       {pending && (
         <span className="absolute inset-0 flex items-center justify-center gap-2">
@@ -45,6 +46,8 @@ function SubmitButton() {
 }
 
 export default function ForgotPasswordPage() {
+  const toastKeyRef = useRef("");
+  const [submittedEmail, setSubmittedEmail] = useState("");
   const [state, formAction] = useActionState(
     async (
       _prevState: {
@@ -54,10 +57,22 @@ export default function ForgotPasswordPage() {
       } | null,
       formData: FormData,
     ) => {
+      const email = String(formData.get("email") || "");
+      setSubmittedEmail(email);
       return requestPasswordResetAction(formData);
     },
     null,
   );
+
+  useEffect(() => {
+    if (!state?.message || state.success) return;
+
+    const toastKey = `error:${state.message}`;
+    if (toastKeyRef.current === toastKey) return;
+    toastKeyRef.current = toastKey;
+
+    toast.error(state.message);
+  }, [state]);
 
   return (
     <div className="min-h-screen bg-(--page-background) px-6 py-10">
@@ -65,60 +80,90 @@ export default function ForgotPasswordPage() {
         <div className="w-full overflow-hidden rounded-4xl border border-(--border-color) bg-(--surface-elevated) shadow-dialog">
           <div className="h-1 bg-(--primary-color)" />
           <div className="px-8 py-7">
-            <h1 className="text-3xl font-semibold tracking-tight text-(--heading-color)">
-              Forgot password
-            </h1>
-            <p className="mt-2 text-sm leading-6 text-(--muted-color)">
-              Enter your email and we will generate a reset link.
-            </p>
+            {!state?.success ? (
+              <>
+                <h1 className="text-3xl font-semibold tracking-tight text-(--heading-color)">
+                  Forgot password
+                </h1>
+                <p className="mt-2 text-sm leading-6 text-(--muted-color)">
+                  Enter your email and we will generate a reset link.
+                </p>
 
-            <form action={formAction} className="mt-6 space-y-4">
-              <div>
-                <label className="mb-2 block text-sm font-medium text-(--heading-color)">
-                  Email
-                </label>
-                <input
-                  name="email"
-                  type="email"
-                  required
-                  placeholder="name@company.com"
-                  className="w-full rounded-xl border border-(--border-color) bg-(--surface-soft) px-3 py-2.5 text-(--text-color) shadow-sm transition-colors duration-200 placeholder:text-[#9CA3AF] focus:border-(--primary-color) focus:outline-none focus:ring-2 focus:ring-(--primary-color)/20"
-                />
-              </div>
+                <form action={formAction} className="mt-6 space-y-4">
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-(--heading-color)">
+                      Email
+                    </label>
+                    <input
+                      name="email"
+                      type="email"
+                      required
+                      placeholder="name@company.com"
+                      className="w-full rounded-xl border border-(--border-color) bg-(--surface-soft) px-3 py-2.5 text-(--text-color) shadow-sm transition-colors duration-200 placeholder:text-[#9CA3AF] focus:border-(--primary-color) focus:outline-none focus:ring-2 focus:ring-(--primary-color)/20"
+                    />
+                  </div>
 
-              {state?.message && (
-                <div
-                  className={`rounded-xl border p-3 text-sm ${state.success ? "border-[rgba(76,175,80,0.18)] bg-[rgba(76,175,80,0.08)] text-(--heading-color)" : "border-[rgba(229,57,53,0.18)] bg-[rgba(229,57,53,0.08)] text-(--danger-color)"}`}
-                >
-                  {state.message}
-                </div>
-              )}
+                  {state?.resetLink && (
+                    <div className="rounded-xl border border-[rgba(30,136,229,0.22)] bg-[rgba(30,136,229,0.08)] p-3">
+                      <p className="mb-2 text-xs text-(--info-color)">
+                        SMTP not configured. Use this reset link directly:
+                      </p>
+                      <a
+                        href={state.resetLink}
+                        className="break-all text-xs font-medium text-(--info-color) underline hover:opacity-80"
+                      >
+                        {state.resetLink}
+                      </a>
+                    </div>
+                  )}
 
-              {state?.resetLink && (
-                <div className="rounded-xl border border-[rgba(30,136,229,0.22)] bg-[rgba(30,136,229,0.08)] p-3">
-                  <p className="mb-2 text-xs text-(--info-color)">
-                    SMTP not configured. Use this reset link directly:
+                  <SubmitButton />
+
+                  <div className="text-center">
+                    <Link
+                      href="/login"
+                      className="text-sm font-medium text-(--heading-color) transition-colors hover:text-(--primary-color)"
+                    >
+                      Back to sign in
+                    </Link>
+                  </div>
+                </form>
+              </>
+            ) : (
+              <>
+                <div className="mt-4 text-center">
+                  <h1 className="text-3xl font-semibold tracking-tight text-(--heading-color)">
+                    Check your email
+                  </h1>
+                  <p className="mt-4 text-sm leading-6 text-(--muted-color)">
+                    We have sent an email to <strong>{submittedEmail}</strong>.
+                    If you don't receive the email, make sure to check your spam
+                    folder.
                   </p>
-                  <a
-                    href={state.resetLink}
-                    className="break-all text-xs font-medium text-(--info-color) underline hover:opacity-80"
-                  >
-                    {state.resetLink}
-                  </a>
                 </div>
-              )}
 
-              <SubmitButton />
+                {state?.resetLink && (
+                  <div className="mt-6 rounded-xl border border-[rgba(30,136,229,0.22)] bg-[rgba(30,136,229,0.08)] p-3">
+                    <p className="mb-2 text-xs text-(--info-color)">
+                      SMTP not configured. Use this reset link directly:
+                    </p>
+                    <a
+                      href={state.resetLink}
+                      className="break-all text-xs font-medium text-(--info-color) underline hover:opacity-80"
+                    >
+                      {state.resetLink}
+                    </a>
+                  </div>
+                )}
 
-              <div className="text-center">
                 <Link
                   href="/login"
-                  className="text-sm font-medium text-(--heading-color) transition-colors hover:text-(--primary-color)"
+                  className="mt-6 block w-full rounded-xl bg-(--primary-color) px-4 py-3 text-center text-sm font-semibold text-(--on-primary) shadow-glow transition-colors hover:bg-(--primary-hover-color)"
                 >
-                  Back to sign in
+                  Back to Login
                 </Link>
-              </div>
-            </form>
+              </>
+            )}
           </div>
         </div>
       </div>
