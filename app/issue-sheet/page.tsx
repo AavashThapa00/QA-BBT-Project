@@ -54,6 +54,7 @@ const SHEET_TYPES = [
 ];
 
 const PRIORITY_OPTIONS = Object.values(SeverityEnum);
+const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 
 const PRIORITY_COLORS: Record<string, string> = {
   LOW: "bg-emerald-100 text-emerald-700 border-emerald-200",
@@ -153,6 +154,28 @@ export default function IssueSheetPage() {
   const [pageLoaded, setPageLoaded] = useState(false);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  const totalRows = rows.length;
+  const totalPages = Math.max(1, Math.ceil(totalRows / pageSize));
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const paginatedRows = rows.slice(startIndex, endIndex);
+  const visibleStart = totalRows === 0 ? 0 : startIndex + 1;
+  const visibleEnd = Math.min(endIndex, totalRows);
+
+  const getVisiblePages = () => {
+    const pages: number[] = [];
+    const start = Math.max(1, currentPage - 2);
+    const end = Math.min(totalPages, currentPage + 2);
+
+    for (let page = start; page <= end; page += 1) {
+      pages.push(page);
+    }
+
+    return pages;
+  };
 
   const loadRows = async () => {
     setLoading(true);
@@ -181,6 +204,10 @@ export default function IssueSheetPage() {
       return () => clearTimeout(timer);
     }
   }, [message, error]);
+
+  useEffect(() => {
+    setCurrentPage((prev) => Math.min(prev, totalPages));
+  }, [totalPages]);
 
   const updateRow = (id: string, key: keyof EditableRow, value: string) => {
     setRows((prev) =>
@@ -754,18 +781,45 @@ export default function IssueSheetPage() {
               } animation-delay-300`}
             >
               <div className="border-b border-(--border-color) bg-(--surface-soft) px-6 py-4">
-                <h2 className="text-xl font-bold text-(--heading-color)">
-                  Issue Sheet
-                </h2>
-                <p className="mt-1.5 flex items-center gap-2 text-xs text-(--muted-color)">
-                  <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 font-semibold text-emerald-700">
-                    {rows.length}
-                  </span>
-                  Use Open to view details and Remove to delete issues.
-                </p>
+                <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+                  <div>
+                    <h2 className="text-xl font-bold text-(--heading-color)">
+                      Issue Sheet
+                    </h2>
+                    <p className="mt-1.5 flex items-center gap-2 text-xs text-(--muted-color)">
+                      <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 font-semibold text-emerald-700">
+                        {rows.length}
+                      </span>
+                      Use Open to view details and Remove to delete issues.
+                    </p>
+                  </div>
+
+                  <div className="flex flex-col gap-2 text-xs text-(--muted-color) sm:flex-row sm:items-center sm:gap-3">
+                    <label className="flex items-center gap-2">
+                      <span>Rows per page</span>
+                      <select
+                        value={pageSize}
+                        onChange={(e) => {
+                          setPageSize(Number(e.target.value));
+                          setCurrentPage(1);
+                        }}
+                        className="rounded-md border border-(--border-color) bg-(--surface) px-2 py-1 text-xs text-(--text-color) focus:border-(--primary-color) focus:outline-none focus:ring-1 focus:ring-(--primary-color)/40"
+                      >
+                        {PAGE_SIZE_OPTIONS.map((size) => (
+                          <option key={size} value={size}>
+                            {size}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <span>
+                      Showing {visibleStart}-{visibleEnd} of {totalRows}
+                    </span>
+                  </div>
+                </div>
               </div>
 
-              <div className="max-h-128 overflow-x-auto">
+              <div className="issue-table-scroll overflow-x-auto">
                 <table className="min-w-7xl w-full table-fixed text-sm lg:min-w-370">
                   <thead className="sticky top-0 border-b border-(--border-color) bg-(--surface-soft)">
                     <tr className="text-left text-(--muted-color)">
@@ -829,7 +883,7 @@ export default function IssueSheetPage() {
                         </td>
                       </tr>
                     ) : (
-                      rows.map((row, idx) => (
+                      paginatedRows.map((row, idx) => (
                         <tr
                           key={row.id}
                           className={`group animate-in fade-in border-t border-(--border-color) transition-all duration-500 hover:bg-emerald-50`}
@@ -968,6 +1022,69 @@ export default function IssueSheetPage() {
                   </tbody>
                 </table>
               </div>
+
+              {!loading && rows.length > 0 && (
+                <div className="flex flex-col gap-3 border-t border-(--border-color) bg-(--surface-soft) px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="text-xs text-(--muted-color)">
+                    Page {currentPage} of {totalPages}
+                  </p>
+
+                  <div className="flex flex-wrap items-center gap-1.5 sm:justify-end">
+                    <button
+                      type="button"
+                      onClick={() => setCurrentPage(1)}
+                      disabled={currentPage === 1}
+                      className="rounded-lg border border-(--border-color) bg-(--surface) px-3 py-1.5 text-xs font-medium text-(--text-color) shadow-sm transition-all hover:-translate-y-0.5 hover:border-(--primary-color) hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-45"
+                    >
+                      First
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setCurrentPage((prev) => Math.max(1, prev - 1))
+                      }
+                      disabled={currentPage === 1}
+                      className="rounded-lg border border-(--border-color) bg-(--surface) px-3 py-1.5 text-xs font-medium text-(--text-color) shadow-sm transition-all hover:-translate-y-0.5 hover:border-(--primary-color) hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-45"
+                    >
+                      Prev
+                    </button>
+
+                    {getVisiblePages().map((page) => (
+                      <button
+                        key={page}
+                        type="button"
+                        onClick={() => setCurrentPage(page)}
+                        className={`rounded-lg border px-3 py-1.5 text-xs font-semibold shadow-sm transition-all ${
+                          page === currentPage
+                            ? "border-(--primary-color) bg-(--primary-color) text-white"
+                            : "border-(--border-color) bg-(--surface) text-(--text-color) hover:-translate-y-0.5 hover:border-(--primary-color) hover:bg-slate-100"
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    ))}
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+                      }
+                      disabled={currentPage === totalPages}
+                      className="rounded-lg border border-(--border-color) bg-(--surface) px-3 py-1.5 text-xs font-medium text-(--text-color) shadow-sm transition-all hover:-translate-y-0.5 hover:border-(--primary-color) hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-45"
+                    >
+                      Next
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCurrentPage(totalPages)}
+                      disabled={currentPage === totalPages}
+                      className="rounded-lg border border-(--border-color) bg-(--surface) px-3 py-1.5 text-xs font-medium text-(--text-color) shadow-sm transition-all hover:-translate-y-0.5 hover:border-(--primary-color) hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-45"
+                    >
+                      Last
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

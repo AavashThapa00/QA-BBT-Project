@@ -328,6 +328,31 @@ textarea:disabled {
   display: none;
 }
 
+/* Custom horizontal scrollbar for wide data tables */
+.issue-table-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+.issue-table-scroll::-webkit-scrollbar {
+  height: 10px;
+}
+
+.issue-table-scroll::-webkit-scrollbar-track {
+  background: linear-gradient(180deg, rgba(17, 26, 44, 0.95), rgba(9, 16, 29, 0.95));
+  border-radius: 999px;
+}
+
+.issue-table-scroll::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(53, 80, 116, 0.95), rgba(35, 49, 74, 0.95));
+  border: 2px solid var(--scrollbar-track);
+  border-radius: 999px;
+}
+
+.issue-table-scroll::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(96, 165, 250, 0.85), rgba(53, 80, 116, 0.95));
+}
+
 .animation-delay-200 {
   animation-delay: 200ms;
 }
