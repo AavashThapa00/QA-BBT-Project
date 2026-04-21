@@ -21,11 +21,13 @@ interface DefectsByModuleData {
 interface DefectsByModuleChartProps {
   data: DefectsByModuleData[];
   title?: string;
+  onModuleClick?: (moduleName: string) => void;
 }
 
 export default function DefectsByModuleChart({
   data,
   title = "Defects by Module",
+  onModuleClick,
 }: DefectsByModuleChartProps) {
   const sortedData = [...data].sort((a, b) => b.count - a.count);
   const topModule = sortedData[0] ?? null;
@@ -144,10 +146,12 @@ export default function DefectsByModuleChart({
               barSize={16}
               background={{ fill: "rgba(148, 163, 184, 0.14)", radius: 8 }}
               isAnimationActive={true}
+              cursor={onModuleClick ? "pointer" : "default"}
             >
               {sortedData.map((entry, index) => (
                 <Cell
                   key={`cell-${index}`}
+                  onClick={() => onModuleClick?.(entry.module)}
                   fill={
                     index === 0
                       ? "url(#moduleBarGlow)"

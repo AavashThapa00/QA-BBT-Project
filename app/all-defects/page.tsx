@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import {
   HiArrowLeft,
   HiCheckCircle,
@@ -95,6 +96,7 @@ function migrateDefectStatus(defect: Defect): Defect {
 
 export default function AllDefectsPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [defects, setDefects] = useState<Defect[]>([]);
   const [filteredDefects, setFilteredDefects] = useState<Defect[]>([]);
   const [selectedModule, setSelectedModule] = useState("ALL");
@@ -111,6 +113,16 @@ export default function AllDefectsPage() {
       new Set(defects.map((defect) => defect.priority?.trim()).filter(Boolean)),
     ),
   ];
+
+  useEffect(() => {
+    const moduleParam = searchParams.get("module");
+    if (!moduleParam) return;
+
+    const normalizedModule = moduleParam.trim();
+    if (!normalizedModule) return;
+
+    setSelectedModule(normalizedModule);
+  }, [searchParams]);
 
   useEffect(() => {
     loadDefects();
@@ -258,7 +270,19 @@ export default function AllDefectsPage() {
             {MODULES.map((module) => (
               <button
                 key={module}
-                onClick={() => setSelectedModule(module)}
+                onClick={() => {
+                  setSelectedModule(module);
+                  const params = new URLSearchParams(searchParams.toString());
+                  if (module === "ALL") {
+                    params.delete("module");
+                  } else {
+                    params.set("module", module);
+                  }
+                  const query = params.toString();
+                  router.replace(
+                    query ? `/all-defects?${query}` : "/all-defects",
+                  );
+                }}
                 className={`whitespace-nowrap rounded-lg border px-4 py-2 text-sm font-medium transition-all ${
                   selectedModule === module
                     ? "border-(--primary-color) bg-(--primary-color) text-white"

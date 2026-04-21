@@ -453,7 +453,14 @@ export default function Home() {
                 </>
               ) : (
                 <>
-                  <DefectsByModuleChart data={state.defectsByModule} />
+                  <DefectsByModuleChart
+                    data={state.defectsByModule}
+                    onModuleClick={(moduleName) =>
+                      router.push(
+                        `/all-defects?module=${encodeURIComponent(moduleName)}`,
+                      )
+                    }
+                  />
                   <DefectsByPriorityChart data={state.defectsByPriority} />
                 </>
               )}
