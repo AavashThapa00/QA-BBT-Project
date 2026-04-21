@@ -1,8 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
 import { MdBugReport } from "react-icons/md";
-import gsap from "gsap";
 
 export function AuthBrandingSection() {
   return (
