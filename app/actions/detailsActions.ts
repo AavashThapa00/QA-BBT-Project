@@ -54,11 +54,11 @@ export async function getAllDefectsSorted(): Promise<Defect[]> {
             __statusPriority: {
               $switch: {
                 branches: [
-                  { case: { $eq: ["$status", "ON_HOLD"] }, then: 1 },
-                  { case: { $eq: ["$status", "OPEN"] }, then: 2 },
-                  { case: { $eq: ["$status", "IN_PROGRESS"] }, then: 3 },
+                  { case: { $eq: ["$status", "HOLD"] }, then: 1 },
+                  { case: { $eq: ["$status", "RE_OPENED"] }, then: 2 },
+                  { case: { $eq: ["$status", "PENDING"] }, then: 3 },
                   { case: { $eq: ["$status", "AS_IT_IS"] }, then: 4 },
-                  { case: { $eq: ["$status", "CLOSED"] }, then: 5 },
+                  { case: { $eq: ["$status", "FIXED"] }, then: 5 },
                 ],
                 default: 6,
               },

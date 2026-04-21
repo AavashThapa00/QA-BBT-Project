@@ -177,18 +177,9 @@ export default function DefectsTable({
     const priorityMatch =
       priorityFilter.length === 0 || priorityFilter.includes(defect.priority);
 
-    // Map user-friendly status labels to enum values
-    const statusValueMap: Record<string, string[]> = {
-      Pending: ["OPEN", "IN_PROGRESS"],
-      Fixed: ["CLOSED"],
-      "As it is": ["AS_IT_IS"],
-      Hold: ["ON_HOLD"],
-    };
-    const mappedStatusFilter = statusFilter.flatMap(
-      (s) => statusValueMap[s] || [s],
-    );
+    // No mapping needed anymore - status values are now directly the enum values
     const statusMatch =
-      statusFilter.length === 0 || mappedStatusFilter.includes(defect.status);
+      statusFilter.length === 0 || statusFilter.includes(defect.status);
 
     return moduleMatch && severityMatch && priorityMatch && statusMatch;
   });

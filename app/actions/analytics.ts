@@ -86,7 +86,7 @@ export async function getAverageFixTimeByModule(): Promise<ModuleFixTime[]> {
         uncertain_count: number;
         avg_days: number | null;
       }>([
-        { $match: { status: { $in: ["CLOSED", "AS_IT_IS"] } } },
+        { $match: { status: { $in: ["FIXED", "AS_IT_IS"] } } },
         {
           $project: {
             main_module: moduleExpr,

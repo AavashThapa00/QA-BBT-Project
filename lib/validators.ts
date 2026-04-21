@@ -8,11 +8,11 @@ export const SeverityEnum = z.enum([
 ] as const);
 
 export const StatusEnum = z.enum([
-    "OPEN",
-    "IN_PROGRESS",
-    "CLOSED",
-    "ON_HOLD",
+    "PENDING",
+    "FIXED",
     "AS_IT_IS",
+    "HOLD",
+    "RE_OPENED",
 ] as const);
 
 export const CreateDefectSchema = z.object({

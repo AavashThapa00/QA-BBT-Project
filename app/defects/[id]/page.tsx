@@ -15,11 +15,11 @@ import AppButton from "@/app/components/common/AppButton";
 import { PageSkeleton } from "@/app/components/common/SkeletonLoader";
 
 const STATUS_LABELS: Record<string, string> = {
-  OPEN: "Open",
-  IN_PROGRESS: "In Progress",
-  CLOSED: "Fixed",
-  ON_HOLD: "Pending",
+  PENDING: "Pending",
+  FIXED: "Fixed",
+  HOLD: "Hold",
   AS_IT_IS: "As it is",
+  RE_OPENED: "Re-opened",
 };
 
 const SEVERITY_COLORS: Record<
@@ -36,28 +36,47 @@ const STATUS_COLORS_MAP: Record<
   string,
   { bg: string; text: string; icon: React.ReactNode }
 > = {
-  OPEN: {
-    bg: "bg-sky-100",
-    text: "text-sky-700",
+  PENDING: {
+    bg: "bg-yellow-100",
+    text: "text-yellow-700",
     icon: <HiExclamationCircle />,
   },
-  IN_PROGRESS: {
-    bg: "bg-indigo-100",
-    text: "text-indigo-700",
-    icon: <HiClock />,
-  },
-  CLOSED: {
+  FIXED: {
     bg: "bg-emerald-100",
     text: "text-emerald-700",
     icon: <HiCheckCircle />,
   },
-  ON_HOLD: { bg: "bg-rose-100", text: "text-rose-700", icon: <HiClock /> },
+  HOLD: { bg: "bg-rose-100", text: "text-rose-700", icon: <HiClock /> },
   AS_IT_IS: {
     bg: "bg-slate-100",
     text: "text-slate-700",
     icon: <HiCheckCircle />,
   },
+  RE_OPENED: {
+    bg: "bg-orange-100",
+    text: "text-orange-700",
+    icon: <HiExclamationCircle />,
+  },
 };
+
+// Convert old status values to new ones for backward compatibility
+function migrateDefectStatus(defect: Defect): Defect {
+  const statusMap: Record<string, string> = {
+    OPEN: "PENDING",
+    IN_PROGRESS: "PENDING",
+    ON_HOLD: "HOLD",
+    CLOSED: "FIXED",
+    PENDING: "PENDING",
+    FIXED: "FIXED",
+    HOLD: "HOLD",
+    RE_OPENED: "RE_OPENED",
+    AS_IT_IS: "AS_IT_IS",
+  };
+  return {
+    ...defect,
+    status: (statusMap[defect.status] || "PENDING") as any,
+  };
+}
 
 export default function DefectDetailPage() {
   const router = useRouter();
@@ -73,7 +92,7 @@ export default function DefectDetailPage() {
       try {
         const data = await getDefectById(id);
         if (data) {
-          setDefect(data);
+          setDefect(migrateDefectStatus(data));
         } else {
           setError("Defect not found");
         }

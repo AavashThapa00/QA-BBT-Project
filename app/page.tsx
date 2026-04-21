@@ -258,13 +258,13 @@ export default function Home() {
 
     switch (filterType) {
       case "open":
-        // Show all open defects: Open, In Progress, On Hold (Pending)
-        newFilters = { status: ["OPEN", "IN_PROGRESS", "ON_HOLD"] };
+        // Show all open defects: Pending, Re-opened, Hold
+        newFilters = { status: ["PENDING", "RE_OPENED", "HOLD"] };
         filterLabel = "Open Defects";
         break;
       case "closed":
-        // Show closed defects: Fixed (Closed) and As it is
-        newFilters = { status: ["CLOSED", "AS_IT_IS"] };
+        // Show closed defects: Fixed and As it is
+        newFilters = { status: ["FIXED", "AS_IT_IS"] };
         filterLabel = "Closed Defects";
         break;
       case "critical":

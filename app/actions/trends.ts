@@ -76,7 +76,7 @@ export async function getMonthlyTrends(): Promise<MonthlyTrend[]> {
             reported: { $sum: 1 },
             fixed: {
               $sum: {
-                $cond: [{ $in: ["$status", ["CLOSED", "AS_IT_IS"]] }, 1, 0],
+                $cond: [{ $in: ["$status", ["FIXED", "AS_IT_IS"]] }, 1, 0],
               },
             },
           },

@@ -5,7 +5,7 @@ import { fail, ok } from "@/lib/backend/http";
 import { getApiUser } from "@/lib/backend/session";
 
 const severitySchema = z.enum(["MAJOR", "HIGH", "MEDIUM", "LOW"]);
-const statusSchema = z.enum(["OPEN", "IN_PROGRESS", "CLOSED", "ON_HOLD", "AS_IT_IS"]);
+const statusSchema = z.enum(["PENDING", "FIXED", "AS_IT_IS", "HOLD", "RE_OPENED"]);
 
 const querySchema = z.object({
   dateFrom: z.string().optional(),
