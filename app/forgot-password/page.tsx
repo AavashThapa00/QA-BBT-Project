@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useActionState, useEffect, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { toast } from "sonner";
+import { AuthBrandingSection } from "@/app/components/common/AuthBrandingSection";
 import { requestPasswordResetAction } from "@/app/actions/auth";
 
 function SubmitButton() {
@@ -75,21 +76,32 @@ export default function ForgotPasswordPage() {
   }, [state]);
 
   return (
-    <div className="min-h-screen bg-(--page-background) px-6 py-10">
-      <div className="mx-auto flex min-h-[calc(100vh-5rem)] w-full max-w-md items-center justify-center">
-        <div className="w-full overflow-hidden rounded-4xl border border-(--border-color) bg-(--surface-elevated) shadow-dialog">
-          <div className="h-1 bg-(--primary-color)" />
-          <div className="px-8 py-7">
+    <div className="relative min-h-screen overflow-hidden bg-(--page-background)">
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(148,163,184,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,0.08)_1px,transparent_1px)] bg-size-[44px_44px] opacity-30" />
+      <div className="pointer-events-none absolute -left-28 top-0 h-136 w-136 rounded-full bg-(--primary-color)/20 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-28 right-0 h-136 w-136 rounded-full bg-(--accent-color)/18 blur-3xl" />
+
+      <div className="relative grid min-h-screen lg:grid-cols-2">
+        <AuthBrandingSection />
+
+        <section className="relative flex items-center justify-center px-4 py-8 sm:px-8">
+          <div className="w-full max-w-md rounded-3xl border border-(--border-color) bg-(--surface-elevated)/95 p-7 shadow-dialog backdrop-blur-md sm:p-8">
             {!state?.success ? (
               <>
+                <div className="mb-6 flex items-center justify-between">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-(--muted-color)">
+                    Reset Password
+                  </p>
+                </div>
+
                 <h1 className="text-3xl font-semibold tracking-tight text-(--heading-color)">
                   Forgot password
                 </h1>
-                <p className="mt-2 text-sm leading-6 text-(--muted-color)">
+                <p className="mt-3 text-sm text-(--muted-color)">
                   Enter your email and we will generate a reset link.
                 </p>
 
-                <form action={formAction} className="mt-6 space-y-4">
+                <form action={formAction} className="mt-7 space-y-5">
                   <div>
                     <label className="mb-2 block text-sm font-medium text-(--heading-color)">
                       Email
@@ -104,10 +116,8 @@ export default function ForgotPasswordPage() {
                   </div>
 
                   {state?.resetLink && (
-                    <div className="rounded-xl border border-[rgba(30,136,229,0.22)] bg-[rgba(30,136,229,0.08)] p-3">
-                      <p className="mb-2 text-xs text-(--info-color)">
-                        SMTP not configured. Use this reset link directly:
-                      </p>
+                    <div className="rounded-xl border border-[rgba(30,136,229,0.22)] bg-[rgba(30,136,229,0.08)] p-3 text-sm text-(--info-color)">
+                      SMTP not configured. Use this reset link directly:{" "}
                       <a
                         href={state.resetLink}
                         className="break-all text-xs font-medium text-(--info-color) underline hover:opacity-80"
@@ -131,25 +141,27 @@ export default function ForgotPasswordPage() {
               </>
             ) : (
               <>
-                <div className="mt-4 text-center">
-                  <h1 className="text-3xl font-semibold tracking-tight text-(--heading-color)">
-                    Check your email
-                  </h1>
-                  <p className="mt-4 text-sm leading-6 text-(--muted-color)">
-                    We have sent an email to <strong>{submittedEmail}</strong>.
-                    If you don't receive the email, make sure to check your spam
-                    folder.
+                <div className="mb-6 flex items-center justify-between">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-(--muted-color)">
+                    Confirmation
                   </p>
                 </div>
 
+                <h1 className="text-3xl font-semibold tracking-tight text-(--heading-color)">
+                  Check your email
+                </h1>
+                <p className="mt-3 text-sm text-(--muted-color)">
+                  We have sent an email to <strong>{submittedEmail}</strong>. If
+                  you don't receive the email, make sure to check your spam
+                  folder.
+                </p>
+
                 {state?.resetLink && (
-                  <div className="mt-6 rounded-xl border border-[rgba(30,136,229,0.22)] bg-[rgba(30,136,229,0.08)] p-3">
-                    <p className="mb-2 text-xs text-(--info-color)">
-                      SMTP not configured. Use this reset link directly:
-                    </p>
+                  <div className="mt-7 rounded-xl border border-[rgba(30,136,229,0.22)] bg-[rgba(30,136,229,0.08)] p-3 text-sm text-(--info-color)">
+                    SMTP not configured. Use this reset link directly:
                     <a
                       href={state.resetLink}
-                      className="break-all text-xs font-medium text-(--info-color) underline hover:opacity-80"
+                      className="mt-2 break-all text-xs font-medium text-(--info-color) underline hover:opacity-80"
                     >
                       {state.resetLink}
                     </a>
@@ -158,14 +170,14 @@ export default function ForgotPasswordPage() {
 
                 <Link
                   href="/login"
-                  className="mt-6 block w-full rounded-xl bg-(--primary-color) px-4 py-3 text-center text-sm font-semibold text-(--on-primary) shadow-glow transition-colors hover:bg-(--primary-hover-color)"
+                  className="mt-7 block w-full rounded-xl bg-(--primary-color) px-4 py-3 text-center text-sm font-semibold text-(--on-primary) shadow-glow transition-colors hover:bg-(--primary-hover-color)"
                 >
                   Back to Login
                 </Link>
               </>
             )}
           </div>
-        </div>
+        </section>
       </div>
     </div>
   );

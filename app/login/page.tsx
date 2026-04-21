@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { toast } from "sonner";
+import { AuthBrandingSection } from "@/app/components/common/AuthBrandingSection";
 import {
   requestLoginCodeAction,
   verifyLoginCodeAction,
@@ -176,22 +177,42 @@ export default function LoginPage() {
   const inVerificationStep = !!challengeId;
 
   return (
-    <div className="min-h-screen bg-(--page-background) px-6 py-10">
-      <div className="mx-auto flex min-h-[calc(100vh-5rem)] w-full max-w-md items-center justify-center">
-        <div className="w-full overflow-hidden rounded-4xl border border-(--border-color) bg-(--surface-elevated) shadow-dialog">
-          <div className="h-1 bg-(--primary-color)" />
-          <div className="px-8 py-7">
-            <h1 className="mt-4 text-3xl font-semibold tracking-tight text-(--heading-color)">
-              Welcome back
+    <div className="relative min-h-screen overflow-hidden bg-(--page-background)">
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(148,163,184,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,0.08)_1px,transparent_1px)] bg-size-[44px_44px] opacity-30" />
+      <div className="pointer-events-none absolute -left-28 top-0 h-136 w-136 rounded-full bg-(--primary-color)/20 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-28 right-0 h-136 w-136 rounded-full bg-(--accent-color)/18 blur-3xl" />
+
+      <div className="relative grid min-h-screen lg:grid-cols-2">
+        <AuthBrandingSection />
+
+        <section className="relative flex items-center justify-center px-4 py-8 sm:px-8">
+          <div className="w-full max-w-md rounded-3xl border border-(--border-color) bg-(--surface-elevated)/95 p-7 shadow-dialog backdrop-blur-md sm:p-8">
+            <div className="mb-6 flex items-center justify-between">
+              {inVerificationStep && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setChallengeId("");
+                    setDevCode("");
+                  }}
+                  className="text-xs font-medium text-(--muted-color) transition-colors hover:text-(--heading-color)"
+                >
+                  Change email
+                </button>
+              )}
+            </div>
+
+            <h1 className="text-3xl font-semibold tracking-tight text-(--heading-color)">
+              {inVerificationStep ? "Verify code" : "Sign in"}
             </h1>
-            <p className="mt-2 text-sm leading-6 text-(--muted-color)">
+            <p className="mt-2 text-sm text-(--muted-color)">
               {inVerificationStep
-                ? `Enter the 6-digit code sent to ${email}.`
-                : "Enter your email and password to receive a sign-in code."}
+                ? `Code sent to ${email}`
+                : "Secure login with one-time verification"}
             </p>
 
             {!inVerificationStep ? (
-              <form action={requestCodeFormAction} className="mt-6 space-y-4">
+              <form action={requestCodeFormAction} className="mt-7 space-y-5">
                 <div>
                   <label className="mb-2 block text-sm font-medium text-(--heading-color)">
                     Email
@@ -214,7 +235,7 @@ export default function LoginPage() {
                     type="password"
                     required
                     className={fieldClassName}
-                    placeholder="••••••••"
+                    placeholder="********"
                   />
                 </div>
 
@@ -230,7 +251,7 @@ export default function LoginPage() {
                 <RequestCodeSubmitButton />
               </form>
             ) : (
-              <form action={verifyCodeFormAction} className="mt-6 space-y-4">
+              <form action={verifyCodeFormAction} className="mt-7 space-y-5">
                 <input type="hidden" name="challengeId" value={challengeId} />
 
                 <div>
@@ -261,7 +282,7 @@ export default function LoginPage() {
               </form>
             )}
           </div>
-        </div>
+        </section>
       </div>
     </div>
   );
