@@ -3,6 +3,10 @@
 import { Fragment, useEffect, useState } from "react";
 import Link from "next/link";
 import {
+  Listbox,
+  ListboxButton,
+  ListboxOption,
+  ListboxOptions,
   Dialog,
   DialogPanel,
   DialogTitle,
@@ -11,6 +15,7 @@ import {
 } from "@headlessui/react";
 import {
   HiArrowLeft,
+  HiChevronDown,
   HiPlus,
   HiCheck,
   HiCheckCircle,
@@ -39,6 +44,7 @@ import {
   StatusEnum,
   QCStatusBBTEnum,
 } from "@/lib/types";
+import { normalizeEnumValue } from "@/lib/utils";
 
 interface EditableRow {
   id: string;
@@ -68,31 +74,50 @@ const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 const PRIORITY_COLORS: Record<string, string> = {
   LOW: "bg-emerald-100 text-emerald-700 border-emerald-200",
   MEDIUM: "bg-amber-100 text-amber-700 border-amber-200",
-  HIGH: "bg-orange-100 text-orange-700 border-orange-200",
-  MAJOR: "bg-rose-100 text-rose-700 border-rose-200",
+  HIGH: "bg-rose-50 text-rose-700 border-rose-200",
+  MAJOR: "bg-red-100 text-red-700 border-red-200",
 };
 
 const SEVERITY_COLORS: Record<Severity, string> = {
   LOW: "bg-emerald-100 text-emerald-700 border-emerald-200",
   MEDIUM: "bg-amber-100 text-amber-700 border-amber-200",
-  HIGH: "bg-orange-100 text-orange-700 border-orange-200",
-  MAJOR: "bg-rose-100 text-rose-700 border-rose-200",
+  HIGH: "bg-rose-50 text-rose-700 border-rose-200",
+  MAJOR: "bg-red-100 text-red-700 border-red-200",
+};
+
+const QC_STATUS_COLORS: Record<QCStatusBBT, string> = {
+  PASSED: "bg-green-100 text-green-700 border-green-200",
+  PENDING: "bg-amber-100 text-amber-700 border-amber-200",
+  REJECTED: "bg-orange-100 text-orange-700 border-orange-200",
+  FAILED: "bg-red-100 text-red-700 border-red-200",
 };
 
 const STATUS_COLORS: Record<Status, string> = {
-  OPEN: "bg-sky-100 text-sky-700 border-sky-200",
-  IN_PROGRESS: "bg-indigo-100 text-indigo-700 border-indigo-200",
-  CLOSED: "bg-emerald-100 text-emerald-700 border-emerald-200",
-  ON_HOLD: "bg-rose-100 text-rose-700 border-rose-200",
+  PENDING: "bg-amber-100 text-amber-700 border-amber-200",
+  FIXED: "bg-green-100 text-green-700 border-green-200",
+  HOLD: "bg-rose-100 text-rose-700 border-rose-200",
   AS_IT_IS: "bg-slate-100 text-slate-700 border-slate-200",
+  RE_OPENED: "bg-orange-100 text-orange-700 border-orange-200",
 };
 
 const STATUS_LABELS: Record<Status, string> = {
-  OPEN: "Open",
-  IN_PROGRESS: "In Progress",
-  CLOSED: "Fixed",
-  ON_HOLD: "Pending",
+  PENDING: "Pending",
+  FIXED: "Fixed",
+  HOLD: "Hold",
   AS_IT_IS: "As it is",
+  RE_OPENED: "Re-opened",
+};
+
+const TEST_TYPE_OPTIONS: Array<DropdownOption<TestType>> = [
+  { value: "smoke", label: "Smoke Test" },
+  { value: "cycle", label: "Cycle Test" },
+];
+
+const PAGE_SIZE_LABELS: Record<number, string> = {
+  10: "10",
+  25: "25",
+  50: "50",
+  100: "100",
 };
 
 function toPriorityLabel(priority: string): string {
@@ -102,6 +127,102 @@ function toPriorityLabel(priority: string): string {
   if (normalized === "HIGH") return "High";
   if (normalized === "MAJOR") return "Major";
   return priority;
+}
+
+function toQcStatusLabel(qcStatus: QCStatusBBT): string {
+  if (qcStatus === "PASSED") return "Passed";
+  if (qcStatus === "FAILED") return "Failed";
+  if (qcStatus === "PENDING") return "Pending";
+  if (qcStatus === "REJECTED") return "Rejected";
+  return qcStatus;
+}
+
+type DropdownOption<T extends string | number> = {
+  value: T;
+  label: string;
+};
+
+function DropdownField<T extends string | number>({
+  value,
+  onChange,
+  options,
+  buttonClassName = "",
+  optionClassName = "",
+}: {
+  value: T;
+  onChange: (value: T) => void;
+  options: Array<DropdownOption<T>>;
+  buttonClassName?: string;
+  optionClassName?: string;
+}) {
+  const selectedOption = options.find((option) => option.value === value) || {
+    value,
+    label: String(value),
+  };
+
+  return (
+    <Listbox value={value} onChange={onChange}>
+      <div className="relative">
+        <ListboxButton
+          className={`flex w-full items-center justify-between gap-2 rounded-lg border px-3 py-2 text-left text-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-(--primary-color)/20 ${buttonClassName}`}
+        >
+          <span className="truncate font-medium">{selectedOption.label}</span>
+          <HiChevronDown className="h-4 w-4 shrink-0 opacity-80" />
+        </ListboxButton>
+
+        <ListboxOptions className="absolute z-30 mt-1 max-h-56 w-full overflow-auto rounded-lg border border-(--border-color) bg-(--surface) p-1 shadow-lg focus:outline-none">
+          {options.map((option) => (
+            <ListboxOption
+              key={String(option.value)}
+              value={option.value}
+              className={({ active }) =>
+                `cursor-pointer rounded-md px-3 py-2 text-[13px] transition-colors ${
+                  active
+                    ? "bg-slate-50 text-(--heading-color)"
+                    : "text-(--text-color)"
+                } ${optionClassName}`
+              }
+            >
+              {({ selected }) => (
+                <div className="flex items-center justify-between gap-3">
+                  <span className="truncate">{option.label}</span>
+                </div>
+              )}
+            </ListboxOption>
+          ))}
+        </ListboxOptions>
+      </div>
+    </Listbox>
+  );
+}
+
+function QcStatusDropdown({
+  value,
+  onChange,
+  className,
+}: {
+  value: QCStatusBBT;
+  onChange: (value: QCStatusBBT) => void;
+  className?: string;
+}) {
+  return (
+    <DropdownField
+      value={value}
+      onChange={onChange}
+      options={Object.values(QCStatusBBTEnum).map((qcStatus) => ({
+        value: qcStatus,
+        label: toQcStatusLabel(qcStatus),
+      }))}
+      buttonClassName={`${QC_STATUS_COLORS[value] || "border-(--border-color) bg-(--surface-soft) text-(--text-color)"} ${className || ""}`}
+    />
+  );
+}
+
+function normalizePriorityValue(priority: string | null | undefined): string {
+  if (!priority) return "";
+  return (
+    normalizeEnumValue(priority, Object.values(SeverityEnum)) || priority.trim()
+  );
 }
 
 const DEFAULT_NEW_ISSUE: ManualDefectInput = {
@@ -117,7 +238,7 @@ const DEFAULT_NEW_ISSUE: ManualDefectInput = {
   testSteps: "",
   priority: "MEDIUM",
   severity: SeverityEnum.MEDIUM,
-  status: StatusEnum.OPEN,
+  status: StatusEnum.PENDING,
   qcStatusBbt: QCStatusBBTEnum.PENDING,
   issueTestDate: "",
   fixedDate: "",
@@ -134,14 +255,30 @@ function toInputDate(value: Date | string | null | undefined): string {
   return `${year}-${month}-${day}`;
 }
 
+// Convert old status values to new ones for backward compatibility
+function migrateStatus(oldStatus: string): Status {
+  const statusMap: Record<string, Status> = {
+    OPEN: "PENDING",
+    IN_PROGRESS: "PENDING",
+    ON_HOLD: "HOLD",
+    CLOSED: "FIXED",
+    PENDING: "PENDING",
+    FIXED: "FIXED",
+    HOLD: "HOLD",
+    RE_OPENED: "RE_OPENED",
+    AS_IT_IS: "AS_IT_IS",
+  };
+  return (statusMap[oldStatus] || "PENDING") as Status;
+}
+
 function mapDefectToRow(defect: Defect): EditableRow {
   return {
     id: defect.id,
     testCaseId: defect.testCaseId || "",
     module: defect.module || "",
-    priority: defect.priority || "",
+    priority: normalizePriorityValue(defect.priority),
     severity: defect.severity,
-    status: defect.status,
+    status: migrateStatus(defect.status as string),
     qcStatusBbt: defect.qcStatusBbt,
     issueTestDate: toInputDate(defect.dateReported),
     fixedDate: toInputDate(defect.dateFixed),
@@ -359,7 +496,11 @@ export default function IssueSheetPage() {
         return;
       }
 
-      setSelectedDefect(defect);
+      setSelectedDefect(
+        migrateStatus(defect.status as string)
+          ? { ...defect, status: migrateStatus(defect.status as string) }
+          : defect,
+      );
     } catch {
       setError("Failed to open issue details");
     } finally {
@@ -587,10 +728,9 @@ export default function IssueSheetPage() {
                             <label className="block text-xs text-slate-300 mb-1.5">
                               Test Type
                             </label>
-                            <select
+                            <DropdownField
                               value={(newIssue.testType as TestType) || "smoke"}
-                              onChange={(e) => {
-                                const testType = e.target.value as TestType;
+                              onChange={(testType) => {
                                 setNewIssue((prev) => ({
                                   ...prev,
                                   testType,
@@ -608,11 +748,9 @@ export default function IssueSheetPage() {
                                       : prev.sheetType || "KFQ Cycle",
                                 }));
                               }}
-                              className="w-full rounded-lg border border-(--border-color) bg-(--surface-soft) px-4 py-2.5 text-sm text-(--text-color) transition-all duration-200 focus:border-(--primary-color) focus:outline-none focus:ring-2 focus:ring-(--primary-color)/20"
-                            >
-                              <option value="smoke">Smoke Test</option>
-                              <option value="cycle">Cycle Test</option>
-                            </select>
+                              options={TEST_TYPE_OPTIONS}
+                              buttonClassName="border-(--border-color) bg-(--surface-soft) text-(--text-color)"
+                            />
                           </div>
 
                           {[
@@ -650,22 +788,20 @@ export default function IssueSheetPage() {
                             <label className="block text-xs text-slate-300 mb-1.5">
                               Priority
                             </label>
-                            <select
-                              value={newIssue.priority}
-                              onChange={(e) =>
+                            <DropdownField
+                              value={normalizePriorityValue(newIssue.priority)}
+                              onChange={(priority) =>
                                 setNewIssue((prev) => ({
                                   ...prev,
-                                  priority: e.target.value,
+                                  priority,
                                 }))
                               }
-                              className="w-full rounded-lg border border-(--border-color) bg-(--surface-soft) px-4 py-2.5 text-sm text-(--text-color) transition-all duration-200 focus:border-(--primary-color) focus:outline-none focus:ring-2 focus:ring-(--primary-color)/20"
-                            >
-                              {PRIORITY_OPTIONS.map((priority) => (
-                                <option key={priority} value={priority}>
-                                  {priority}
-                                </option>
-                              ))}
-                            </select>
+                              options={PRIORITY_OPTIONS.map((priority) => ({
+                                value: priority,
+                                label: toPriorityLabel(priority),
+                              }))}
+                              buttonClassName={`${PRIORITY_COLORS[normalizePriorityValue(newIssue.priority)] || "border-(--border-color) bg-(--surface-soft) text-(--text-color)"}`}
+                            />
                           </div>
                           <div>
                             <label className="block text-xs text-slate-300 mb-1.5">
@@ -673,82 +809,76 @@ export default function IssueSheetPage() {
                                 ? "Sheet"
                                 : "Cycle"}
                             </label>
-                            <select
+                            <DropdownField
                               value={
                                 newIssue.sheetType || "Smoke Testing Sheet"
                               }
-                              onChange={(e) =>
+                              onChange={(sheetType) =>
                                 setNewIssue((prev) => ({
                                   ...prev,
-                                  sheetType: e.target.value,
+                                  sheetType,
                                 }))
                               }
-                              className="w-full rounded-lg border border-(--border-color) bg-(--surface-soft) px-4 py-2.5 text-sm text-(--text-color) transition-all duration-200 focus:border-(--primary-color) focus:outline-none focus:ring-2 focus:ring-(--primary-color)/20"
-                            >
-                              {(newIssue.testType || "smoke") === "smoke" ? (
-                                <option value="Smoke Testing Sheet">
-                                  Smoke Testing Sheet
-                                </option>
-                              ) : (
-                                SHEET_TYPES.filter(
-                                  (sheetType) =>
-                                    sheetType !== "Smoke Testing Sheet",
-                                ).map((sheetType) => (
-                                  <option key={sheetType} value={sheetType}>
-                                    {sheetType}
-                                  </option>
-                                ))
-                              )}
-                            </select>
+                              options={
+                                (newIssue.testType || "smoke") === "smoke"
+                                  ? [
+                                      {
+                                        value: "Smoke Testing Sheet",
+                                        label: "Smoke Testing Sheet",
+                                      },
+                                    ]
+                                  : SHEET_TYPES.filter(
+                                      (sheetType) =>
+                                        sheetType !== "Smoke Testing Sheet",
+                                    ).map((sheetType) => ({
+                                      value: sheetType,
+                                      label: sheetType,
+                                    }))
+                              }
+                              buttonClassName="border-(--border-color) bg-(--surface-soft) text-(--text-color)"
+                            />
                           </div>
-                          <select
+                          <DropdownField
                             value={newIssue.severity}
-                            onChange={(e) =>
+                            onChange={(severity) =>
                               setNewIssue((prev) => ({
                                 ...prev,
-                                severity: e.target.value as Severity,
+                                severity: severity as Severity,
                               }))
                             }
-                            className="rounded-lg border border-(--border-color) bg-(--surface-soft) px-4 py-2.5 text-sm text-(--text-color) transition-all duration-200 focus:border-(--primary-color) focus:outline-none focus:ring-2 focus:ring-(--primary-color)/20"
-                          >
-                            {Object.values(SeverityEnum).map((severity) => (
-                              <option key={severity} value={severity}>
-                                {severity}
-                              </option>
-                            ))}
-                          </select>
-                          <select
+                            options={Object.values(SeverityEnum).map(
+                              (severity) => ({
+                                value: severity,
+                                label: toPriorityLabel(severity),
+                              }),
+                            )}
+                            buttonClassName={`${SEVERITY_COLORS[newIssue.severity]}`}
+                          />
+                          <DropdownField
                             value={newIssue.status}
-                            onChange={(e) =>
+                            onChange={(status) =>
                               setNewIssue((prev) => ({
                                 ...prev,
-                                status: e.target.value as Status,
+                                status: status as Status,
                               }))
                             }
-                            className="rounded-lg border border-(--border-color) bg-(--surface-soft) px-4 py-2.5 text-sm text-(--text-color) transition-all duration-200 focus:border-(--primary-color) focus:outline-none focus:ring-2 focus:ring-(--primary-color)/20"
-                          >
-                            {Object.values(StatusEnum).map((status) => (
-                              <option key={status} value={status}>
-                                {status}
-                              </option>
-                            ))}
-                          </select>
-                          <select
+                            options={Object.values(StatusEnum).map(
+                              (status) => ({
+                                value: status,
+                                label: STATUS_LABELS[status] || status,
+                              }),
+                            )}
+                            buttonClassName={`${STATUS_COLORS[newIssue.status]}`}
+                          />
+                          <QcStatusDropdown
                             value={newIssue.qcStatusBbt}
-                            onChange={(e) =>
+                            onChange={(qcStatusBbt) =>
                               setNewIssue((prev) => ({
                                 ...prev,
-                                qcStatusBbt: e.target.value as QCStatusBBT,
+                                qcStatusBbt,
                               }))
                             }
-                            className="rounded-lg border border-(--border-color) bg-(--surface-soft) px-4 py-2.5 text-sm text-(--text-color) transition-all duration-200 focus:border-(--primary-color) focus:outline-none focus:ring-2 focus:ring-(--primary-color)/20"
-                          >
-                            {Object.values(QCStatusBBTEnum).map((qcStatus) => (
-                              <option key={qcStatus} value={qcStatus}>
-                                {qcStatus}
-                              </option>
-                            ))}
-                          </select>
+                          />
                           <input
                             type="date"
                             value={newIssue.issueTestDate}
@@ -924,20 +1054,18 @@ export default function IssueSheetPage() {
                   <div className="flex flex-col gap-2 text-xs text-(--muted-color) sm:flex-row sm:items-center sm:gap-3">
                     <label className="flex items-center gap-2">
                       <span>Rows per page</span>
-                      <select
+                      <DropdownField
                         value={pageSize}
-                        onChange={(e) => {
-                          setPageSize(Number(e.target.value));
+                        onChange={(size) => {
+                          setPageSize(Number(size));
                           setCurrentPage(1);
                         }}
-                        className="rounded-md border border-(--border-color) bg-(--surface) px-2 py-1 text-xs text-(--text-color) focus:border-(--primary-color) focus:outline-none focus:ring-1 focus:ring-(--primary-color)/40"
-                      >
-                        {PAGE_SIZE_OPTIONS.map((size) => (
-                          <option key={size} value={size}>
-                            {size}
-                          </option>
-                        ))}
-                      </select>
+                        options={PAGE_SIZE_OPTIONS.map((size) => ({
+                          value: size,
+                          label: PAGE_SIZE_LABELS[size],
+                        }))}
+                        buttonClassName="rounded-md border-(--border-color) bg-(--surface) px-2 py-1 text-xs text-(--text-color) focus:ring-1 focus:ring-(--primary-color)/40"
+                      />
                     </label>
                     <span>
                       Showing {visibleStart}-{visibleEnd} of {totalRows}
@@ -948,7 +1076,8 @@ export default function IssueSheetPage() {
                 {dirtyCount > 0 && (
                   <div className="mt-3 flex flex-col gap-2 rounded-xl border border-amber-200 bg-amber-50/70 p-3 sm:flex-row sm:items-center sm:justify-between">
                     <p className="text-xs font-semibold text-amber-700">
-                      {dirtyCount} row{dirtyCount === 1 ? "" : "s"} with unsaved changes
+                      {dirtyCount} row{dirtyCount === 1 ? "" : "s"} with unsaved
+                      changes
                     </p>
                     <div className="flex flex-wrap items-center gap-2">
                       <AppButton
@@ -993,16 +1122,16 @@ export default function IssueSheetPage() {
                       <th className="w-37.5 px-4 py-3 text-xs font-semibold uppercase tracking-wider">
                         Fixed Date
                       </th>
-                      <th className="w-30 px-4 py-3 text-xs font-semibold uppercase tracking-wider">
+                      <th className="w-34 px-4 py-3 text-xs font-semibold uppercase tracking-wider">
                         Priority
                       </th>
-                      <th className="w-32.5 px-4 py-3 text-xs font-semibold uppercase tracking-wider">
+                      <th className="w-34 px-4 py-3 text-xs font-semibold uppercase tracking-wider">
                         Severity
                       </th>
-                      <th className="w-35 px-4 py-3 text-xs font-semibold uppercase tracking-wider">
+                      <th className="w-34 px-4 py-3 text-xs font-semibold uppercase tracking-wider">
                         Status
                       </th>
-                      <th className="w-35 px-4 py-3 text-xs font-semibold uppercase tracking-wider">
+                      <th className="w-34 px-4 py-3 text-xs font-semibold uppercase tracking-wider">
                         QC Status
                       </th>
                       <th className="w-55 min-w-55 px-4 py-3 text-xs font-semibold uppercase tracking-wider">
@@ -1051,198 +1180,188 @@ export default function IssueSheetPage() {
                             }`}
                             style={{ animationDelay: `${idx * 50}ms` }}
                           >
-                          <td className="px-4 py-3 align-top text-xs font-semibold text-(--text-color)">
-                            <span className="inline-flex max-w-42.5 truncate whitespace-nowrap rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-emerald-700">
-                              {row.sheetType || "-"}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 align-top text-(--text-color)">
-                            <div className="flex flex-col items-start gap-1">
-                              <span className="whitespace-nowrap">
-                                {row.testCaseId || "-"}
+                            <td className="px-4 py-3 align-top text-xs font-semibold text-(--text-color)">
+                              <span className="inline-flex max-w-42.5 truncate whitespace-nowrap rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-emerald-700">
+                                {row.sheetType || "-"}
                               </span>
-                              {rowDirty && (
-                                <span className="text-[11px] font-semibold text-amber-700">
-                                  Unsaved
+                            </td>
+                            <td className="px-4 py-3 align-top text-(--text-color)">
+                              <div className="flex flex-col items-start gap-1">
+                                <span className="whitespace-nowrap">
+                                  {row.testCaseId || "-"}
                                 </span>
-                              )}
-                            </div>
-                          </td>
-                          <td
-                            className="px-4 py-3 align-top truncate text-(--text-color)"
-                            title={row.module || ""}
-                          >
-                            {row.module || "-"}
-                          </td>
-                          <td className="px-4 py-3 align-top">
-                            <input
-                              type="date"
-                              value={row.issueTestDate}
-                              onChange={(e) =>
-                                updateRow(
-                                  row.id,
-                                  "issueTestDate",
-                                  e.target.value,
-                                )
-                              }
-                              className="w-full rounded-lg border border-(--border-color) bg-(--surface-soft) px-3 py-1.5 text-xs text-(--text-color) transition-all duration-200 focus:border-(--primary-color) focus:outline-none focus:ring-1 focus:ring-(--primary-color)/50"
-                            />
-                          </td>
-                          <td className="px-4 py-3 align-top">
-                            <input
-                              type="date"
-                              value={row.fixedDate}
-                              onChange={(e) =>
-                                updateRow(row.id, "fixedDate", e.target.value)
-                              }
-                              className="w-full rounded-lg border border-(--border-color) bg-(--surface-soft) px-3 py-1.5 text-xs text-(--text-color) transition-all duration-200 focus:border-(--primary-color) focus:outline-none focus:ring-1 focus:ring-(--primary-color)/50"
-                            />
-                          </td>
-                          <td className="px-4 py-3 align-top">
-                            <select
-                              value={row.priority}
-                              onChange={(e) =>
-                                updateRow(row.id, "priority", e.target.value)
-                              }
-                              className={`w-full rounded-full border px-3 py-1.5 text-xs font-semibold transition-all duration-200 focus:outline-none focus:ring-1 ${PRIORITY_COLORS[row.priority?.toUpperCase()] || "border-slate-200 bg-slate-100 text-slate-700"}`}
-                            >
-                              {PRIORITY_OPTIONS.map((priority) => (
-                                <option key={priority} value={priority}>
-                                  {toPriorityLabel(priority)}
-                                </option>
-                              ))}
-                            </select>
-                          </td>
-                          <td className="px-4 py-3 align-top">
-                            <select
-                              value={row.severity}
-                              onChange={(e) =>
-                                updateRow(row.id, "severity", e.target.value)
-                              }
-                              className={`w-full rounded-full border px-3 py-1.5 text-xs font-semibold transition-all duration-200 focus:outline-none focus:ring-1 ${SEVERITY_COLORS[row.severity] || "border-slate-200 bg-slate-100 text-slate-700"}`}
-                            >
-                              {Object.values(SeverityEnum).map((severity) => (
-                                <option key={severity} value={severity}>
-                                  {toPriorityLabel(severity)}
-                                </option>
-                              ))}
-                            </select>
-                          </td>
-                          <td className="px-4 py-3 align-top">
-                            <select
-                              value={row.status}
-                              onChange={(e) =>
-                                updateRow(row.id, "status", e.target.value)
-                              }
-                              className={`w-full rounded-full border px-3 py-1.5 text-xs font-semibold transition-all duration-200 focus:outline-none focus:ring-1 ${STATUS_COLORS[row.status] || "border-slate-200 bg-slate-100 text-slate-700"}`}
-                            >
-                              {Object.values(StatusEnum).map((status) => (
-                                <option key={status} value={status}>
-                                  {STATUS_LABELS[status] || status}
-                                </option>
-                              ))}
-                            </select>
-                          </td>
-                          <td className="px-4 py-3 align-top">
-                            <select
-                              value={row.qcStatusBbt}
-                              onChange={(e) =>
-                                updateRow(row.id, "qcStatusBbt", e.target.value)
-                              }
-                              className="w-full rounded-lg border border-(--border-color) bg-(--surface-soft) px-3 py-1.5 text-xs text-(--text-color) transition-all duration-200 focus:border-(--primary-color) focus:outline-none focus:ring-1 focus:ring-(--primary-color)/50"
-                            >
-                              {Object.values(QCStatusBBTEnum).map(
-                                (qcStatus) => (
-                                  <option key={qcStatus} value={qcStatus}>
-                                    {qcStatus}
-                                  </option>
-                                ),
-                              )}
-                            </select>
-                          </td>
-                          <td className="w-55 min-w-55 px-4 py-3 align-top">
-                            <div className="space-y-2">
-                              <div className="flex items-center gap-1.5 whitespace-nowrap">
                                 {rowDirty && (
-                                  <>
-                                    <AppButton
-                                      onClick={() => onSaveRow(row)}
-                                      disabled={
-                                        savingId === row.id ||
-                                        isBulkSaving ||
-                                        deletingId === row.id ||
-                                        openingId === row.id
-                                      }
-                                      title="Save changes"
-                                      aria-label="Save changes"
-                                      variant="successSoft"
-                                      size="icon"
-                                      className="shrink-0"
-                                    >
-                                      <HiCheck className="w-4 h-4" />
-                                    </AppButton>
-
-                                    <AppButton
-                                      onClick={() => onResetRow(row.id)}
-                                      disabled={
-                                        savingId === row.id ||
-                                        isBulkSaving ||
-                                        deletingId === row.id ||
-                                        openingId === row.id
-                                      }
-                                      title="Discard changes"
-                                      aria-label="Discard changes"
-                                      variant="dangerSoft"
-                                      size="icon"
-                                      className="shrink-0"
-                                    >
-                                      <HiRefresh className="w-4 h-4" />
-                                    </AppButton>
-                                  </>
+                                  <span className="text-[11px] font-semibold text-amber-700">
+                                    Unsaved
+                                  </span>
                                 )}
-
-                                <AppButton
-                                  onClick={() => onOpenRow(row.id)}
-                                  disabled={
-                                    openingId === row.id ||
-                                    deletingId === row.id ||
-                                    isBulkSaving ||
-                                    savingId === row.id
-                                  }
-                                  title="Open issue"
-                                  aria-label="Open issue"
-                                  variant="primary"
-                                  size="icon"
-                                  className="shrink-0"
-                                >
-                                  <HiEye className="w-4 h-4" />
-                                </AppButton>
-
-                                <AppButton
-                                  onClick={() => onDeleteRow(row.id)}
-                                  disabled={
-                                    deletingId === row.id ||
-                                    openingId === row.id ||
-                                    isBulkSaving ||
-                                    savingId === row.id
-                                  }
-                                  title="Remove issue"
-                                  aria-label="Remove issue"
-                                  variant="danger"
-                                  size="icon"
-                                  className="shrink-0"
-                                >
-                                  <HiTrash className="w-4 h-4" />
-                                </AppButton>
                               </div>
+                            </td>
+                            <td
+                              className="px-4 py-3 align-top truncate text-(--text-color)"
+                              title={row.module || ""}
+                            >
+                              {row.module || "-"}
+                            </td>
+                            <td className="px-4 py-3 align-top">
+                              <input
+                                type="date"
+                                value={row.issueTestDate}
+                                onChange={(e) =>
+                                  updateRow(
+                                    row.id,
+                                    "issueTestDate",
+                                    e.target.value,
+                                  )
+                                }
+                                className="w-full rounded-lg border border-(--border-color) bg-(--surface-soft) px-3 py-1.5 text-xs text-(--text-color) transition-all duration-200 focus:border-(--primary-color) focus:outline-none focus:ring-1 focus:ring-(--primary-color)/50"
+                              />
+                            </td>
+                            <td className="px-4 py-3 align-top">
+                              <input
+                                type="date"
+                                value={row.fixedDate}
+                                onChange={(e) =>
+                                  updateRow(row.id, "fixedDate", e.target.value)
+                                }
+                                className="w-full rounded-lg border border-(--border-color) bg-(--surface-soft) px-3 py-1.5 text-xs text-(--text-color) transition-all duration-200 focus:border-(--primary-color) focus:outline-none focus:ring-1 focus:ring-(--primary-color)/50"
+                              />
+                            </td>
+                            <td className="px-4 py-3 align-top">
+                              <DropdownField
+                                value={normalizePriorityValue(row.priority)}
+                                onChange={(priority) =>
+                                  updateRow(row.id, "priority", priority)
+                                }
+                                options={PRIORITY_OPTIONS.map((priority) => ({
+                                  value: priority,
+                                  label: toPriorityLabel(priority),
+                                }))}
+                                buttonClassName={`rounded-full px-3 py-1.5 text-xs font-semibold ${PRIORITY_COLORS[normalizePriorityValue(row.priority)] || "border-slate-200 bg-slate-100 text-slate-700"}`}
+                              />
+                            </td>
+                            <td className="px-4 py-3 align-top">
+                              <DropdownField
+                                value={row.severity}
+                                onChange={(severity) =>
+                                  updateRow(row.id, "severity", severity)
+                                }
+                                options={Object.values(SeverityEnum).map(
+                                  (severity) => ({
+                                    value: severity,
+                                    label: toPriorityLabel(severity),
+                                  }),
+                                )}
+                                buttonClassName={`rounded-full px-3 py-1.5 text-xs font-semibold ${SEVERITY_COLORS[row.severity] || "border-slate-200 bg-slate-100 text-slate-700"}`}
+                              />
+                            </td>
+                            <td className="px-4 py-3 align-top">
+                              <DropdownField
+                                value={row.status}
+                                onChange={(status) =>
+                                  updateRow(row.id, "status", status)
+                                }
+                                options={Object.values(StatusEnum).map(
+                                  (status) => ({
+                                    value: status,
+                                    label: STATUS_LABELS[status] || status,
+                                  }),
+                                )}
+                                buttonClassName={`rounded-full px-3 py-1.5 text-xs font-semibold ${STATUS_COLORS[row.status] || "border-slate-200 bg-slate-100 text-slate-700"}`}
+                              />
+                            </td>
+                            <td className="px-4 py-3 align-top">
+                              <QcStatusDropdown
+                                value={row.qcStatusBbt}
+                                onChange={(qcStatusBbt) =>
+                                  updateRow(row.id, "qcStatusBbt", qcStatusBbt)
+                                }
+                                className="w-full px-3 py-1.5 text-xs"
+                              />
+                            </td>
+                            <td className="w-55 min-w-55 px-4 py-3 align-top">
+                              <div className="space-y-2">
+                                <div className="flex items-center gap-1.5 whitespace-nowrap">
+                                  {rowDirty && (
+                                    <>
+                                      <AppButton
+                                        onClick={() => onSaveRow(row)}
+                                        disabled={
+                                          savingId === row.id ||
+                                          isBulkSaving ||
+                                          deletingId === row.id ||
+                                          openingId === row.id
+                                        }
+                                        title="Save changes"
+                                        aria-label="Save changes"
+                                        variant="successSoft"
+                                        size="icon"
+                                        className="shrink-0"
+                                      >
+                                        <HiCheck className="w-4 h-4" />
+                                      </AppButton>
 
-                              {savingId === row.id && (
-                                <p className="text-[11px] font-medium text-(--muted-color)">
-                                  Saving changes...
-                                </p>
-                              )}
-                            </div>
-                          </td>
+                                      <AppButton
+                                        onClick={() => onResetRow(row.id)}
+                                        disabled={
+                                          savingId === row.id ||
+                                          isBulkSaving ||
+                                          deletingId === row.id ||
+                                          openingId === row.id
+                                        }
+                                        title="Discard changes"
+                                        aria-label="Discard changes"
+                                        variant="dangerSoft"
+                                        size="icon"
+                                        className="shrink-0"
+                                      >
+                                        <HiRefresh className="w-4 h-4" />
+                                      </AppButton>
+                                    </>
+                                  )}
+
+                                  <AppButton
+                                    onClick={() => onOpenRow(row.id)}
+                                    disabled={
+                                      openingId === row.id ||
+                                      deletingId === row.id ||
+                                      isBulkSaving ||
+                                      savingId === row.id
+                                    }
+                                    title="Open issue"
+                                    aria-label="Open issue"
+                                    variant="primary"
+                                    size="icon"
+                                    className="shrink-0"
+                                  >
+                                    <HiEye className="w-4 h-4" />
+                                  </AppButton>
+
+                                  <AppButton
+                                    onClick={() => onDeleteRow(row.id)}
+                                    disabled={
+                                      deletingId === row.id ||
+                                      openingId === row.id ||
+                                      isBulkSaving ||
+                                      savingId === row.id
+                                    }
+                                    title="Remove issue"
+                                    aria-label="Remove issue"
+                                    variant="danger"
+                                    size="icon"
+                                    className="shrink-0"
+                                  >
+                                    <HiTrash className="w-4 h-4" />
+                                  </AppButton>
+                                </div>
+
+                                {savingId === row.id && (
+                                  <p className="text-[11px] font-medium text-(--muted-color)">
+                                    Saving changes...
+                                  </p>
+                                )}
+                              </div>
+                            </td>
                           </tr>
                         );
                       })
@@ -1353,7 +1472,9 @@ export default function IssueSheetPage() {
                     Priority
                   </p>
                   <p className="text-sm font-semibold text-(--text-color)">
-                    {selectedDefect.priority || "-"}
+                    {toPriorityLabel(
+                      normalizePriorityValue(selectedDefect.priority),
+                    ) || "-"}
                   </p>
                 </div>
               </div>

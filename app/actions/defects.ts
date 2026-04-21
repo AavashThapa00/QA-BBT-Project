@@ -14,12 +14,14 @@ import {
   SeverityEnum,
   QCStatusBBTEnum,
 } from "@/lib/types";
+import { normalizeEnumValue } from "@/lib/utils";
 import {
   DefectDoc,
   buildDefectMongoFilter,
   getDefectSort,
   toDefect,
 } from "@/lib/mongo-defects";
+import { getCurrentUser } from "./auth";
 
 const getDefectsCollection = async () =>
   (await mongoCollections.defects()) as unknown as Collection<DefectDoc>;
@@ -43,9 +45,9 @@ export async function getDefectMetrics(filters?: DefectFilters): Promise<{
             {
               status: {
                 $in: [
-                  StatusEnum.OPEN,
-                  StatusEnum.IN_PROGRESS,
-                  StatusEnum.ON_HOLD,
+                  StatusEnum.PENDING,
+                  StatusEnum.RE_OPENED,
+                  StatusEnum.HOLD,
                 ],
               },
             },
@@ -54,7 +56,7 @@ export async function getDefectMetrics(filters?: DefectFilters): Promise<{
         defects.countDocuments({
           $and: [
             baseFilter,
-            { status: { $in: [StatusEnum.CLOSED, StatusEnum.AS_IT_IS] } },
+            { status: { $in: [StatusEnum.FIXED, StatusEnum.AS_IT_IS] } },
           ],
         } as Filter<DefectDoc>),
         defects.countDocuments({
@@ -157,6 +159,10 @@ export async function getDefectsBySeverity(filters?: DefectFilters): Promise<
 function normalizePriorityLabel(priority: string | null): string {
   const normalized = (priority || "").trim().toUpperCase();
   return normalized || "UNKNOWN";
+}
+
+function normalizeStoredPriority(priority: string): string {
+  return normalizeEnumValue(priority, Object.values(SeverityEnum)) || priority.trim();
 }
 
 const PRIORITY_ORDER: Record<string, number> = {
@@ -310,7 +316,7 @@ export async function getAverageResolutionTime(
   const defects = await getDefectsCollection();
   const filter = buildDefectMongoFilter({
     ...filters,
-    status: [StatusEnum.CLOSED],
+    status: [StatusEnum.FIXED],
   });
 
   try {
@@ -464,6 +470,7 @@ export async function createManualDefect(
     const id = randomUUID();
     const issueTestDate = parseDateInput(input.issueTestDate);
     const fixedDate = input.fixedDate ? parseDateInput(input.fixedDate) : null;
+    const priority = normalizeStoredPriority(input.priority);
 
     await defects.insertOne({
       id,
@@ -498,6 +505,12 @@ export async function updateManualDefect(
   id: string,
   updates: ManualDefectUpdateInput,
 ): Promise<{ success: boolean; message: string }> {
+  // Permission check: Only admin and super_admin can update status
+  const user = await getCurrentUser();
+  if (!user || (user.role !== "admin" && user.role !== "super_admin")) {
+    return { success: false, message: "Unauthorized: Only admins can update defects" };
+  }
+
   const defects = await getDefectsCollection();
   if (!id) {
     return { success: false, message: "Defect ID is required" };
@@ -517,7 +530,7 @@ export async function updateManualDefect(
   }
 
   if (updates.priority !== undefined) {
-    const priority = updates.priority.trim();
+    const priority = normalizeStoredPriority(updates.priority);
     if (!priority) {
       return { success: false, message: "Priority cannot be empty" };
     }

@@ -201,8 +201,10 @@ export async function uploadCSV(
         }
 
         const priority =
-          extractColumnValue(validatedRow, ["Priority", "priority"]) ||
-          "Medium";
+          normalizeEnumValue(
+            extractColumnValue(validatedRow, ["Priority", "priority"]),
+            Object.values(SeverityEnum),
+          ) || "MEDIUM";
 
         const assignedTo = extractColumnValue(validatedRow, [
           "Assigned To",
@@ -221,31 +223,33 @@ export async function uploadCSV(
         if (statusStr) {
           const lowerStatus = statusStr.toLowerCase().trim();
           if (lowerStatus.includes("fix") || lowerStatus.includes("closed")) {
-            status = StatusEnum.CLOSED;
+            status = StatusEnum.FIXED;
           } else if (
             lowerStatus === "hold" ||
             lowerStatus === "on hold" ||
             lowerStatus.includes("hold")
           ) {
-            status = StatusEnum.ON_HOLD;
+            status = StatusEnum.HOLD;
           } else if (lowerStatus === "pending") {
-            status = StatusEnum.OPEN;
+            status = StatusEnum.PENDING;
           } else if (
             lowerStatus.includes("progress") ||
             lowerStatus.includes("in progress")
           ) {
-            status = StatusEnum.IN_PROGRESS;
+            status = StatusEnum.PENDING;
           } else if (lowerStatus === "as it is") {
             status = StatusEnum.AS_IT_IS;
+          } else if (lowerStatus === "re-opened" || lowerStatus === "reopened") {
+            status = StatusEnum.RE_OPENED;
           } else {
             const normalized = normalizeEnumValue(
               statusStr,
               Object.values(StatusEnum),
             );
-            status = (normalized as Status) || StatusEnum.OPEN;
+            status = (normalized as Status) || StatusEnum.PENDING;
           }
         } else {
-          status = StatusEnum.OPEN; // Default to OPEN if no status provided
+          status = StatusEnum.PENDING; // Default to PENDING if no status provided
         }
 
         const dateFixedStr = extractColumnValue(validatedRow, [

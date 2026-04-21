@@ -1,6 +1,6 @@
 // Type definitions for Defect
 export type Severity = "MAJOR" | "HIGH" | "MEDIUM" | "LOW";
-export type Status = "OPEN" | "IN_PROGRESS" | "CLOSED" | "ON_HOLD" | "AS_IT_IS";
+export type Status = "PENDING" | "FIXED" | "AS_IT_IS" | "HOLD" | "RE_OPENED";
 export type QCStatusBBT = "PASSED" | "FAILED" | "PENDING" | "REJECTED";
 
 export interface Defect {
@@ -35,11 +35,11 @@ export const SeverityEnum = {
 } as const;
 
 export const StatusEnum = {
-    OPEN: "OPEN" as Status,
-    IN_PROGRESS: "IN_PROGRESS" as Status,
-    CLOSED: "CLOSED" as Status,
-    ON_HOLD: "ON_HOLD" as Status,
+    PENDING: "PENDING" as Status,
+    FIXED: "FIXED" as Status,
     AS_IT_IS: "AS_IT_IS" as Status,
+    HOLD: "HOLD" as Status,
+    RE_OPENED: "RE_OPENED" as Status,
 } as const;
 
 export const QCStatusBBTEnum = {

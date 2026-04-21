@@ -44,7 +44,7 @@ import {
 interface StatusData {
   name: string;
   value: number;
-  key: "AS_IT_IS" | "HOLD" | "PENDING" | "FIXED";
+  key: "AS_IT_IS" | "HOLD" | "PENDING" | "FIXED" | "RE_OPENED";
 }
 
 interface ModuleFixTime {
@@ -92,6 +92,7 @@ const STATUS_GROUPS = [
   { key: "AS_IT_IS" as const, name: "As it is", color: "#9e9e9e" },
   { key: "HOLD" as const, name: "Hold", color: "#ff9800" },
   { key: "PENDING" as const, name: "Pending", color: "#ffc107" },
+  { key: "RE_OPENED" as const, name: "Re-opened", color: "#f97316" },
   { key: "FIXED" as const, name: "Fixed", color: "#4caf50" },
 ];
 
@@ -114,13 +115,14 @@ const MODULE_COLORS: Record<string, string> = {
 
 const getStatusLabel = (status: string) => {
   switch (status) {
-    case "OPEN":
-    case "IN_PROGRESS":
+    case "PENDING":
       return "Pending";
-    case "CLOSED":
+    case "FIXED":
       return "Fixed";
-    case "ON_HOLD":
+    case "HOLD":
       return "Hold";
+    case "RE_OPENED":
+      return "Re-opened";
     case "AS_IT_IS":
       return "As it is";
     default:
@@ -181,6 +183,7 @@ export default function AnalyticsPage() {
           AS_IT_IS: 0,
           HOLD: 0,
           PENDING: 0,
+          RE_OPENED: 0,
           FIXED: 0,
         };
 
@@ -191,16 +194,15 @@ export default function AnalyticsPage() {
             case "AS_IT_IS":
               groupedCounts.AS_IT_IS += item.count;
               break;
-            case "ON_HOLD":
             case "HOLD":
               groupedCounts.HOLD += item.count;
               break;
-            case "OPEN":
-            case "IN_PROGRESS":
             case "PENDING":
               groupedCounts.PENDING += item.count;
               break;
-            case "CLOSED":
+            case "RE_OPENED":
+              groupedCounts.RE_OPENED += item.count;
+              break;
             case "FIXED":
               groupedCounts.FIXED += item.count;
               break;

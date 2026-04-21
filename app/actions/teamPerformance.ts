@@ -52,7 +52,7 @@ export async function getTeamPerformance(): Promise<TeamMember[]> {
             open_defects: {
               $sum: {
                 $cond: [
-                  { $in: ["$status", ["OPEN", "IN_PROGRESS", "ON_HOLD"]] },
+                  { $in: ["$status", ["PENDING", "RE_OPENED", "HOLD"]] },
                   1,
                   0,
                 ],
@@ -60,7 +60,7 @@ export async function getTeamPerformance(): Promise<TeamMember[]> {
             },
             closed_defects: {
               $sum: {
-                $cond: [{ $in: ["$status", ["CLOSED", "AS_IT_IS"]] }, 1, 0],
+                $cond: [{ $in: ["$status", ["FIXED", "AS_IT_IS"]] }, 1, 0],
               },
             },
             high_severity_count: {
@@ -73,7 +73,7 @@ export async function getTeamPerformance(): Promise<TeamMember[]> {
                 $cond: [
                   {
                     $and: [
-                      { $in: ["$status", ["CLOSED", "AS_IT_IS"]] },
+                      { $in: ["$status", ["FIXED", "AS_IT_IS"]] },
                       { $ne: ["$dateReported", null] },
                       { $ne: ["$dateFixed", null] },
                     ],
@@ -123,8 +123,8 @@ export async function getTeamDefectsByStatus(
     const defects = await getDefectsCollection();
     const statusFilter =
       statusGroup === "open"
-        ? ["OPEN", "IN_PROGRESS", "ON_HOLD"]
-        : ["CLOSED", "AS_IT_IS"];
+        ? ["PENDING", "RE_OPENED", "HOLD"]
+        : ["FIXED", "AS_IT_IS"];
 
     const hasTeamFilter = assignedTo !== "ALL";
     const query: Record<string, unknown> = { status: { $in: statusFilter } };

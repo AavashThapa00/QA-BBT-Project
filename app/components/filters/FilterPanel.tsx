@@ -141,10 +141,10 @@ export default function FilterPanel({
   );
 
   const statusOptions = [
-    { value: StatusEnum.OPEN, label: "Open" },
-    { value: StatusEnum.IN_PROGRESS, label: "In Progress" },
-    { value: StatusEnum.ON_HOLD, label: "On Hold" },
-    { value: StatusEnum.CLOSED, label: "Fixed" },
+    { value: StatusEnum.PENDING, label: "Pending" },
+    { value: StatusEnum.RE_OPENED, label: "Re-opened" },
+    { value: StatusEnum.HOLD, label: "Hold" },
+    { value: StatusEnum.FIXED, label: "Fixed" },
     { value: StatusEnum.AS_IT_IS, label: "As it is" },
   ];
 
