@@ -1,8 +1,25 @@
 "use client";
 
-import React, { useState } from "react";
-import { HiDownload, HiX } from "react-icons/hi";
-import { exportAllDefects } from "@/app/actions/defects";
+import React, { Fragment, useEffect, useState } from "react";
+import {
+  Dialog,
+  DialogPanel,
+  DialogTitle,
+  Listbox,
+  ListboxButton,
+  ListboxOption,
+  ListboxOptions,
+  Transition,
+  TransitionChild,
+} from "@headlessui/react";
+import {
+  HiCheck,
+  HiChevronDown,
+  HiDownload,
+  HiFolderOpen,
+  HiX,
+} from "react-icons/hi";
+import { exportAllDefects, getDefectsByModule } from "@/app/actions/defects";
 import { DefectFilters } from "@/lib/types";
 import {
   enrichDefectsWithCalculations,
@@ -21,6 +38,8 @@ export default function ExportDefectsPanel({
   onClose,
   currentFilters = {},
 }: ExportDefectsPanelProps) {
+  const [projectOptions, setProjectOptions] = useState<string[]>([]);
+  const [selectedProject, setSelectedProject] = useState("ALL");
   const [isLoading, setIsLoading] = useState(false);
   const [dateFrom, setDateFrom] = useState<string>(
     currentFilters.dateFrom ? formatDateForInput(currentFilters.dateFrom) : "",
@@ -30,7 +49,35 @@ export default function ExportDefectsPanel({
   );
   const [error, setError] = useState<string | null>(null);
 
-  if (!isOpen) return null;
+  useEffect(() => {
+    if (!isOpen) return;
+
+    setDateFrom(
+      currentFilters.dateFrom
+        ? formatDateForInput(currentFilters.dateFrom)
+        : "",
+    );
+    setDateTo(
+      currentFilters.dateTo ? formatDateForInput(currentFilters.dateTo) : "",
+    );
+    setSelectedProject("ALL");
+    setError(null);
+
+    const loadProjects = async () => {
+      try {
+        const { module: _ignoredModuleFilter, ...baseFilters } = currentFilters;
+        const modules = await getDefectsByModule(baseFilters);
+        const options = modules
+          .map((item) => item.module?.trim())
+          .filter((module): module is string => !!module);
+        setProjectOptions(options);
+      } catch {
+        setProjectOptions([]);
+      }
+    };
+
+    loadProjects();
+  }, [isOpen, currentFilters]);
 
   const handleExport = async () => {
     setIsLoading(true);
@@ -70,6 +117,7 @@ export default function ExportDefectsPanel({
         ...currentFilters,
         dateFrom: dateFromObj,
         dateTo: dateToObj,
+        module: selectedProject === "ALL" ? undefined : [selectedProject],
       };
 
       // Fetch all defects with filters
@@ -97,137 +145,175 @@ export default function ExportDefectsPanel({
     }
   };
 
+  const projectItems = ["ALL", ...projectOptions];
+
+  if (!isOpen) return null;
+
   return (
-    <>
-      {/* Modal with Page Blur Effect */}
-      <div
-        className={`fixed inset-0 z-50 transition-opacity duration-300 ${
-          isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
-        }`}
-      >
-        {/* Blurred Background Overlay */}
-        <div
-          className="absolute inset-0 overlay-backdrop backdrop-blur-sm"
-          onClick={onClose}
-        />
+    <Transition appear show={isOpen} as={Fragment}>
+      <Dialog as="div" className="relative z-50" onClose={onClose}>
+        <TransitionChild
+          as={Fragment}
+          enter="ease-out duration-200"
+          enterFrom="opacity-0"
+          enterTo="opacity-100"
+          leave="ease-in duration-150"
+          leaveFrom="opacity-100"
+          leaveTo="opacity-0"
+        >
+          <div className="fixed inset-0 overlay-backdrop backdrop-blur-sm" />
+        </TransitionChild>
 
-        {/* Modal Dialog */}
-        <div className="absolute inset-0 flex items-center justify-center p-4">
-          <div
-            className={`w-full max-w-md transform rounded-2xl border border-(--border-color) bg-(--surface) shadow-dialog transition-all duration-400 ${
-              isOpen ? "scale-100 opacity-100" : "scale-95 opacity-0"
-            }`}
-          >
-            {/* Header */}
-            <div className="flex items-center justify-between border-b border-(--border-color) p-6">
-              <div className="flex items-center gap-2">
-                <HiDownload className="w-5 h-5 text-(--primary-color)" />
-                <h2 className="text-lg font-semibold text-(--heading-color)">
-                  Export All Defects
-                </h2>
-              </div>
-              <button
-                onClick={onClose}
-                className="rounded-lg p-1 transition-colors hover:bg-emerald-50"
-                aria-label="Close"
-              >
-                <HiX className="w-5 h-5 text-(--muted-color)" />
-              </button>
-            </div>
-
-            {/* Content */}
-            <div className="p-6 space-y-4">
-              <p className="text-sm text-(--muted-color)">
-                Filter by date range to export all defects matching your
-                criteria.
-              </p>
-
-              <div className="space-y-4">
-                {/* From Date */}
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-(--text-color)">
-                    From Date (Optional)
-                  </label>
-                  <input
-                    type="date"
-                    value={dateFrom}
-                    onChange={(e) => setDateFrom(e.target.value)}
-                    className="w-full rounded-lg border border-(--border-color) bg-(--surface-soft) px-3 py-2 text-(--text-color) placeholder-(--muted-color) focus:border-transparent focus:ring-2 focus:ring-(--primary-color)"
-                  />
-                </div>
-
-                {/* To Date */}
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-(--text-color)">
-                    To Date (Optional)
-                  </label>
-                  <input
-                    type="date"
-                    value={dateTo}
-                    onChange={(e) => setDateTo(e.target.value)}
-                    className="w-full rounded-lg border border-(--border-color) bg-(--surface-soft) px-3 py-2 text-(--text-color) placeholder-(--muted-color) focus:border-transparent focus:ring-2 focus:ring-(--primary-color)"
-                  />
-                </div>
-
-                {/* Error Message */}
-                {error && (
-                  <div className="rounded-lg border border-rose-200 bg-rose-50 p-3">
-                    <p className="text-sm text-rose-700">{error}</p>
+        <div className="fixed inset-0 overflow-y-auto">
+          <div className="flex min-h-full items-center justify-center p-4">
+            <TransitionChild
+              as={Fragment}
+              enter="ease-out duration-200"
+              enterFrom="opacity-0 scale-95"
+              enterTo="opacity-100 scale-100"
+              leave="ease-in duration-150"
+              leaveFrom="opacity-100 scale-100"
+              leaveTo="opacity-0 scale-95"
+            >
+              <DialogPanel className="w-full max-w-xl overflow-hidden rounded-2xl border border-(--border-color) bg-(--surface) shadow-2xl">
+                <div className="border-b border-(--border-color) bg-(--surface-soft) px-6 py-4">
+                  <div className="flex items-center gap-3">
+                    <div className="rounded-lg bg-(--primary-color) p-2 text-white">
+                      <HiDownload className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <DialogTitle className="text-lg font-bold text-(--heading-color)">
+                        Export Defects
+                      </DialogTitle>
+                      <p className="text-xs text-(--muted-color)">
+                        Download a clean Excel file with project and date
+                        filters.
+                      </p>
+                    </div>
+                    <button
+                      onClick={onClose}
+                      className="ml-auto rounded-lg p-2 text-(--muted-color) transition-colors hover:bg-emerald-50 hover:text-(--heading-color)"
+                      aria-label="Close"
+                    >
+                      <HiX className="h-5 w-5" />
+                    </button>
                   </div>
-                )}
-
-                {/* Info */}
-                <div className="rounded-lg border border-emerald-100 bg-emerald-50 p-3">
-                  <p className="text-sm text-emerald-700">
-                    All active filters will be included in the export.
-                  </p>
                 </div>
-              </div>
-            </div>
 
-            {/* Footer */}
-            <div className="flex gap-3 border-t border-(--border-color) p-6">
-              <button
-                onClick={onClose}
-                disabled={isLoading}
-                className="flex-1 rounded-lg border border-(--border-color) px-4 py-2 font-medium text-(--muted-color) transition-colors hover:bg-emerald-50 hover:text-(--heading-color) disabled:opacity-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleExport}
-                disabled={isLoading}
-                className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-(--primary-color) px-4 py-2 font-medium text-white transition-colors hover:bg-(--primary-hover-color) disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {isLoading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
-                    <span>Exporting...</span>
-                  </>
-                ) : (
-                  <>
-                    <HiDownload className="w-4 h-4" />
-                    <span>Export</span>
-                  </>
-                )}
-              </button>
-            </div>
+                <div className="space-y-5 px-6 py-5">
+                  <div>
+                    <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-(--muted-color)">
+                      Project
+                    </label>
+                    <Listbox
+                      value={selectedProject}
+                      onChange={setSelectedProject}
+                    >
+                      <div className="relative">
+                        <ListboxButton className="flex w-full items-center justify-between rounded-lg border border-(--border-color) bg-(--surface-soft) px-3 py-2.5 text-left text-sm text-(--text-color) transition-colors hover:border-(--primary-color) focus:outline-none focus:ring-2 focus:ring-(--primary-color)/30">
+                          <span className="flex items-center gap-2">
+                            <HiFolderOpen className="h-4 w-4 text-(--muted-color)" />
+                            {selectedProject === "ALL"
+                              ? "All projects"
+                              : selectedProject}
+                          </span>
+                          <HiChevronDown className="h-4 w-4 text-(--muted-color)" />
+                        </ListboxButton>
+                        <ListboxOptions className="absolute z-30 mt-1 max-h-64 w-full overflow-auto rounded-lg border border-(--border-color) bg-(--surface) p-1 shadow-lg focus:outline-none">
+                          {projectItems.map((project) => (
+                            <ListboxOption
+                              key={project}
+                              value={project}
+                              className={({ active }) =>
+                                `cursor-pointer rounded-md px-3 py-2 text-sm ${
+                                  active
+                                    ? "bg-slate-50 text-(--heading-color)"
+                                    : "text-(--text-color)"
+                                }`
+                              }
+                            >
+                              {({ selected }) => (
+                                <div className="flex items-center justify-between gap-2">
+                                  <span>
+                                    {project === "ALL"
+                                      ? "All projects"
+                                      : project}
+                                  </span>
+                                  {selected ? (
+                                    <HiCheck className="h-4 w-4 text-(--primary-color)" />
+                                  ) : null}
+                                </div>
+                              )}
+                            </ListboxOption>
+                          ))}
+                        </ListboxOptions>
+                      </div>
+                    </Listbox>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div>
+                      <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-(--muted-color)">
+                        From Date
+                      </label>
+                      <input
+                        type="date"
+                        value={dateFrom}
+                        onChange={(e) => setDateFrom(e.target.value)}
+                        className="w-full rounded-lg border border-(--border-color) bg-(--surface-soft) px-3 py-2 text-sm text-(--text-color) transition-colors focus:outline-none focus:ring-2 focus:ring-(--primary-color)/30"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-(--muted-color)">
+                        To Date
+                      </label>
+                      <input
+                        type="date"
+                        value={dateTo}
+                        onChange={(e) => setDateTo(e.target.value)}
+                        className="w-full rounded-lg border border-(--border-color) bg-(--surface-soft) px-3 py-2 text-sm text-(--text-color) transition-colors focus:outline-none focus:ring-2 focus:ring-(--primary-color)/30"
+                      />
+                    </div>
+                  </div>
+
+                  {error && (
+                    <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
+                      {error}
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex gap-3 border-t border-(--border-color) px-6 py-4">
+                  <button
+                    onClick={onClose}
+                    disabled={isLoading}
+                    className="flex-1 rounded-lg border border-(--border-color) px-4 py-2 text-sm font-medium text-(--muted-color) transition-colors hover:bg-emerald-50 hover:text-(--heading-color) disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleExport}
+                    disabled={isLoading}
+                    className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-(--primary-color) px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-(--primary-hover-color) disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {isLoading ? (
+                      <>
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                        <span>Exporting...</span>
+                      </>
+                    ) : (
+                      <>
+                        <HiDownload className="h-4 w-4" />
+                        <span>Export Defects</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </DialogPanel>
+            </TransitionChild>
           </div>
         </div>
-      </div>
-
-      <style jsx>{`
-        @keyframes modalEnter {
-          from {
-            opacity: 0;
-            transform: scale(0.95) translateY(-20px);
-          }
-          to {
-            opacity: 1;
-            transform: scale(1) translateY(0);
-          }
-        }
-      `}</style>
-    </>
+      </Dialog>
+    </Transition>
   );
 }
