@@ -461,7 +461,14 @@ export default function Home() {
                       )
                     }
                   />
-                  <DefectsByPriorityChart data={state.defectsByPriority} />
+                  <DefectsByPriorityChart
+                    data={state.defectsByPriority}
+                    onPriorityClick={(priorityName) =>
+                      router.push(
+                        `/all-defects?priority=${encodeURIComponent(priorityName)}`,
+                      )
+                    }
+                  />
                 </>
               )}
             </div>

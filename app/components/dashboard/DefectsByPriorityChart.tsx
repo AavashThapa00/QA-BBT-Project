@@ -21,6 +21,7 @@ interface DefectsByPriorityData {
 interface DefectsByPriorityChartProps {
   data: DefectsByPriorityData[];
   title?: string;
+  onPriorityClick?: (priorityName: string) => void;
 }
 
 const PRIORITY_ORDER: Record<string, number> = {
@@ -55,6 +56,7 @@ const normalizePriorityLabel = (priority: string) =>
 export default function DefectsByPriorityChart({
   data,
   title = "Defects by Priority",
+  onPriorityClick,
 }: DefectsByPriorityChartProps) {
   const sortedData = [...data]
     .map((item) => ({
@@ -178,10 +180,12 @@ export default function DefectsByPriorityChart({
               barSize={16}
               background={{ fill: "rgba(148, 163, 184, 0.14)", radius: 8 }}
               isAnimationActive={true}
+              cursor={onPriorityClick ? "pointer" : "default"}
             >
               {sortedData.map((entry, index) => (
                 <Cell
                   key={`cell-${index}`}
+                  onClick={() => onPriorityClick?.(entry.priority)}
                   fill={
                     index === 0
                       ? "url(#priorityBarGlow)"

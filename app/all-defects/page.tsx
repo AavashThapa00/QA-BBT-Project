@@ -75,6 +75,8 @@ function toTitleCase(value: string) {
     .replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
+const normalizePriority = (value: string) => value.trim().toUpperCase();
+
 // Convert old status values to new ones for backward compatibility
 function migrateDefectStatus(defect: Defect): Defect {
   const statusMap: Record<string, string> = {
@@ -110,7 +112,12 @@ export default function AllDefectsPage() {
   const priorityOptions = [
     "ALL",
     ...Array.from(
-      new Set(defects.map((defect) => defect.priority?.trim()).filter(Boolean)),
+      new Set(
+        defects
+          .map((defect) => defect.priority)
+          .filter((priority): priority is string => Boolean(priority?.trim()))
+          .map((priority) => normalizePriority(priority)),
+      ),
     ),
   ];
 
@@ -122,6 +129,16 @@ export default function AllDefectsPage() {
     if (!normalizedModule) return;
 
     setSelectedModule(normalizedModule);
+  }, [searchParams]);
+
+  useEffect(() => {
+    const priorityParam = searchParams.get("priority");
+    if (!priorityParam) return;
+
+    const normalizedPriority = priorityParam.trim();
+    if (!normalizedPriority) return;
+
+    setSelectedPriority(normalizePriority(normalizedPriority));
   }, [searchParams]);
 
   useEffect(() => {
@@ -373,7 +390,9 @@ export default function AllDefectsPage() {
                 </span>
                 <select
                   value={selectedPriority}
-                  onChange={(e) => setSelectedPriority(e.target.value)}
+                  onChange={(e) =>
+                    setSelectedPriority(normalizePriority(e.target.value))
+                  }
                   className="w-full rounded-lg border border-(--border-color) bg-(--surface-soft) px-3 py-2 text-sm text-(--text-color) focus:border-(--primary-color) focus:outline-none focus:ring-2 focus:ring-(--primary-color)/20"
                 >
                   {priorityOptions.map((priority) => (
