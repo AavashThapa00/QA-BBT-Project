@@ -1,4 +1,5 @@
 import { Defect, Severity, DefectWithResolutionTime } from "./types";
+import * as XLSX from "xlsx";
 
 export function calculateResolutionDays(defect: Defect): number | undefined {
     if (!defect.dateFixed || !defect.dateReported) return undefined;
@@ -10,12 +11,12 @@ export function calculateResolutionDays(defect: Defect): number | undefined {
 
 export function calculateDaysOpen(defect: Defect): number {
     if (!defect.dateReported) return 0;
-    
+
     // If dateFixed exists, calculate from dateReported to dateFixed
     // Otherwise, calculate from dateReported to current date
     const endDate = defect.dateFixed ? new Date(defect.dateFixed) : new Date();
     const startDate = new Date(defect.dateReported);
-    
+
     const diffTime = Math.abs(
         endDate.getTime() - startDate.getTime()
     );
@@ -123,15 +124,15 @@ function escapeCSVValue(value: any): string {
     if (value === null || value === undefined) {
         return "";
     }
-    
+
     const stringValue = String(value);
-    
+
     // If the value contains comma, newline, or double quotes, wrap it in quotes
     if (stringValue.includes(",") || stringValue.includes("\n") || stringValue.includes('"')) {
         // Escape double quotes by doubling them
         return `"${stringValue.replace(/"/g, '""')}"`;
     }
-    
+
     return stringValue;
 }
 
@@ -140,15 +141,39 @@ export function exportToCSV(
     filename: string = "defects.csv"
 ): void {
     const STATUS_LABELS: Record<string, string> = {
+        PENDING: "Pending",
+        FIXED: "Fixed",
+        HOLD: "Hold",
+        RE_OPENED: "Re-opened",
+        AS_IT_IS: "As it is",
         OPEN: "Open",
         IN_PROGRESS: "In Progress",
         CLOSED: "Fixed",
-        ON_HOLD: "Pending",
-        AS_IT_IS: "As it is",
+        ON_HOLD: "Hold",
+    };
+
+    const normalizeTestCaseId = (testCaseId?: string): string => {
+        const value = (testCaseId || "").trim();
+        if (!value || value === "-" || value.toUpperCase() === "N/A") {
+            return "N/A";
+        }
+        return value;
+    };
+
+    const normalizePriorityLabel = (priority?: string): string => {
+        const value = (priority || "").trim();
+        if (!value) return "N/A";
+
+        const normalized = value.toUpperCase();
+        if (normalized === "LOW") return "Low";
+        if (normalized === "MEDIUM") return "Medium";
+        if (normalized === "HIGH") return "High";
+        if (normalized === "MAJOR") return "Major";
+
+        return value;
     };
 
     const headers = [
-        "Issue ID",
         "Test Case ID",
         "Date Reported",
         "Module",
@@ -166,12 +191,11 @@ export function exportToCSV(
     ];
 
     const rows = defects.map((defect: DefectWithResolutionTime) => [
-        defect.id || "N/A",
-        defect.testCaseId || "N/A",
+        normalizeTestCaseId(defect.testCaseId),
         formatDate(defect.dateReported),
         defect.module || "N/A",
         defect.severity || "N/A",
-        defect.priority || "N/A",
+        normalizePriorityLabel(defect.priority),
         STATUS_LABELS[defect.status] || defect.status || "N/A",
         defect.summary || defect.testScenario || "N/A",
         defect.expectedResult || "N/A",
@@ -202,6 +226,112 @@ export function exportToCSV(
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+}
+
+export function exportToExcel(
+    defects: DefectWithResolutionTime[],
+    filename: string = "defects.xlsx"
+): void {
+    const STATUS_LABELS: Record<string, string> = {
+        PENDING: "Pending",
+        FIXED: "Fixed",
+        HOLD: "Hold",
+        RE_OPENED: "Re-opened",
+        AS_IT_IS: "As it is",
+        OPEN: "Open",
+        IN_PROGRESS: "In Progress",
+        CLOSED: "Fixed",
+        ON_HOLD: "Hold",
+    };
+
+    const normalizeTestCaseId = (testCaseId?: string): string => {
+        const value = (testCaseId || "").trim();
+        if (!value || value === "-" || value.toUpperCase() === "N/A") {
+            return "N/A";
+        }
+        return value;
+    };
+
+    const normalizePriorityLabel = (priority?: string): string => {
+        const value = (priority || "").trim();
+        if (!value) return "N/A";
+
+        const normalized = value.toUpperCase();
+        if (normalized === "LOW") return "Low";
+        if (normalized === "MEDIUM") return "Medium";
+        if (normalized === "HIGH") return "High";
+        if (normalized === "MAJOR") return "Major";
+
+        return value;
+    };
+
+    const headers = [
+        "Test Case ID",
+        "Date Reported",
+        "Module",
+        "Severity",
+        "Priority",
+        "Status",
+        "Issue Summary",
+        "Expected Result",
+        "Actual Result",
+        "Description / Steps",
+        "Remarks",
+        "Date Fixed",
+        "Resolution Days",
+        "Days Open",
+    ];
+
+    const rows = defects.map((defect: DefectWithResolutionTime) => [
+        normalizeTestCaseId(defect.testCaseId),
+        formatDate(defect.dateReported),
+        defect.module || "N/A",
+        defect.severity || "N/A",
+        normalizePriorityLabel(defect.priority),
+        STATUS_LABELS[defect.status] || defect.status || "N/A",
+        defect.summary || defect.testScenario || "N/A",
+        defect.expectedResult || "N/A",
+        defect.actualResult || "N/A",
+        defect.descriptionSteps || defect.testSteps || "N/A",
+        defect.remarks || "N/A",
+        defect.dateFixed ? formatDate(defect.dateFixed) : "N/A",
+        defect.resolutionDays !== undefined ? String(defect.resolutionDays) : "N/A",
+        defect.daysOpen !== undefined ? String(defect.daysOpen) : "N/A",
+    ]);
+
+    const worksheetData = [headers, ...rows];
+    const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+
+    // Estimate display widths so Excel opens with readable columns.
+    worksheet["!cols"] = headers.map((header, columnIndex) => {
+        const maxCellLength = Math.max(
+            header.length,
+            ...rows.map((row) => String(row[columnIndex] ?? "").length),
+        );
+        return { wch: Math.min(Math.max(maxCellLength + 2, 12), 80) };
+    });
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Defects");
+
+    const xlsxArray = XLSX.write(workbook, {
+        bookType: "xlsx",
+        type: "array",
+    });
+
+    const blob = new Blob([xlsxArray], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
+
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", filename.endsWith(".xlsx") ? filename : `${filename}.xlsx`);
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
 }
 
 export function getMonthYear(date: Date): string {

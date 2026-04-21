@@ -6,7 +6,7 @@ import { exportAllDefects } from "@/app/actions/defects";
 import { DefectFilters } from "@/lib/types";
 import {
   enrichDefectsWithCalculations,
-  exportToCSV,
+  exportToExcel,
   formatDateForInput,
 } from "@/lib/utils";
 
@@ -83,8 +83,8 @@ export default function ExportDefectsPanel({
 
       // Enrich and export
       const enrichedDefects = enrichDefectsWithCalculations(allDefects);
-      const filename = `defects-export-${new Date().toISOString().split("T")[0]}.csv`;
-      exportToCSV(enrichedDefects, filename);
+      const filename = `defects-export-${new Date().toISOString().split("T")[0]}.xlsx`;
+      exportToExcel(enrichedDefects, filename);
 
       // Close modal after success
       onClose();
