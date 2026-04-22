@@ -49,16 +49,41 @@ export async function getTeamPerformance(): Promise<TeamMember[]> {
         avg_fix_time_days: number | null;
       }>([
         {
-          $match: {
-            assignedTo: { $type: "string" },
-            $expr: {
-              $gt: [{ $strLenCP: { $trim: { input: "$assignedTo" } } }, 0],
+          $project: {
+            assigned_to_normalized: {
+              $let: {
+                vars: {
+                  normalized: {
+                    $trim: {
+                      input: {
+                        $convert: {
+                          input: "$assignedTo",
+                          to: "string",
+                          onError: "",
+                          onNull: "",
+                        },
+                      },
+                    },
+                  },
+                },
+                in: {
+                  $cond: [
+                    { $gt: [{ $strLenCP: "$$normalized" }, 0] },
+                    "$$normalized",
+                    "Unassigned",
+                  ],
+                },
+              },
             },
+            status: 1,
+            severity: 1,
+            dateReported: 1,
+            dateFixed: 1,
           },
         },
         {
           $group: {
-            _id: { $trim: { input: "$assignedTo" } },
+            _id: "$assigned_to_normalized",
             total_defects: { $sum: 1 },
             open_defects: {
               $sum: {
@@ -80,7 +105,7 @@ export async function getTeamPerformance(): Promise<TeamMember[]> {
                 $cond: [
                   {
                     $and: [
-                      { $in: ["$status", ["FIXED", "AS_IT_IS"]] },
+                      { $in: ["$status", CLOSED_DEFECT_STATUSES] },
                       { $ne: ["$dateReported", null] },
                       { $ne: ["$dateFixed", null] },
                     ],

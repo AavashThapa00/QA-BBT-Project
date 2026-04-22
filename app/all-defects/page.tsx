@@ -2,9 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useSearchParams } from "next/navigation";
 import {
-  HiArrowLeft,
   HiCheckCircle,
   HiClock,
   HiExclamationCircle,
@@ -98,7 +96,6 @@ function migrateDefectStatus(defect: Defect): Defect {
 
 export default function AllDefectsPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [defects, setDefects] = useState<Defect[]>([]);
   const [filteredDefects, setFilteredDefects] = useState<Defect[]>([]);
   const [selectedModule, setSelectedModule] = useState("ALL");
@@ -122,24 +119,18 @@ export default function AllDefectsPage() {
   ];
 
   useEffect(() => {
-    const moduleParam = searchParams.get("module");
-    if (!moduleParam) return;
+    const params = new URLSearchParams(window.location.search);
+    const moduleParam = params.get("module");
+    const priorityParam = params.get("priority");
 
-    const normalizedModule = moduleParam.trim();
-    if (!normalizedModule) return;
+    if (moduleParam?.trim()) {
+      setSelectedModule(moduleParam.trim());
+    }
 
-    setSelectedModule(normalizedModule);
-  }, [searchParams]);
-
-  useEffect(() => {
-    const priorityParam = searchParams.get("priority");
-    if (!priorityParam) return;
-
-    const normalizedPriority = priorityParam.trim();
-    if (!normalizedPriority) return;
-
-    setSelectedPriority(normalizePriority(normalizedPriority));
-  }, [searchParams]);
+    if (priorityParam?.trim()) {
+      setSelectedPriority(normalizePriority(priorityParam.trim()));
+    }
+  }, []);
 
   useEffect(() => {
     loadDefects();
@@ -254,27 +245,22 @@ export default function AllDefectsPage() {
   return (
     <div className="min-h-screen bg-(--page-background)">
       {/* Header - Constrained Width */}
-      <div className="w-full sticky top-0 z-10 border-b border-emerald-100 bg-(--surface) shadow-sm px-4 py-4 sm:px-6 lg:px-8">
+      <div className="w-full sticky top-0 z-10 border-b border-(--border-color) bg-(--surface) px-4 py-4 shadow-sm sm:px-6 lg:px-8">
         <div className="mx-auto w-full max-w-screen-2xl">
-          <div className="flex items-center gap-4">
-            <AppButton
-              onClick={() => router.push("/")}
-              variant="secondary"
-              size="icon"
-              aria-label="Back to dashboard"
-            >
-              <HiArrowLeft className="h-5 w-5" />
-            </AppButton>
+          <div className="flex items-center justify-between gap-4">
             <div>
-              <h1 className="text-xl font-semibold text-(--heading-color)">
+              <p className="text-xs uppercase tracking-[0.14em] text-(--muted-color)">
                 All Defects
-              </h1>
-              <p className="text-sm text-(--muted-color)">
-                {filteredDefects.length} defect
-                {filteredDefects.length !== 1 ? "s" : ""}
-                {selectedModule !== "ALL" && ` in ${selectedModule}`}
               </p>
+              <h1 className="text-xl font-semibold text-(--heading-color)">
+                Issue Explorer
+              </h1>
             </div>
+            <p className="text-sm text-(--muted-color)">
+              {filteredDefects.length} defect
+              {filteredDefects.length !== 1 ? "s" : ""}
+              {selectedModule !== "ALL" && ` in ${selectedModule}`}
+            </p>
           </div>
         </div>
       </div>
@@ -289,7 +275,7 @@ export default function AllDefectsPage() {
                 key={module}
                 onClick={() => {
                   setSelectedModule(module);
-                  const params = new URLSearchParams(searchParams.toString());
+                  const params = new URLSearchParams(window.location.search);
                   if (module === "ALL") {
                     params.delete("module");
                   } else {

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Geist_Mono, Poppins } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
-import Navigation from "./components/common/Navigation";
+import AppSidebar from "./components/common/AppSidebar";
 import AppToaster from "./components/common/AppToaster";
 import AuthSessionGuard from "./components/common/AuthSessionGuard";
 
@@ -114,10 +114,14 @@ export default function RootLayout({
             description: appDescription,
           })}
         </Script>
-        <Navigation />
-        <AuthSessionGuard />
-        <AppToaster />
-        {children}
+        <div className="flex min-h-screen w-full bg-(--page-background)">
+          <AppSidebar />
+          <div className="min-w-0 flex-1">
+            <AuthSessionGuard />
+            <AppToaster />
+            {children}
+          </div>
+        </div>
       </body>
     </html>
   );
