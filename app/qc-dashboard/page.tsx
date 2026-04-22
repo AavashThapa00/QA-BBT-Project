@@ -114,10 +114,10 @@ export default function QCDashboardPage() {
               <span className="font-medium">Back to Dashboard</span>
             </Link>
             <h1 className="text-3xl font-bold text-(--heading-color)">
-              QC Dashboard
+              QA Dashboard
             </h1>
             <p className="mt-1 text-sm text-(--muted-color)">
-              Track QC Status by BBT effectively
+              Track QA Status by BBT effectively
             </p>
           </div>
         </div>
@@ -164,10 +164,10 @@ export default function QCDashboardPage() {
           <div className="mb-6">
             <h2 className="flex items-center gap-2 text-lg font-semibold text-(--heading-color)">
               <HiClipboardCheck className="h-5 w-5 text-(--primary-color)" />
-              QC Status Distribution
+              QA Status Distribution
             </h2>
             <p className="mt-1 text-xs text-(--muted-color)">
-              Pending vs Done QC status
+              Pending vs Done QA status
             </p>
           </div>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">

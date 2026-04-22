@@ -26,7 +26,7 @@ interface DefectsByModuleChartProps {
 
 export default function DefectsByModuleChart({
   data,
-  title = "Defects by Module",
+  title = "Issues by Module",
   onModuleClick,
 }: DefectsByModuleChartProps) {
   const sortedData = [...data].sort((a, b) => b.count - a.count);

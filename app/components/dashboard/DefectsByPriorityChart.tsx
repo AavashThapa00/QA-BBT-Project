@@ -55,7 +55,7 @@ const normalizePriorityLabel = (priority: string) =>
 
 export default function DefectsByPriorityChart({
   data,
-  title = "Defects by Priority",
+  title = "Issues by Priority",
   onPriorityClick,
 }: DefectsByPriorityChartProps) {
   const sortedData = [...data]

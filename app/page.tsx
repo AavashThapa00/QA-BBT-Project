@@ -397,19 +397,19 @@ export default function Home() {
             ) : state.metrics ? (
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
                 <MetricsCard
-                  title="Total Defects"
+                  title="Total Issues"
                   value={state.metrics.totalDefects}
                   icon={<HiChartBar />}
                   onClick={() => handleMetricClick("all")}
                 />
                 <MetricsCard
-                  title="Open Defects"
+                  title="Open Issues"
                   value={state.metrics.openDefects}
                   icon={<HiExclamationCircle />}
                   onClick={() => handleMetricClick("open")}
                 />
                 <MetricsCard
-                  title="Closed Defects"
+                  title="Closed Issues"
                   value={state.metrics.closedDefects}
                   icon={<HiClipboardList />}
                   onClick={() => handleMetricClick("closed")}
@@ -493,7 +493,7 @@ export default function Home() {
                   {state.averageResolutionTime}
                 </p>
                 <p className="mt-1 text-sm text-(--muted-color)">
-                  days to resolve defects
+                  days to resolve issues
                 </p>
               </div>
             ) : null}
@@ -512,7 +512,7 @@ export default function Home() {
                   <div>
                     <h2 className="flex items-center gap-2 text-lg font-semibold text-(--heading-color)">
                       <HiClipboardList className="h-5 w-5 text-(--primary-color)" />
-                      Defects List
+                      Issues List
                     </h2>
                     <p className="mt-1 text-xs text-(--muted-color)">
                       Showing {state.defects.length} on this page •{" "}
@@ -526,7 +526,7 @@ export default function Home() {
                     className="flex items-center gap-2 rounded-md bg-(--primary-color) px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-(--primary-hover-color) disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <HiDownload className="h-4 w-4" />
-                    <span>Export All</span>
+                    <span>Export Data</span>
                   </button>
                 </div>
 
@@ -549,7 +549,7 @@ export default function Home() {
                   </div>
                 ) : (
                   <div className="rounded-xl border border-(--border-color) bg-slate-50 px-3 py-2 text-xs text-(--muted-color)">
-                    No active filters. You are viewing the full defects list.
+                    No active filters. You are viewing the full issues list.
                   </div>
                 )}
               </div>

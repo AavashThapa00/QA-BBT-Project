@@ -27,11 +27,11 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { name: "Dashboard", href: "/", icon: HiHome },
-  { name: "Issue Sheet", href: "/issue-sheet", icon: HiViewList },
+  { name: "Smoke Sheet", href: "/issue-sheet", icon: HiViewList },
   { name: "Test Cycle", href: "/test-execution", icon: HiArrowRight },
   { name: "Analytics & Performance", href: "/analytics", icon: HiChartBar },
-  { name: "All Defects", href: "/all-defects", icon: HiViewList },
-  { name: "QC Status", href: "/qc-dashboard", icon: HiClipboardCheck },
+  { name: "All Issues", href: "/all-defects", icon: HiViewList },
+  { name: "QA Status", href: "/qc-dashboard", icon: HiClipboardCheck },
 ];
 
 function BrandLogo() {

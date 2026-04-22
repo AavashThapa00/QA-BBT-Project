@@ -26,7 +26,7 @@ interface DefectsTrendChartProps {
 
 export default function DefectsTrendChart({
   data,
-  title = "Defects Trend Over Time",
+  title = "Issues Trend Over Time",
 }: DefectsTrendChartProps) {
   const trendSummary =
     data.length >= 2
@@ -42,7 +42,7 @@ export default function DefectsTrendChart({
             {title}
           </h3>
           <p className="text-xs text-(--muted-color)">
-            Historical trends of defect reports
+            Historical trends of issue reports
           </p>
         </div>
         <div className="text-right">
@@ -128,7 +128,7 @@ export default function DefectsTrendChart({
                 stroke: "var(--surface)",
                 strokeWidth: 2,
               }}
-              name="Defects"
+              name="Issues"
               isAnimationActive={false}
             />
           </LineChart>

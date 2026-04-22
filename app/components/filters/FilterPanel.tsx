@@ -176,6 +176,8 @@ export default function FilterPanel({
     return `${year}-${month}-${day}`;
   };
 
+  const todayFormatted = formatDateForInput(new Date());
+
   const getRangeDates = (days: number) => {
     const to = new Date();
     const from = new Date();
@@ -306,6 +308,7 @@ export default function FilterPanel({
               type="date"
               value={dateFrom}
               onChange={(e) => setDateFrom(e.target.value)}
+              max={todayFormatted}
               disabled={isLoading}
               className="w-full px-3 py-2.5 border border-(--border-color) rounded-md text-xs text-(--text-color) bg-(--surface-soft) focus:outline-none focus:ring-2 focus:ring-(--primary-color) focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed hover:border-(--primary-color) transition-colors"
             />
@@ -319,6 +322,7 @@ export default function FilterPanel({
               type="date"
               value={dateTo}
               onChange={(e) => setDateTo(e.target.value)}
+              max={todayFormatted}
               disabled={isLoading}
               className="w-full px-3 py-2.5 border border-(--border-color) rounded-md text-xs text-(--text-color) bg-(--surface-soft) focus:outline-none focus:ring-2 focus:ring-(--primary-color) focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed hover:border-(--primary-color) transition-colors"
             />
