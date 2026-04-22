@@ -164,7 +164,7 @@ export default function TestCaseImportForm({
         csvContent = await csvFile.text();
       }
 
-      const response = await fetch("/api/v1/test-cases/bulk-import", {
+      const response = await fetch("/backend/v1/test-cases/bulk-import", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -207,7 +207,7 @@ export default function TestCaseImportForm({
       setPublicImportLoading(true);
 
       const response = await fetch(
-        "/api/v1/test-cases/import-public-workbook",
+        "/backend/v1/test-cases/import-public-workbook",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

@@ -26,6 +26,7 @@ export function middleware(request: NextRequest) {
   const isResetPassword = pathname.startsWith("/reset-password");
   const isNext = pathname.startsWith("/_next");
   const isApi = pathname.startsWith("/api");
+  const isBackend = pathname.startsWith("/backend");
   const isPublicFile = /\.[^/]+$/.test(pathname);
   const isStatic =
     pathname === "/favicon.ico" ||
@@ -42,6 +43,7 @@ export function middleware(request: NextRequest) {
     !isPublicAuthRoute &&
     !isNext &&
     !isApi &&
+    !isBackend &&
     !isStatic &&
     !isPublicFile
   ) {
@@ -81,5 +83,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!api|_next|.*\\..*).*)"],
+  matcher: ["/((?!api|backend|_next|.*\\..*).*)"],
 };

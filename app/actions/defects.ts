@@ -1,387 +1,39 @@
 "use server";
 
-import { randomUUID } from "crypto";
-import { Collection, Filter } from "mongodb";
-import { mongoCollections } from "@/lib/mongodb";
+import { backendJson } from "@/lib/backend/request";
 import {
   Defect,
-  Severity,
-  Status,
-  QCStatusBBT,
   DefectFilters,
   PaginationParams,
-  StatusEnum,
+  DashboardMetrics,
+  DefectByModule,
+  DefectByPriority,
+  DefectTrend,
+  Severity,
+  QCStatusBBT,
   SeverityEnum,
+  StatusEnum,
   QCStatusBBTEnum,
+  Status,
 } from "@/lib/types";
 import { normalizeEnumValue } from "@/lib/utils";
-import {
-  DefectDoc,
-  buildDefectMongoFilter,
-  getDefectSort,
-  toDefect,
-} from "@/lib/mongo-defects";
-import { getCurrentUser } from "./auth";
 
-const getDefectsCollection = async () =>
-  (await mongoCollections.defects()) as unknown as Collection<DefectDoc>;
-
-const OPEN_DEFECT_STATUSES = [
-  StatusEnum.PENDING,
-  StatusEnum.RE_OPENED,
-  StatusEnum.HOLD,
-  "OPEN",
-  "IN_PROGRESS",
-  "ON_HOLD",
-];
-
-const CLOSED_DEFECT_STATUSES = [
-  StatusEnum.FIXED,
-  StatusEnum.AS_IT_IS,
-  "CLOSED",
-];
-
-export async function getDefectMetrics(filters?: DefectFilters): Promise<{
-  totalDefects: number;
-  openDefects: number;
-  closedDefects: number;
-  highSeverityCount: number;
-}> {
-  const defects = await getDefectsCollection();
-  const baseFilter = buildDefectMongoFilter(filters);
-
-  try {
-    const [totalDefects, openDefects, closedDefects, highSeverityCount] =
-      await Promise.all([
-        defects.countDocuments(baseFilter),
-        defects.countDocuments({
-          $and: [baseFilter, { status: { $in: OPEN_DEFECT_STATUSES } }],
-        } as Filter<DefectDoc>),
-        defects.countDocuments({
-          $and: [baseFilter, { status: { $in: CLOSED_DEFECT_STATUSES } }],
-        } as Filter<DefectDoc>),
-        defects.countDocuments({
-          $and: [baseFilter, { severity: SeverityEnum.MAJOR }],
-        } as Filter<DefectDoc>),
-      ]);
-
-    return {
-      totalDefects,
-      openDefects,
-      closedDefects,
-      highSeverityCount,
-    };
-  } catch (error) {
-    console.error("Error fetching defect metrics:", error);
-    throw error;
-  }
-}
-
-export async function getDefectsByModule(filters?: DefectFilters): Promise<
-  Array<{
-    module: string;
-    count: number;
-  }>
-> {
-  const defects = await getDefectsCollection();
-  const filter = buildDefectMongoFilter(filters);
-
-  try {
-    const result = await defects
-      .aggregate<{
-        _id: string | null;
-        count: number;
-      }>([
-        { $match: filter },
-        { $group: { _id: "$module", count: { $sum: 1 } } },
-        { $sort: { count: -1 } },
-      ])
-      .toArray();
-
-    const moduleMap: Record<string, number> = {};
-
-    result.forEach((row) => {
-      const mainModule = extractMainModuleFromName(row._id || "Unknown");
-      moduleMap[mainModule] = (moduleMap[mainModule] || 0) + row.count;
-    });
-
-    return Object.entries(moduleMap)
-      .map(([module, count]) => ({ module, count }))
-      .sort((a, b) => b.count - a.count);
-  } catch (error) {
-    console.error("Error fetching defects by module:", error);
-    throw error;
-  }
-}
-
-function extractMainModuleFromName(moduleName: string): string {
-  if (!moduleName) return "Unknown";
-
-  // Try to extract known module prefixes
-  const lowerName = moduleName.toLowerCase();
-
-  if (lowerName.includes("hsa")) return "HSA";
-  if (lowerName.includes("kfq")) return "KFQ";
-  if (lowerName.includes("gmst")) return "GMST";
-  if (lowerName.includes("nmst")) return "NMST";
-  if (lowerName.includes("mst")) return "GMST";
-  if (lowerName.includes("alston") || lowerName.includes("innovatetech"))
-    return "Innovatetech";
-
-  // If no known prefix, use the first word before "−" or space
-  const match = moduleName.match(/^([A-Z0-9]+)/);
-  return match ? match[1] : moduleName.substring(0, 20);
-}
-
-export async function getDefectsBySeverity(filters?: DefectFilters): Promise<
-  Array<{
-    severity: Severity;
-    count: number;
-  }>
-> {
-  const defects = await getDefectsCollection();
-  const filter = buildDefectMongoFilter(filters);
-
-  try {
-    const result = await defects
-      .aggregate<{
-        _id: Severity | null;
-        count: number;
-      }>([
-        { $match: filter },
-        { $group: { _id: "$severity", count: { $sum: 1 } } },
-        { $sort: { count: -1 } },
-      ])
-      .toArray();
-    return result
-      .filter((row) => !!row._id)
-      .map((row) => ({
-        severity: row._id as Severity,
-        count: row.count,
-      }));
-  } catch (error) {
-    console.error("Error fetching defects by severity:", error);
-    throw error;
-  }
-}
-
-function normalizePriorityLabel(priority: string | null): string {
-  const normalized = (priority || "").trim().toUpperCase();
-  return normalized || "UNKNOWN";
-}
-
-function normalizeStoredPriority(priority: string): string {
-  return (
-    normalizeEnumValue(priority, Object.values(SeverityEnum)) || priority.trim()
-  );
-}
-
-const PRIORITY_ORDER: Record<string, number> = {
-  P0: 1,
-  P1: 2,
-  P2: 3,
-  P3: 4,
-  P4: 5,
-  CRITICAL: 6,
-  HIGH: 7,
-  MEDIUM: 8,
-  LOW: 9,
-  UNKNOWN: 10,
-};
-
-export async function getDefectsByPriority(filters?: DefectFilters): Promise<
-  Array<{
-    priority: string;
-    count: number;
-  }>
-> {
-  const defects = await getDefectsCollection();
-  const filter = buildDefectMongoFilter(filters);
-
-  try {
-    const result = await defects
-      .aggregate<{
-        _id: string | null;
-        count: number;
-      }>([
-        { $match: filter },
-        { $group: { _id: "$priority", count: { $sum: 1 } } },
-      ])
-      .toArray();
-
-    const priorityMap: Record<string, number> = {};
-
-    result.forEach((row) => {
-      const priority = normalizePriorityLabel(row._id);
-      priorityMap[priority] = (priorityMap[priority] || 0) + row.count;
-    });
-
-    return Object.entries(priorityMap)
-      .map(([priority, count]) => ({ priority, count }))
-      .sort((a, b) => {
-        const rankA = PRIORITY_ORDER[a.priority] ?? Number.MAX_SAFE_INTEGER;
-        const rankB = PRIORITY_ORDER[b.priority] ?? Number.MAX_SAFE_INTEGER;
-
-        if (rankA !== rankB) return rankA - rankB;
-        if (b.count !== a.count) return b.count - a.count;
-        return a.priority.localeCompare(b.priority);
-      });
-  } catch (error) {
-    console.error("Error fetching defects by priority:", error);
-    throw error;
-  }
-}
-
-export async function getDefectsTrend(
-  filters?: DefectFilters,
-  groupBy: "day" | "month" = "day",
-): Promise<
-  Array<{
-    date: string;
-    count: number;
-  }>
-> {
-  const defects = await getDefectsCollection();
-  const baseFilter = buildDefectMongoFilter(filters);
-  const dateFormat = groupBy === "month" ? "%Y-%m" : "%Y-%m-%d";
-
-  try {
-    const result = await defects
-      .aggregate<{ _id: string; count: number }>([
-        {
-          $match: {
-            $and: [
-              baseFilter,
-              {
-                dateReported: {
-                  $exists: true,
-                  $ne: null,
-                  $type: "date",
-                },
-              },
-            ],
-          } as Filter<DefectDoc>,
-        },
-        {
-          $group: {
-            _id: {
-              $dateToString: {
-                format: dateFormat,
-                date: "$dateReported",
-              },
-            },
-            count: { $sum: 1 },
-          },
-        },
-        { $sort: { _id: 1 } },
-      ])
-      .toArray();
-    return result.map((row) => ({
-      date: row._id,
-      count: row.count,
-    }));
-  } catch (error) {
-    console.error("Error fetching defects trend:", error);
-    throw error;
-  }
-}
-
-export async function getDefects(
-  filters?: DefectFilters,
-  pagination?: PaginationParams,
-): Promise<{
+interface DefectListResponse {
   defects: Defect[];
   total: number;
   page: number;
   pageSize: number;
   totalPages: number;
-}> {
-  const defectsCollection = await getDefectsCollection();
-  const filter = buildDefectMongoFilter(filters);
-  const pageSize = pagination?.pageSize || 10;
-  const page = Math.max(0, (pagination?.page || 1) - 1);
-  const offset = page * pageSize;
-
-  const [defectsResult, total] = await Promise.all([
-    defectsCollection
-      .find(filter)
-      .sort(getDefectSort(pagination?.sortBy, pagination?.sortOrder))
-      .skip(offset)
-      .limit(pageSize)
-      .toArray(),
-    defectsCollection.countDocuments(filter),
-  ]);
-
-  return {
-    defects: defectsResult.map(toDefect),
-    total,
-    page: page + 1,
-    pageSize,
-    totalPages: Math.ceil(total / pageSize),
-  };
 }
 
-export async function getAverageResolutionTime(
-  filters?: DefectFilters,
-): Promise<number> {
-  const defects = await getDefectsCollection();
-  const filter = buildDefectMongoFilter({
-    ...filters,
-    status: [StatusEnum.FIXED],
-  });
-
-  try {
-    const result = await defects
-      .find({
-        $and: [
-          filter,
-          {
-            dateFixed: { $exists: true, $ne: null, $type: "date" },
-            dateReported: { $exists: true, $ne: null, $type: "date" },
-          },
-        ],
-      } as Filter<DefectDoc>)
-      .project({ dateReported: 1, dateFixed: 1 })
-      .toArray();
-
-    if (result.length === 0) return 0;
-
-    const totalDays = result.reduce((sum, row) => {
-      const reported =
-        row.dateReported instanceof Date ? row.dateReported : null;
-      const fixed = row.dateFixed instanceof Date ? row.dateFixed : null;
-      if (!reported || !fixed) return sum;
-      const diffDays = Math.floor(
-        (fixed.getTime() - reported.getTime()) / (1000 * 60 * 60 * 24),
-      );
-      return sum + (Number.isFinite(diffDays) ? diffDays : 0);
-    }, 0);
-    return Math.round(totalDays / result.length);
-  } catch (error) {
-    console.error("Error fetching average resolution time:", error);
-    throw error;
-  }
+interface TrendRow {
+  date: string;
+  count: number;
 }
 
-export async function exportAllDefects(
-  filters?: DefectFilters,
-): Promise<Defect[]> {
-  const defects = await getDefectsCollection();
-  const filter = buildDefectMongoFilter(filters);
+const MAX_BACKEND_PAGE_SIZE = 200;
 
-  try {
-    const result = await defects
-      .find(filter)
-      .sort({ dateReported: -1 })
-      .toArray();
-    return result.map(toDefect);
-  } catch (error) {
-    console.error("Error exporting all defects:", error);
-    throw error;
-  }
-}
-
-export interface ManualDefectInput {
+interface ManualDefectInput {
   testCaseId?: string;
   module: string;
   descriptionSteps?: string;
@@ -401,7 +53,7 @@ export interface ManualDefectInput {
   sheetType?: string;
 }
 
-export interface ManualDefectUpdateInput {
+interface ManualDefectUpdateInput {
   issueTestDate?: string;
   fixedDate?: string | null;
   priority?: string;
@@ -410,105 +62,241 @@ export interface ManualDefectUpdateInput {
   qcStatusBbt?: QCStatusBBT;
 }
 
-function parseDateInput(dateValue: string): Date {
+function buildQuery(filters?: DefectFilters, pagination?: PaginationParams) {
+  const query = new URLSearchParams();
+
+  if (pagination?.page) query.set("page", String(pagination.page));
+  if (pagination?.pageSize) {
+    query.set("pageSize", String(Math.min(pagination.pageSize, MAX_BACKEND_PAGE_SIZE)));
+  }
+  if (pagination?.sortBy) query.set("sortBy", pagination.sortBy);
+  if (pagination?.sortOrder) query.set("sortOrder", pagination.sortOrder);
+
+  if (filters) {
+    if (filters.dateFrom instanceof Date) query.set("dateFrom", filters.dateFrom.toISOString());
+    if (filters.dateTo instanceof Date) query.set("dateTo", filters.dateTo.toISOString());
+    if (filters.searchTerm) query.set("search", filters.searchTerm);
+    if (filters.severity?.length) query.set("severity", filters.severity.join(","));
+    if (filters.status?.length) query.set("status", filters.status.join(","));
+    if (filters.module?.length) query.set("module", filters.module.join(","));
+  }
+
+  return query.toString();
+}
+
+async function fetchAllDefects(filters?: DefectFilters) {
+  const firstPage = await getDefects(filters, {
+    page: 1,
+    pageSize: MAX_BACKEND_PAGE_SIZE,
+    sortBy: "date",
+    sortOrder: "desc",
+  });
+
+  if (firstPage.totalPages <= 1) {
+    return firstPage.defects;
+  }
+
+  const allDefects = [...firstPage.defects];
+
+  for (let page = 2; page <= firstPage.totalPages; page++) {
+    const nextPage = await getDefects(filters, {
+      page,
+      pageSize: MAX_BACKEND_PAGE_SIZE,
+      sortBy: "date",
+      sortOrder: "desc",
+    });
+    allDefects.push(...nextPage.defects);
+  }
+
+  return allDefects;
+}
+
+function normalizeStoredPriority(priority: string): string {
+  return (
+    normalizeEnumValue(priority, Object.values(SeverityEnum)) || priority.trim()
+  );
+}
+
+function parseDateInput(dateValue: string): string {
   const parsed = new Date(dateValue);
   if (Number.isNaN(parsed.getTime())) {
     throw new Error(`Invalid date value: ${dateValue}`);
   }
-  return parsed;
+  return parsed.toISOString();
 }
 
-function isValidSeverity(value: string): value is Severity {
-  return Object.values(SeverityEnum).includes(value as Severity);
+export async function getDefectMetrics(filters?: DefectFilters): Promise<{
+  totalDefects: number;
+  openDefects: number;
+  closedDefects: number;
+  highSeverityCount: number;
+}> {
+  const defects = await fetchAllDefects(filters);
+  const openStatuses = new Set<Status>(["PENDING", "RE_OPENED", "HOLD"]);
+  const closedStatuses = new Set<Status>(["FIXED", "AS_IT_IS"]);
+  const highSeverities = new Set<Severity>(["MAJOR", "HIGH"]);
+  return {
+    totalDefects: defects.length,
+    openDefects: defects.filter((defect: Defect) => openStatuses.has(defect.status)).length,
+    closedDefects: defects.filter((defect: Defect) => closedStatuses.has(defect.status)).length,
+    highSeverityCount: defects.filter((defect: Defect) => highSeverities.has(defect.severity)).length,
+  };
 }
 
-function isValidStatus(value: string): value is Status {
-  return Object.values(StatusEnum).includes(value as Status);
+export async function getDefectsByModule(filters?: DefectFilters): Promise<DefectByModule[]> {
+  const grouped: Record<string, number> = {};
+  const rows = await fetchAllDefects(filters);
+
+  for (const row of rows) {
+    const normalized = row.module.toLowerCase();
+    let mainModule = row.module;
+    if (normalized.includes("hsa")) mainModule = "HSA";
+    else if (normalized.includes("kfq")) mainModule = "KFQ";
+    else if (normalized.includes("gmst") || normalized.includes("ggmst")) mainModule = "GMST";
+    else if (normalized.includes("nmst")) mainModule = "NMST";
+    else if (normalized.includes("mst")) mainModule = "GMST";
+    else if (normalized.includes("alston") || normalized.includes("innovatetech")) mainModule = "Innovatetech";
+
+    grouped[mainModule] = (grouped[mainModule] || 0) + 1;
+  }
+
+  return Object.entries(grouped)
+    .map(([module, count]) => ({ module, count }))
+    .sort((a, b) => b.count - a.count);
 }
 
-function isValidQcStatus(value: string): value is QCStatusBBT {
-  return Object.values(QCStatusBBTEnum).includes(value as QCStatusBBT);
+export async function getDefectsBySeverity(filters?: DefectFilters): Promise<
+  Array<{ severity: Severity; count: number }>
+> {
+  const rows = await fetchAllDefects(filters);
+  const counts: Record<string, number> = {};
+  for (const row of rows) {
+    counts[row.severity] = (counts[row.severity] || 0) + 1;
+  }
+  return Object.entries(counts).map(([severity, count]) => ({ severity: severity as Severity, count }));
+}
+
+export async function getDefectsByPriority(filters?: DefectFilters): Promise<
+  Array<{ priority: string; count: number }>
+> {
+  const rows = await fetchAllDefects(filters);
+  const counts: Record<string, number> = {};
+  for (const row of rows) {
+    const priority = String(row.priority || "UNKNOWN").trim().toUpperCase() || "UNKNOWN";
+    counts[priority] = (counts[priority] || 0) + 1;
+  }
+  return Object.entries(counts).map(([priority, count]) => ({ priority, count }));
+}
+
+export async function getDefectsTrend(
+  filters?: DefectFilters,
+  groupBy: "day" | "month" = "day",
+): Promise<DefectTrend[]> {
+  const rows = (await fetchAllDefects(filters)).filter((defect: Defect) => Boolean(defect.dateReported));
+  const map = new Map<string, number>();
+
+  for (const defect of rows) {
+    const date = defect.dateReported instanceof Date ? defect.dateReported : new Date(defect.dateReported as unknown as string);
+    if (Number.isNaN(date.getTime())) continue;
+    const key =
+      groupBy === "month"
+        ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`
+        : date.toISOString().slice(0, 10);
+    map.set(key, (map.get(key) || 0) + 1);
+  }
+
+  return Array.from(map.entries())
+    .map(([date, count]) => ({ date, count }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+}
+
+export async function getDefects(
+  filters?: DefectFilters,
+  pagination?: PaginationParams,
+): Promise<{
+  defects: Defect[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}> {
+  const query = buildQuery(filters, pagination);
+  const response = await backendJson<{ items: Defect[]; total: number; page: number; pageSize: number; totalPages: number }>(`/api/defects${query ? `?${query}` : ""}`, {
+    method: "GET",
+  });
+
+  return {
+    defects: response.items,
+    total: response.total,
+    page: response.page,
+    pageSize: response.pageSize,
+    totalPages: response.totalPages,
+  };
+}
+
+export async function getAverageResolutionTime(
+  filters?: DefectFilters,
+): Promise<number> {
+  const defects = await fetchAllDefects(filters);
+  const fixedRows = defects.filter((defect: Defect) => defect.status === "FIXED" && defect.dateReported && defect.dateFixed);
+  if (!fixedRows.length) return 0;
+
+  const totalDays = fixedRows.reduce((sum: number, defect: Defect) => {
+    const reported = defect.dateReported ? new Date(defect.dateReported) : null;
+    const fixed = defect.dateFixed ? new Date(defect.dateFixed) : null;
+    if (!reported || !fixed || Number.isNaN(reported.getTime()) || Number.isNaN(fixed.getTime())) {
+      return sum;
+    }
+    const diffDays = Math.floor((fixed.getTime() - reported.getTime()) / (1000 * 60 * 60 * 24));
+    return sum + (Number.isFinite(diffDays) ? diffDays : 0);
+  }, 0);
+
+  return Math.round(totalDays / fixedRows.length);
+}
+
+export async function exportAllDefects(
+  filters?: DefectFilters,
+): Promise<Defect[]> {
+  return fetchAllDefects(filters);
 }
 
 export async function getManualDefects(limit = 200): Promise<Defect[]> {
-  const defects = await getDefectsCollection();
-  const safeLimit = Math.max(1, Math.min(limit, 1000));
-  const result = await defects
-    .find({})
-    .sort({ dateReported: -1, createdAt: -1 })
-    .limit(safeLimit)
-    .toArray();
-  return result.map(toDefect);
+  const response = await getDefects(undefined, { page: 1, pageSize: Math.max(1, Math.min(limit, MAX_BACKEND_PAGE_SIZE)), sortBy: "date", sortOrder: "desc" });
+  return response.defects;
 }
 
 export async function createManualDefect(
   input: ManualDefectInput,
 ): Promise<{ success: boolean; message: string; id?: string }> {
-  const defects = await getDefectsCollection();
-  const moduleName = input.module?.trim();
-  const expectedResult = input.expectedResult?.trim();
-  const actualResult = input.actualResult?.trim();
-  const priority = input.priority?.trim();
-
-  if (!moduleName) return { success: false, message: "Module is required" };
-  if (!expectedResult)
-    return { success: false, message: "Expected Result is required" };
-  if (!actualResult)
-    return { success: false, message: "Actual Result is required" };
-  if (!priority) return { success: false, message: "Priority is required" };
-  if (!input.issueTestDate)
-    return { success: false, message: "Issue Test Date is required" };
-  if (!isValidSeverity(input.severity))
-    return { success: false, message: "Invalid severity" };
-  if (!isValidStatus(input.status))
-    return { success: false, message: "Invalid status" };
-  if (!isValidQcStatus(input.qcStatusBbt))
-    return { success: false, message: "Invalid QC status" };
-  if ((input.testType || "smoke") === "cycle" && !input.testScenario?.trim()) {
-    return {
-      success: false,
-      message: "Test scenario is required for cycle test",
-    };
-  }
-  if ((input.testType || "smoke") === "cycle" && !input.testSteps?.trim()) {
-    return {
-      success: false,
-      message: "Test steps are required for cycle test",
-    };
-  }
-
   try {
-    const id = randomUUID();
-    const issueTestDate = parseDateInput(input.issueTestDate);
-    const fixedDate = input.fixedDate ? parseDateInput(input.fixedDate) : null;
-    const priority = normalizeStoredPriority(input.priority);
-
-    await defects.insertOne({
-      id,
+    const payload = {
       testCaseId: input.testCaseId?.trim() || null,
-      dateReported: issueTestDate,
-      module: moduleName,
-      descriptionSteps: input.descriptionSteps?.trim() || null,
+      dateReported: parseDateInput(input.issueTestDate),
+      module: input.module.trim(),
       summary: input.summary?.trim() || null,
-      expectedResult,
-      actualResult,
-      remarks: input.remarks?.trim() || null,
-      testType: input.testType || "smoke",
-      testScenario: input.testScenario?.trim() || null,
-      testSteps: input.testSteps?.trim() || null,
+      expectedResult: input.expectedResult.trim(),
+      actualResult: input.actualResult.trim(),
       severity: input.severity,
-      priority,
+      priority: normalizeStoredPriority(input.priority),
+      assignedTo: null,
       status: input.status,
-      dateFixed: fixedDate,
+      dateFixed: input.fixedDate ? parseDateInput(input.fixedDate) : null,
       qcStatusBbt: input.qcStatusBbt,
       sourceFile: input.sheetType || "Smoke Testing Sheet",
-      createdAt: new Date(),
+    };
+
+    const defect = await backendJson<Defect>("/api/defects", {
+      method: "POST",
+      body: JSON.stringify(payload),
+      headers: { "Content-Type": "application/json" },
     });
 
-    return { success: true, message: "Issue added successfully", id };
+    return { success: true, message: "Issue added successfully", id: defect.id };
   } catch (error) {
-    console.error("Error creating manual defect:", error);
-    return { success: false, message: "Failed to add issue" };
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : "Failed to add issue",
+    };
   }
 }
 
@@ -516,59 +304,33 @@ export async function updateManualDefect(
   id: string,
   updates: ManualDefectUpdateInput,
 ): Promise<{ success: boolean; message: string }> {
-  // Permission check: Only admin and super_admin can update status
-  const user = await getCurrentUser();
-  if (!user || (user.role !== "admin" && user.role !== "super_admin")) {
-    return {
-      success: false,
-      message: "Unauthorized: Only admins can update defects",
-    };
-  }
-
-  const defects = await getDefectsCollection();
   if (!id) {
     return { success: false, message: "Defect ID is required" };
   }
 
-  const setData: Partial<DefectDoc> = {};
+  const setData: Record<string, unknown> = {};
 
   if (updates.issueTestDate !== undefined) {
     setData.dateReported = parseDateInput(updates.issueTestDate);
   }
 
   if (updates.fixedDate !== undefined) {
-    setData.dateFixed =
-      updates.fixedDate === null || updates.fixedDate === ""
-        ? null
-        : parseDateInput(updates.fixedDate);
+    setData.dateFixed = updates.fixedDate === null || updates.fixedDate === "" ? null : parseDateInput(updates.fixedDate);
   }
 
   if (updates.priority !== undefined) {
-    const priority = normalizeStoredPriority(updates.priority);
-    if (!priority) {
-      return { success: false, message: "Priority cannot be empty" };
-    }
-    setData.priority = priority;
+    setData.priority = normalizeStoredPriority(updates.priority);
   }
 
   if (updates.severity !== undefined) {
-    if (!isValidSeverity(updates.severity)) {
-      return { success: false, message: "Invalid severity" };
-    }
     setData.severity = updates.severity;
   }
 
   if (updates.status !== undefined) {
-    if (!isValidStatus(updates.status)) {
-      return { success: false, message: "Invalid status" };
-    }
     setData.status = updates.status;
   }
 
   if (updates.qcStatusBbt !== undefined) {
-    if (!isValidQcStatus(updates.qcStatusBbt)) {
-      return { success: false, message: "Invalid QC status" };
-    }
     setData.qcStatusBbt = updates.qcStatusBbt;
   }
 
@@ -577,37 +339,36 @@ export async function updateManualDefect(
   }
 
   try {
-    const result = await defects.updateOne({ id }, { $set: setData });
-
-    if (!result.matchedCount) {
-      return { success: false, message: "Issue not found" };
-    }
-
+    await backendJson(`/api/defects/${encodeURIComponent(id)}`, {
+      method: "PUT",
+      body: JSON.stringify(setData),
+      headers: { "Content-Type": "application/json" },
+    });
     return { success: true, message: "Issue updated successfully" };
   } catch (error) {
-    console.error("Error updating manual defect:", error);
-    return { success: false, message: "Failed to update issue" };
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : "Failed to update issue",
+    };
   }
 }
 
 export async function deleteManualDefect(
   id: string,
 ): Promise<{ success: boolean; message: string }> {
-  const defects = await getDefectsCollection();
   if (!id) {
     return { success: false, message: "Defect ID is required" };
   }
 
   try {
-    const result = await defects.deleteOne({ id });
-
-    if (!result.deletedCount) {
-      return { success: false, message: "Issue not found" };
-    }
-
+    await backendJson(`/api/defects/${encodeURIComponent(id)}`, {
+      method: "DELETE",
+    });
     return { success: true, message: "Issue removed successfully" };
   } catch (error) {
-    console.error("Error deleting manual defect:", error);
-    return { success: false, message: "Failed to remove issue" };
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : "Failed to remove issue",
+    };
   }
 }

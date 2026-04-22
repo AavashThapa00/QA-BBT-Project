@@ -14,6 +14,8 @@
   },
   "dependencies": {
     "@headlessui/react": "^2.2.10",
+    "@reduxjs/toolkit": "^2.11.2",
+    "@tanstack/react-query": "^5.99.2",
     "@types/nodemailer": "^7.0.11",
     "@types/papaparse": "^5.5.2",
     "dotenv": "^17.3.1",
@@ -24,6 +26,7 @@
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-icons": "^4.11.0",
+    "react-redux": "^9.2.0",
     "react-select": "^5.10.2",
     "recharts": "^3.7.0",
     "sonner": "^2.0.7",

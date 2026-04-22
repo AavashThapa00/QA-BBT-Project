@@ -1,78 +1,47 @@
 "use server";
 
-import { Collection } from "mongodb";
-import { mongoCollections } from "@/lib/mongodb";
+import { backendJson } from "@/lib/backend/request";
 import { getCurrentUser } from "@/app/actions/auth";
-import { DefectDoc } from "@/lib/mongo-defects";
 
 interface UploadedFile {
-  name: string;
-  count: number;
-  uploadedAt: string;
-  uploadedBy: string;
+  fileName: string;
+  defectCount: number;
+  uploadedBy?: string;
+  uploadedAt?: string;
 }
-
-const isAdminRole = (role?: string) =>
-  role === "admin" || role === "super_admin";
-
-const getDefectsCollection = async () =>
-  (await mongoCollections.defects()) as unknown as Collection<DefectDoc>;
 
 export async function getUploadedFiles(): Promise<UploadedFile[]> {
   const user = await getCurrentUser();
-  if (!user || !isAdminRole(user.role)) {
+  if (!user) return [];
+
+  try {
+    return await backendJson<UploadedFile[]>("/api/files", { method: "GET" });
+  } catch {
     return [];
   }
-
-  const defects = await getDefectsCollection();
-  const result = await defects
-    .aggregate<{
-      _id: string;
-      count: number;
-      uploadedAt: Date | null;
-      uploadedBy: string | null;
-    }>([
-      { $match: { sourceFile: { $ne: null } } },
-      {
-        $group: {
-          _id: "$sourceFile",
-          count: { $sum: 1 },
-          uploadedAt: { $min: "$createdAt" },
-          uploadedBy: { $max: "$uploadedBy" },
-        },
-      },
-      { $sort: { uploadedAt: -1 } },
-    ])
-    .toArray();
-
-  return result.map((row) => ({
-    name: row._id,
-    count: row.count,
-    uploadedAt: (row.uploadedAt || new Date()).toISOString().split("T")[0],
-    uploadedBy: row.uploadedBy || "Unknown",
-  }));
 }
 
 export async function deleteFileData(fileName: string) {
   const user = await getCurrentUser();
-  if (!user || !isAdminRole(user.role)) {
-    return { success: false, message: "Not authorized" };
+  if (!user) {
+    return { success: false, message: "Not authenticated" };
   }
 
-  if (!fileName) {
+  if (!fileName.trim()) {
     return { success: false, message: "File name is required" };
   }
 
   try {
-    const defects = await getDefectsCollection();
-    const result = await defects.deleteMany({ sourceFile: fileName });
+    const data = await backendJson<{ fileName: string; defectsDeleted: number }>(
+      `/api/files/${encodeURIComponent(fileName)}`,
+      { method: "DELETE" },
+    );
 
     return {
       success: true,
-      message: `Deleted ${result.deletedCount} defect(s) from ${fileName}`,
+      message: `Deleted ${data.defectsDeleted} defects from ${data.fileName}`,
     };
   } catch (error) {
-    console.error("Error deleting file data:", error);
     return {
       success: false,
       message: error instanceof Error ? error.message : "Failed to delete file",

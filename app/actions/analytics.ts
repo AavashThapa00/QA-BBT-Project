@@ -1,12 +1,9 @@
 "use server";
 
-import { Collection } from "mongodb";
-import { mongoCollections } from "@/lib/mongodb";
-import { Status } from "@/lib/types";
-import { DefectDoc } from "@/lib/mongo-defects";
+import { backendJson } from "@/lib/backend/request";
 
 interface StatusCount {
-  status: Status;
+  status: string;
   count: number;
 }
 
@@ -17,136 +14,109 @@ interface ModuleFixTime {
   uncertainCount: number;
 }
 
-const moduleExpr = {
-  $switch: {
-    branches: [
-      {
-        case: { $regexMatch: { input: "$module", regex: /^HSA/i } },
-        then: "HSA",
-      },
-      {
-        case: { $regexMatch: { input: "$module", regex: /^KFQ/i } },
-        then: "KFQ",
-      },
-      {
-        case: { $regexMatch: { input: "$module", regex: /^(GMST|GGMST)/i } },
-        then: "GMST",
-      },
-      {
-        case: { $regexMatch: { input: "$module", regex: /^NMST/i } },
-        then: "NMST",
-      },
-      {
-        case: { $regexMatch: { input: "$module", regex: /^MST/i } },
-        then: "GMST",
-      },
-      {
-        case: { $regexMatch: { input: "$module", regex: /(Innovatetech)/i } },
-        then: "Innovatetech",
-      },
-      {
-        case: { $regexMatch: { input: "$module", regex: /(Alston)/i } },
-        then: "Alston",
-      },
-    ],
-    default: "Other",
-  },
-};
+interface MonthlyTrend {
+  month: string;
+  reported: number;
+  fixed: number;
+}
 
-const CLOSED_DEFECT_STATUSES = ["FIXED", "AS_IT_IS", "CLOSED"];
+interface SeverityTrend {
+  severity: string;
+  count: number;
+}
 
-const getDefectsCollection = async () =>
-  (await mongoCollections.defects()) as unknown as Collection<DefectDoc>;
+interface ModuleTrend {
+  module: string;
+  count: number;
+}
+
+interface TeamMember {
+  assignedTo: string;
+  totalDefects: number;
+  openDefects: number;
+  closedDefects: number;
+  resolutionPercentage: number;
+}
+
+interface TeamDefect {
+  id: string;
+  testCaseId: string | null;
+  module: string;
+  summary: string | null;
+  status: string;
+  dateReported: string | null;
+}
+
+interface QCStatus {
+  status: string;
+  count: number;
+}
+
+interface QCSummary {
+  totalDefects: number;
+  passedQC: number;
+  failedQC: number;
+  pendingQC: number;
+  rejectedQC: number;
+  passPercentage: number;
+}
 
 export async function getDefectsByStatus(): Promise<StatusCount[]> {
-  try {
-    const defects = await getDefectsCollection();
-    const result = await defects
-      .aggregate<{
-        _id: Status;
-        count: number;
-      }>([
-        { $group: { _id: "$status", count: { $sum: 1 } } },
-        { $sort: { _id: 1 } },
-      ])
-      .toArray();
-
-    return result.map((row) => ({
-      status: row._id as Status,
-      count: row.count,
-    }));
-  } catch (error) {
-    console.error("Error fetching defects by status:", error);
-    return [];
-  }
+  return backendJson<StatusCount[]>("/api/analytics/defects/status-counts", {
+    method: "GET",
+  });
 }
 
 export async function getAverageFixTimeByModule(): Promise<ModuleFixTime[]> {
-  try {
-    const defects = await getDefectsCollection();
-    const result = await defects
-      .aggregate<{
-        _id: string;
-        total_fixed: number;
-        uncertain_count: number;
-        avg_days: number | null;
-      }>([
-        { $match: { status: { $in: CLOSED_DEFECT_STATUSES } } },
-        {
-          $project: {
-            main_module: moduleExpr,
-            dateReported: 1,
-            dateFixed: 1,
-          },
-        },
-        {
-          $group: {
-            _id: "$main_module",
-            total_fixed: { $sum: 1 },
-            uncertain_count: {
-              $sum: {
-                $cond: [{ $eq: ["$dateFixed", null] }, 1, 0],
-              },
-            },
-            avg_days: {
-              $avg: {
-                $cond: [
-                  {
-                    $and: [
-                      { $ne: ["$dateReported", null] },
-                      { $ne: ["$dateFixed", null] },
-                    ],
-                  },
-                  {
-                    $max: [
-                      1,
-                      {
-                        $divide: [
-                          { $subtract: ["$dateFixed", "$dateReported"] },
-                          1000 * 60 * 60 * 24,
-                        ],
-                      },
-                    ],
-                  },
-                  null,
-                ],
-              },
-            },
-          },
-        },
-        { $sort: { _id: 1 } },
-      ])
-      .toArray();
+  return backendJson<ModuleFixTime[]>("/api/analytics/defects/average-fix-time-by-module", {
+    method: "GET",
+  });
+}
 
-    const mappedData = result.map((row) => ({
-      module: row._id,
-      avgDays: row.avg_days ? parseFloat(row.avg_days.toFixed(1)) : null,
-      totalFixed: row.total_fixed,
-      uncertainCount: row.uncertain_count,
-    }));
-    return mappedData;
-  } catch (error) {
-    console.error("[SERVER] Error fetching average fix time by module:", error);
-    return [];
-  }
+export async function getMonthlyTrends(): Promise<MonthlyTrend[]> {
+  return backendJson<MonthlyTrend[]>("/api/analytics/trends/monthly", {
+    method: "GET",
+  });
+}
+
+export async function getSeverityTrends(): Promise<SeverityTrend[]> {
+  return backendJson<SeverityTrend[]>("/api/analytics/trends/severity", {
+    method: "GET",
+  });
+}
+
+export async function getModuleTrends(): Promise<ModuleTrend[]> {
+  return backendJson<ModuleTrend[]>("/api/analytics/trends/module", {
+    method: "GET",
+  });
+}
+
+export async function getTeamPerformance(): Promise<TeamMember[]> {
+  return backendJson<TeamMember[]>("/api/analytics/team/performance", {
+    method: "GET",
+  });
+}
+
+export async function getTeamDefectsByStatus(): Promise<TeamDefect[]> {
+  return backendJson<TeamDefect[]>("/api/analytics/team/defects-by-status", {
+    method: "GET",
+  });
+}
+
+export async function getQCStatusCounts(): Promise<QCStatus[]> {
+  return backendJson<QCStatus[]>("/api/analytics/qc/status-counts", {
+    method: "GET",
+  });
+}
+
+export async function getQCSummary(): Promise<QCSummary> {
+  return backendJson<QCSummary>("/api/analytics/qc/summary", {
+    method: "GET",
+  });
+}
+
+export async function getRecentQCDefects(): Promise<TeamDefect[]> {
+  return backendJson<TeamDefect[]>("/api/analytics/qc/recent-defects", {
+    method: "GET",
+  });
 }

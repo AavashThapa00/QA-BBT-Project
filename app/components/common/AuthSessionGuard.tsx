@@ -20,7 +20,7 @@ export default function AuthSessionGuard() {
 
     const verifySession = async () => {
       try {
-        const response = await fetch("/api/v1/auth/session", {
+        const response = await fetch("/backend/v1/auth/session", {
           method: "GET",
           cache: "no-store",
           credentials: "include",

@@ -1,40 +1,13 @@
 "use server";
 
-import {
-  createHash,
-  randomBytes,
-  randomUUID,
-  scryptSync,
-  timingSafeEqual,
-} from "crypto";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { Collection, Filter } from "mongodb";
-import { mongoCollections } from "@/lib/mongodb";
-import {
-  sendLoginVerificationCodeEmail,
-  sendPasswordResetEmail,
-} from "@/lib/email";
+import { backendJson, backendRequest } from "@/lib/backend/request";
 
 const SESSION_COOKIE = "bbt_session";
 const SESSION_EXPIRES_COOKIE = "bbt_session_expires_at";
-const SESSION_DAYS = 7;
-const PASSWORD_RESET_MINUTES = 30;
-const LOGIN_CODE_MINUTES = 10;
 
-type SessionDoc = { id: string; userId: string; expiresAt: Date };
-type UserDoc = {
-  id: string;
-  name: string;
-  email: string;
-  phone?: string | null;
-  role?: string;
-  password_hash?: string;
-  createdAt?: Date;
-  updatedAt?: Date;
-};
-
-interface AuthUser {
+export interface AuthUser {
   id: string;
   name: string;
   email: string;
@@ -42,209 +15,123 @@ interface AuthUser {
   role: "super_admin" | "admin";
 }
 
-const normalizeRole = (role?: string): AuthUser["role"] => {
-  return role === "super_admin" ? "super_admin" : "admin";
-};
+type BackendSessionUser = Omit<AuthUser, "phone"> & { phone?: string | null };
 
-const hashPassword = (password: string) => {
-  const salt = randomBytes(16).toString("hex");
-  const hash = scryptSync(password, salt, 64).toString("hex");
-  return `${salt}:${hash}`;
-};
+async function setSessionCookies(sessionId: string, sessionExpiresAt: string | Date) {
+  return cookies().then((cookieStore) => {
+    const expiresAt = new Date(sessionExpiresAt);
+    cookieStore.set(SESSION_COOKIE, sessionId, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      expires: expiresAt,
+      path: "/",
+    });
+    cookieStore.set(SESSION_EXPIRES_COOKIE, String(expiresAt.getTime()), {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      expires: expiresAt,
+      path: "/",
+    });
+  });
+}
 
-const hashToken = (token: string) => {
-  return createHash("sha256").update(token).digest("hex");
-};
-
-const generateLoginCode = () => {
-  return String(Math.floor(100000 + Math.random() * 900000));
-};
-
-const generateId = () => randomUUID();
-
-const verifyPassword = (password: string, stored: string) => {
-  const [salt, hash] = stored.split(":");
-  if (!salt || !hash) return false;
-  const derived = scryptSync(password, salt, 64);
-  const storedBuffer = Buffer.from(hash, "hex");
-  if (storedBuffer.length !== derived.length) return false;
-  return timingSafeEqual(storedBuffer, derived);
-};
-
-const createSession = async (userId: string) => {
-  const sessions =
-    (await mongoCollections.sessions()) as unknown as Collection<SessionDoc>;
-  const sessionId = generateId();
-  const expiresAt = new Date(Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000);
-  await sessions.insertOne({ id: sessionId, userId, expiresAt });
-  return { sessionId, expiresAt };
-};
-
-const setSessionCookie = async (sessionId: string, expiresAt: Date) => {
+async function clearSessionCookies() {
   const cookieStore = await cookies();
-  cookieStore.set(SESSION_COOKIE, sessionId, {
+  const expired = new Date(0);
+
+  cookieStore.set(SESSION_COOKIE, "", {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
-    expires: expiresAt,
+    expires: expired,
     path: "/",
   });
-  cookieStore.set(SESSION_EXPIRES_COOKIE, String(expiresAt.getTime()), {
+  cookieStore.set(SESSION_EXPIRES_COOKIE, "", {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
-    expires: expiresAt,
+    expires: expired,
     path: "/",
   });
-};
+}
 
-const getSessionId = async () => {
-  const cookieStore = await cookies();
-  const cookie = cookieStore.get(SESSION_COOKIE);
-  return cookie?.value || null;
-};
+function normalizeUser(user: BackendSessionUser): AuthUser {
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    phone: user.phone ?? null,
+    role: user.role,
+  };
+}
 
 export async function getCurrentUser(): Promise<AuthUser | null> {
   try {
-    const sessionId = await getSessionId();
-    if (!sessionId) return null;
-
-    const sessions =
-      (await mongoCollections.sessions()) as unknown as Collection<SessionDoc>;
-    const users =
-      (await mongoCollections.users()) as unknown as Collection<UserDoc>;
-
-    const session = await sessions.findOne({
-      id: sessionId,
-      expiresAt: { $gt: new Date() },
-    } as Filter<SessionDoc>);
-    if (!session) return null;
-
-    const row = await users.findOne({ id: session.userId });
-    if (!row) return null;
-
-    return {
-      id: row.id,
-      name: row.name,
-      email: row.email,
-      phone: row.phone ?? null,
-      role: normalizeRole(row.role),
-    };
-  } catch (error) {
-    console.error("Error fetching current user:", error);
+    const user = await backendJson<BackendSessionUser>("/api/auth/session", {
+      method: "GET",
+    });
+    return normalizeUser(user);
+  } catch {
     return null;
   }
 }
 
 export async function loginAction(formData: FormData) {
-  const email = String(formData.get("email") || "")
-    .trim()
-    .toLowerCase();
+  const email = String(formData.get("email") || "").trim().toLowerCase();
   const password = String(formData.get("password") || "");
 
   if (!email || !password) {
     return { success: false, message: "Email and password are required" };
   }
 
-  const users =
-    (await mongoCollections.users()) as unknown as Collection<UserDoc>;
-  const row = await users.findOne(
-    { email },
-    { projection: { id: 1, password_hash: 1 } },
-  );
+  try {
+    const data = await backendJson<BackendSessionUser & {
+      sessionId: string;
+      sessionExpiresAt: string;
+    }>("/api/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ email, password }),
+      headers: { "Content-Type": "application/json" },
+    });
 
-  if (!row) {
-    return { success: false, message: "Invalid email or password" };
+    await setSessionCookies(data.sessionId, data.sessionExpiresAt);
+    redirect("/");
+  } catch (error) {
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : "Failed to log in",
+    };
   }
-
-  if (!row.password_hash) {
-    return { success: false, message: "Invalid email or password" };
-  }
-
-  const valid = verifyPassword(password, row.password_hash);
-  if (!valid) {
-    return { success: false, message: "Invalid email or password" };
-  }
-
-  const { sessionId, expiresAt } = await createSession(row.id);
-  await setSessionCookie(sessionId, expiresAt);
-
-  redirect("/");
 }
 
 export async function requestLoginCodeAction(formData: FormData) {
-  const email = String(formData.get("email") || "")
-    .trim()
-    .toLowerCase();
+  const email = String(formData.get("email") || "").trim().toLowerCase();
   const password = String(formData.get("password") || "");
 
   if (!email || !password) {
-    return {
-      success: false,
-      message: "Email and password are required",
-    };
+    return { success: false, message: "Email and password are required" };
   }
 
   try {
-    const users =
-      (await mongoCollections.users()) as unknown as Collection<UserDoc>;
-    const loginCodes =
-      (await mongoCollections.loginVerificationCodes()) as unknown as Collection<{
-        id: string;
-        userId: string;
-        code_hash: string;
-        expiresAt: Date;
-        usedAt?: Date | null;
-      }>;
-
-    const row = await users.findOne(
-      { email },
-      { projection: { id: 1, password_hash: 1 } },
-    );
-
-    if (!row) {
-      return { success: false, message: "Invalid email or password" };
-    }
-
-    if (!row.password_hash) {
-      return { success: false, message: "Invalid email or password" };
-    }
-
-    const valid = verifyPassword(password, row.password_hash);
-    if (!valid) {
-      return { success: false, message: "Invalid email or password" };
-    }
-
-    const code = generateLoginCode();
-    const codeHash = hashToken(code);
-    const expiresAt = new Date(Date.now() + LOGIN_CODE_MINUTES * 60 * 1000);
-
-    const challengeId = generateId();
-    await loginCodes.insertOne({
-      id: challengeId,
-      userId: row.id,
-      code_hash: codeHash,
-      expiresAt,
-      usedAt: null,
-    });
-    const emailResult = await sendLoginVerificationCodeEmail({
-      to: email,
-      code,
-      expiresInMinutes: LOGIN_CODE_MINUTES,
+    const data = await backendJson<{
+      challengeId: string;
+      email: string;
+      code?: string;
+      message: string;
+    }>("/api/auth/request-login-code", {
+      method: "POST",
+      body: JSON.stringify({ email, password }),
+      headers: { "Content-Type": "application/json" },
     });
 
-    return {
-      success: true,
-      message: emailResult.sent
-        ? "Verification code sent to your email"
-        : "SMTP not configured. Use the development code below.",
-      challengeId,
-      email,
-      code: emailResult.sent ? undefined : code,
-    };
+    return { success: true, ...data };
   } catch (error) {
-    console.error("Error requesting login code:", error);
-    return { success: false, message: "Failed to send verification code" };
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : "Failed to request login code",
+    };
   }
 }
 
@@ -256,116 +143,50 @@ export async function verifyLoginCodeAction(formData: FormData) {
     return { success: false, message: "Verification code is required" };
   }
 
-  const codeHash = hashToken(code);
-  let userId = "";
-
   try {
-    const loginCodes =
-      (await mongoCollections.loginVerificationCodes()) as unknown as Collection<{
-        id: string;
-        userId: string;
-        code_hash: string;
-        usedAt?: Date | null;
-        expiresAt: Date;
-      }>;
-
-    const row = await loginCodes.findOne({
-      id: challengeId,
-      $or: [{ usedAt: null }, { usedAt: { $exists: false } }],
-      expiresAt: { $gt: new Date() },
+    const data = await backendJson<BackendSessionUser & {
+      sessionId: string;
+      sessionExpiresAt: string;
+    }>("/api/auth/verify-login-code", {
+      method: "POST",
+      body: JSON.stringify({ challengeId, code }),
+      headers: { "Content-Type": "application/json" },
     });
 
-    if (!row) {
-      return { success: false, message: "Code is invalid or expired" };
-    }
-
-    if (row.code_hash !== codeHash) {
-      return { success: false, message: "Code is invalid or expired" };
-    }
-
-    userId = row.userId;
-
-    await loginCodes.updateOne(
-      { id: challengeId },
-      { $set: { usedAt: new Date() } },
-    );
-    await loginCodes.deleteMany({
-      userId,
-      id: { $ne: challengeId },
-      $or: [{ usedAt: null }, { usedAt: { $exists: false } }],
-    });
+    await setSessionCookies(data.sessionId, data.sessionExpiresAt);
+    return { success: true, message: "Signed in successfully" };
   } catch (error) {
-    console.error("Error verifying login code:", error);
-    return { success: false, message: "Failed to verify code" };
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : "Failed to verify code",
+    };
   }
-
-  const { sessionId, expiresAt } = await createSession(userId);
-  await setSessionCookie(sessionId, expiresAt);
-
-  return { success: true, message: "Signed in successfully" };
 }
 
 export async function requestPasswordResetAction(formData: FormData) {
-  const email = String(formData.get("email") || "")
-    .trim()
-    .toLowerCase();
+  const email = String(formData.get("email") || "").trim().toLowerCase();
 
   if (!email) {
     return { success: false, message: "Email is required" };
   }
 
-  const genericMessage =
-    "If an account with that email exists, a password reset link has been sent. Please check your email.";
-
   try {
-    const users = (await mongoCollections.users()) as unknown as Collection<{
-      id: string;
-      email: string;
-    }>;
-    const passwordResetTokens =
-      (await mongoCollections.passwordResetTokens()) as unknown as Collection<{
-        id: string;
-        userId: string;
-        token_hash: string;
-        expiresAt: Date;
-        usedAt?: Date | null;
-      }>;
+    const data = await backendJson<{ message: string; devResetLink?: string }>(
+      "/api/auth/password-reset/request",
+      {
+        method: "POST",
+        body: JSON.stringify({ email }),
+        headers: { "Content-Type": "application/json" },
+      },
+    );
 
-    const user = await users.findOne({ email }, { projection: { id: 1 } });
-
-    if (!user) {
-      return { success: true, message: genericMessage };
-    }
-
-    const userId = user.id;
-    const rawToken = randomBytes(32).toString("hex");
-    const tokenHash = hashToken(rawToken);
-    const expiresAt = new Date(Date.now() + PASSWORD_RESET_MINUTES * 60 * 1000);
-
-    await passwordResetTokens.insertOne({
-      id: generateId(),
-      userId,
-      token_hash: tokenHash,
-      expiresAt,
-      usedAt: null,
-    });
-
-    const appBaseUrl = process.env.APP_BASE_URL || "http://localhost:3000";
-    const resetLink = `${appBaseUrl}/reset-password?token=${rawToken}`;
-
-    const emailResult = await sendPasswordResetEmail({
-      to: email,
-      resetLink,
-    });
-
-    return {
-      success: true,
-      message: genericMessage,
-      resetLink: emailResult.sent ? undefined : resetLink,
-    };
+    return { success: true, ...data };
   } catch (error) {
-    console.error("Error creating password reset token:", error);
-    return { success: false, message: "Unable to generate reset link" };
+    return {
+      success: false,
+      message:
+        error instanceof Error ? error.message : "Unable to generate reset link",
+    };
   }
 }
 
@@ -389,109 +210,37 @@ export async function resetPasswordWithTokenAction(formData: FormData) {
     return { success: false, message: "Passwords do not match" };
   }
 
-  const tokenHash = hashToken(token);
-
   try {
-    const users = (await mongoCollections.users()) as unknown as Collection<{
-      id: string;
-      password_hash: string;
-      updatedAt?: Date;
-    }>;
-    const passwordResetTokens =
-      (await mongoCollections.passwordResetTokens()) as unknown as Collection<{
-        id: string;
-        userId: string;
-        token_hash: string;
-        expiresAt: Date;
-        usedAt?: Date | null;
-      }>;
-    const sessions =
-      (await mongoCollections.sessions()) as unknown as Collection<{
-        userId: string;
-      }>;
-
-    const tokenRow = await passwordResetTokens.findOne({
-      token_hash: tokenHash,
-      $or: [{ usedAt: null }, { usedAt: { $exists: false } }],
-      expiresAt: { $gt: new Date() },
-    });
-
-    if (!tokenRow) {
-      return { success: false, message: "Reset link is invalid or expired" };
-    }
-
-    const userId = tokenRow.userId;
-    const tokenId = tokenRow.id;
-
-    const newHash = hashPassword(password);
-
-    await users.updateOne(
-      { id: userId },
-      { $set: { password_hash: newHash, updatedAt: new Date() } },
+    const data = await backendJson<{ message: string }>(
+      "/api/auth/password-reset/confirm",
+      {
+        method: "POST",
+        body: JSON.stringify({ token, password }),
+        headers: { "Content-Type": "application/json" },
+      },
     );
-    await passwordResetTokens.updateOne(
-      { id: tokenId },
-      { $set: { usedAt: new Date() } },
-    );
-    await sessions.deleteMany({ userId });
 
-    const cookieStore = await cookies();
-    cookieStore.set(SESSION_COOKIE, "", {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      expires: new Date(0),
-      path: "/",
-    });
-    cookieStore.set(SESSION_EXPIRES_COOKIE, "", {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      expires: new Date(0),
-      path: "/",
-    });
-
-    return {
-      success: true,
-      message: "Password has been reset. Please sign in.",
-    };
+    await clearSessionCookies();
+    return { success: true, message: data.message };
   } catch (error) {
-    console.error("Error resetting password:", error);
-    return { success: false, message: "Failed to reset password" };
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : "Failed to reset password",
+    };
   }
 }
 
 export async function logoutAction() {
   try {
-    const sessionId = await getSessionId();
-    if (sessionId) {
-      const sessions =
-        (await mongoCollections.sessions()) as unknown as Collection<{
-          id: string;
-        }>;
-      await sessions.deleteOne({ id: sessionId });
-    }
-  } catch (error) {
-    console.error("Error during logout:", error);
-    return { success: false, message: "Failed to log out" };
+    await backendRequest("/api/auth/logout", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    });
+  } catch {
+    // Logout should still clear local cookies even if the backend request fails.
   }
 
-  const cookieStore = await cookies();
-  cookieStore.set(SESSION_COOKIE, "", {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    expires: new Date(0),
-    path: "/",
-  });
-  cookieStore.set(SESSION_EXPIRES_COOKIE, "", {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    expires: new Date(0),
-    path: "/",
-  });
-
+  await clearSessionCookies();
   return { success: true, message: "Logged out successfully" };
 }
 
@@ -509,29 +258,24 @@ export async function updateProfileAction(formData: FormData) {
     return { success: false, message: "Name and email are required" };
   }
 
-  const users = (await mongoCollections.users()) as unknown as Collection<{
-    id: string;
-    name: string;
-    email: string;
-    phone?: string | null;
-    updatedAt?: Date;
-  }>;
+  try {
+    const data = await backendJson<BackendSessionUser>("/api/auth/profile", {
+      method: "POST",
+      body: JSON.stringify({ name, email, phone: phone || null }),
+      headers: { "Content-Type": "application/json" },
+    });
 
-  const emailCheck = await users.findOne(
-    { email, id: { $ne: user.id } },
-    { projection: { id: 1 } },
-  );
-
-  if (emailCheck) {
-    return { success: false, message: "Email is already in use" };
+    return {
+      success: true,
+      message: "Profile updated",
+      user: normalizeUser(data),
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : "Failed to update profile",
+    };
   }
-
-  await users.updateOne(
-    { id: user.id },
-    { $set: { name, email, phone: phone || null, updatedAt: new Date() } },
-  );
-
-  return { success: true, message: "Profile updated" };
 }
 
 export async function changePasswordAction(formData: FormData) {
@@ -545,32 +289,20 @@ export async function changePasswordAction(formData: FormData) {
     return { success: false, message: "Both passwords are required" };
   }
 
-  const users = (await mongoCollections.users()) as unknown as Collection<{
-    id: string;
-    password_hash: string;
-    updatedAt?: Date;
-  }>;
-  const row = await users.findOne(
-    { id: user.id },
-    { projection: { password_hash: 1 } },
-  );
+  try {
+    const data = await backendJson<{ message: string }>("/api/auth/change-password", {
+      method: "POST",
+      body: JSON.stringify({ currentPassword, newPassword }),
+      headers: { "Content-Type": "application/json" },
+    });
 
-  if (!row) {
-    return { success: false, message: "User not found" };
+    return { success: true, message: data.message || "Password updated" };
+  } catch (error) {
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : "Failed to change password",
+    };
   }
-
-  const valid = verifyPassword(currentPassword, row.password_hash);
-  if (!valid) {
-    return { success: false, message: "Current password is incorrect" };
-  }
-
-  const newHash = hashPassword(newPassword);
-  await users.updateOne(
-    { id: user.id },
-    { $set: { password_hash: newHash, updatedAt: new Date() } },
-  );
-
-  return { success: true, message: "Password updated" };
 }
 
 export async function createUser(params: {
@@ -580,38 +312,22 @@ export async function createUser(params: {
   password: string;
   role?: "super_admin" | "admin";
 }) {
-  const name = params.name.trim();
-  const email = params.email.trim().toLowerCase();
-  const phone = params.phone?.trim() || null;
-  const role = normalizeRole(params.role);
-
-  const users = (await mongoCollections.users()) as unknown as Collection<{
-    id: string;
-    name: string;
-    email: string;
-    phone?: string | null;
-    password_hash: string;
-    role: "super_admin" | "admin";
-    createdAt: Date;
-    updatedAt: Date;
-  }>;
-
-  const existing = await users.findOne({ email }, { projection: { id: 1 } });
-
-  if (existing) {
-    throw new Error("User with this email already exists");
+  const user = await getCurrentUser();
+  if (!user || user.role !== "super_admin") {
+    throw new Error("Not authorized");
   }
 
-  const passwordHash = hashPassword(params.password);
-  const now = new Date();
-  await users.insertOne({
-    id: generateId(),
-    name,
-    email,
-    phone,
-    password_hash: passwordHash,
-    role,
-    createdAt: now,
-    updatedAt: now,
+  const payload = {
+    name: params.name.trim(),
+    email: params.email.trim().toLowerCase(),
+    phone: params.phone?.trim() || null,
+    password: params.password,
+    role: params.role || "admin",
+  };
+
+  await backendJson("/api/users", {
+    method: "POST",
+    body: JSON.stringify(payload),
+    headers: { "Content-Type": "application/json" },
   });
 }

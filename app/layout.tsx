@@ -5,6 +5,7 @@ import "./globals.css";
 import AppSidebar from "./components/common/AppSidebar";
 import AppToaster from "./components/common/AppToaster";
 import AuthSessionGuard from "./components/common/AuthSessionGuard";
+import Providers from "./providers";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -114,14 +115,16 @@ export default function RootLayout({
             description: appDescription,
           })}
         </Script>
-        <div className="flex min-h-screen w-full bg-(--page-background)">
-          <AppSidebar />
-          <div className="min-w-0 flex-1">
-            <AuthSessionGuard />
-            <AppToaster />
-            {children}
+        <Providers>
+          <div className="flex min-h-screen w-full bg-(--page-background)">
+            <AppSidebar />
+            <div className="min-w-0 flex-1">
+              <AuthSessionGuard />
+              <AppToaster />
+              {children}
+            </div>
           </div>
-        </div>
+        </Providers>
       </body>
     </html>
   );

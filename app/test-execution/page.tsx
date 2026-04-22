@@ -271,7 +271,7 @@ export default function TestCaseExecutionPage() {
     async function loadCycles() {
       try {
         setLoading(true);
-        const response = await fetch("/api/v1/test-cycles");
+        const response = await fetch("/backend/v1/test-cycles");
         const data = await response.json();
         if (data.success) {
           const nodes = (data.data || []) as TestCycle[];
@@ -338,7 +338,7 @@ export default function TestCaseExecutionPage() {
         setLoadingTestCases(true);
         setHasLoadedTestCases(false);
         const response = await fetch(
-          `/api/v1/test-cycles/${selectedCycle}/test-cases`,
+          `/backend/v1/test-cycles/${selectedCycle}/test-cases`,
         );
         const data = await response.json();
         if (data.success) {
@@ -403,7 +403,7 @@ export default function TestCaseExecutionPage() {
     async function loadRuns() {
       try {
         const response = await fetch(
-          `/api/v1/test-cycles/${selectedCycle}/runs`,
+          `/backend/v1/test-cycles/${selectedCycle}/runs`,
         );
         const data = await response.json();
         if (data.success) {
@@ -424,7 +424,7 @@ export default function TestCaseExecutionPage() {
       setLoadingTestCases(true);
       setHasLoadedTestCases(false);
       const response = await fetch(
-        `/api/v1/test-cycles/${selectedCycle}/test-cases`,
+        `/backend/v1/test-cycles/${selectedCycle}/test-cases`,
       );
       const data = await response.json();
       if (data.success) {
@@ -445,7 +445,7 @@ export default function TestCaseExecutionPage() {
 
     try {
       setSavingId(testCaseId);
-      const response = await fetch("/api/v1/test-executions", {
+      const response = await fetch("/backend/v1/test-executions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -498,7 +498,7 @@ export default function TestCaseExecutionPage() {
 
     try {
       setSavingId(testCaseId);
-      const response = await fetch("/api/v1/test-executions", {
+      const response = await fetch("/backend/v1/test-executions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -559,7 +559,7 @@ export default function TestCaseExecutionPage() {
       const defectTitle = issueSummary;
       const defectDescription = `Issue Description: ${issueDescription}\n\nTest Steps: ${testCase.steps}`;
 
-      const response = await fetch("/api/v1/test-executions", {
+      const response = await fetch("/backend/v1/test-executions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -646,7 +646,7 @@ export default function TestCaseExecutionPage() {
 
     try {
       setSavingTestCaseId(editingTestCaseId);
-      const response = await fetch("/api/v1/test-cases", {
+      const response = await fetch("/backend/v1/test-cases", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -662,7 +662,7 @@ export default function TestCaseExecutionPage() {
         const editingTarget = testCases.find(
           (tc) => tc.id === editingTestCaseId,
         );
-        const executionResponse = await fetch("/api/v1/test-executions", {
+        const executionResponse = await fetch("/backend/v1/test-executions", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -757,7 +757,7 @@ export default function TestCaseExecutionPage() {
     // Refresh cycles list after successful import
     async function loadCycles() {
       try {
-        const response = await fetch("/api/v1/test-cycles");
+        const response = await fetch("/backend/v1/test-cycles");
         const data = await response.json();
         if (data.success) {
           setCycles(data.data || []);
@@ -782,7 +782,7 @@ export default function TestCaseExecutionPage() {
 
     try {
       setCreatingNode(true);
-      const response = await fetch("/api/v1/test-cycles", {
+      const response = await fetch("/backend/v1/test-cycles", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -840,7 +840,7 @@ export default function TestCaseExecutionPage() {
 
     try {
       setCreatingNode(true);
-      const response = await fetch("/api/v1/test-cycles", {
+      const response = await fetch("/backend/v1/test-cycles", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -863,7 +863,7 @@ export default function TestCaseExecutionPage() {
 
       // Reload full cycle tree so server-side cloned scopes/cases appear immediately.
       try {
-        const refreshResponse = await fetch("/api/v1/test-cycles");
+        const refreshResponse = await fetch("/backend/v1/test-cycles");
         const refreshData = await refreshResponse.json();
         if (refreshData.success) {
           setCycles((refreshData.data || []) as TestCycle[]);
@@ -899,7 +899,7 @@ export default function TestCaseExecutionPage() {
 
     try {
       setCreatingNode(true);
-      const response = await fetch("/api/v1/test-cycles", {
+      const response = await fetch("/backend/v1/test-cycles", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -953,7 +953,7 @@ export default function TestCaseExecutionPage() {
     try {
       setCreatingTestCase(true);
 
-      const createResponse = await fetch("/api/v1/test-cases", {
+      const createResponse = await fetch("/backend/v1/test-cases", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -977,7 +977,7 @@ export default function TestCaseExecutionPage() {
       const createdCaseId = createData.data.id as string;
 
       if (newCaseStatus !== "NOT_RUN" || newCaseRemarks.trim()) {
-        await fetch("/api/v1/test-executions", {
+        await fetch("/backend/v1/test-executions", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -1015,7 +1015,7 @@ export default function TestCaseExecutionPage() {
     try {
       setDownloadingRunId(runId);
       const response = await fetch(
-        `/api/v1/test-cycles/${selectedCycle}/runs/${runId}/download`,
+        `/backend/v1/test-cycles/${selectedCycle}/runs/${runId}/download`,
       );
 
       if (!response.ok) {
@@ -1050,7 +1050,7 @@ export default function TestCaseExecutionPage() {
     try {
       setDeletingRunId(runId);
       const response = await fetch(
-        `/api/v1/test-cycles/${selectedCycle}/runs/${runId}`,
+        `/backend/v1/test-cycles/${selectedCycle}/runs/${runId}`,
         {
           method: "DELETE",
         },
@@ -1080,7 +1080,7 @@ export default function TestCaseExecutionPage() {
     try {
       setRestoringRunId(runId);
       const response = await fetch(
-        `/api/v1/test-cycles/${selectedCycle}/runs/${runId}`,
+        `/backend/v1/test-cycles/${selectedCycle}/runs/${runId}`,
       );
       const data = await response.json();
 
@@ -1104,7 +1104,7 @@ export default function TestCaseExecutionPage() {
         const saved = executionMap.get(testCase.testCaseId);
         const status = saved?.status ?? "NOT_RUN";
 
-        return fetch("/api/v1/test-executions", {
+        return fetch("/backend/v1/test-executions", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -1177,7 +1177,7 @@ export default function TestCaseExecutionPage() {
 
       // Save current run snapshot before resetting statuses.
       const saveResponse = await fetch(
-        `/api/v1/test-cycles/${selectedCycle}/runs`,
+        `/backend/v1/test-cycles/${selectedCycle}/runs`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -1197,7 +1197,7 @@ export default function TestCaseExecutionPage() {
       setRuns((prev) => [saveData.data, ...prev]);
 
       const resetPromises = testCases.map((testCase) =>
-        fetch("/api/v1/test-executions", {
+        fetch("/backend/v1/test-executions", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

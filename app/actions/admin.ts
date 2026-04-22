@@ -1,9 +1,7 @@
 "use server";
 
-import { Collection } from "mongodb";
-import { mongoCollections } from "@/lib/mongodb";
-import { getCurrentUser, createUser } from "@/app/actions/auth";
-import { randomBytes, scryptSync } from "crypto";
+import { backendJson } from "@/lib/backend/request";
+import { getCurrentUser } from "@/app/actions/auth";
 
 export type UserRole = "super_admin" | "admin";
 
@@ -19,26 +17,6 @@ interface AdminUser {
 const isAdminRole = (role: UserRole | undefined) =>
   role === "admin" || role === "super_admin";
 const isSuperAdmin = (role: UserRole | undefined) => role === "super_admin";
-const normalizeRole = (role?: string): UserRole =>
-  role === "super_admin" ? "super_admin" : "admin";
-
-const getUsersCollection = async () =>
-  (await mongoCollections.users()) as unknown as Collection<{
-    id: string;
-    name: string;
-    email: string;
-    phone?: string | null;
-    role?: string;
-    createdAt?: Date;
-    updatedAt?: Date;
-    password_hash?: string;
-  }>;
-
-const hashPassword = (password: string) => {
-  const salt = randomBytes(16).toString("hex");
-  const hash = scryptSync(password, salt, 64).toString("hex");
-  return `${salt}:${hash}`;
-};
 
 export async function getUsers(): Promise<AdminUser[]> {
   const user = await getCurrentUser();
@@ -46,17 +24,11 @@ export async function getUsers(): Promise<AdminUser[]> {
     return [];
   }
 
-  const users = await getUsersCollection();
-  const result = await users.find({}).sort({ createdAt: -1 }).toArray();
-
-  return result.map((row) => ({
-    id: row.id,
-    name: row.name,
-    email: row.email,
-    phone: row.phone || null,
-    role: normalizeRole(row.role),
-    createdAt: (row.createdAt || new Date()).toISOString().split("T")[0],
-  }));
+  try {
+    return await backendJson<AdminUser[]>("/api/users", { method: "GET" });
+  } catch {
+    return [];
+  }
 }
 
 export async function createUserAdminAction(formData: FormData) {
@@ -71,7 +43,7 @@ export async function createUserAdminAction(formData: FormData) {
     .toLowerCase();
   const phone = String(formData.get("phone") || "").trim();
   const password = String(formData.get("password") || "").trim();
-  const role = normalizeRole(String(formData.get("role") || "admin"));
+  const role = String(formData.get("role") || "admin") as UserRole;
 
   if (!name || !email || !password) {
     return {
@@ -81,7 +53,11 @@ export async function createUserAdminAction(formData: FormData) {
   }
 
   try {
-    await createUser({ name, email, phone, password, role });
+    await backendJson("/api/users", {
+      method: "POST",
+      body: JSON.stringify({ name, email, phone: phone || null, password, role }),
+      headers: { "Content-Type": "application/json" },
+    });
     return { success: true, message: "User created" };
   } catch (error) {
     return {
@@ -98,18 +74,25 @@ export async function updateUserRoleAction(formData: FormData) {
   }
 
   const userId = String(formData.get("userId") || "");
-  const role = normalizeRole(String(formData.get("role") || "admin"));
+  const role = String(formData.get("role") || "admin") as UserRole;
 
   if (!userId) {
     return { success: false, message: "User is required" };
   }
 
-  const users = await getUsersCollection();
-  await users.updateOne(
-    { id: userId },
-    { $set: { role, updatedAt: new Date() } },
-  );
-  return { success: true, message: "Role updated" };
+  try {
+    await backendJson(`/api/users/${userId}/role`, {
+      method: "PUT",
+      body: JSON.stringify({ role }),
+      headers: { "Content-Type": "application/json" },
+    });
+    return { success: true, message: "Role updated" };
+  } catch (error) {
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : "Failed to update role",
+    };
+  }
 }
 
 export async function resetUserPasswordAction(formData: FormData) {
@@ -125,13 +108,19 @@ export async function resetUserPasswordAction(formData: FormData) {
     return { success: false, message: "User and password are required" };
   }
 
-  const newHash = hashPassword(newPassword);
-  const users = await getUsersCollection();
-  await users.updateOne(
-    { id: userId },
-    { $set: { password_hash: newHash, updatedAt: new Date() } },
-  );
-  return { success: true, message: "Password reset" };
+  try {
+    await backendJson(`/api/users/${userId}/password-reset`, {
+      method: "PUT",
+      body: JSON.stringify({ newPassword }),
+      headers: { "Content-Type": "application/json" },
+    });
+    return { success: true, message: "Password reset" };
+  } catch (error) {
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : "Failed to reset password",
+    };
+  }
 }
 
 export async function deleteUserAction(formData: FormData) {
@@ -146,16 +135,19 @@ export async function deleteUserAction(formData: FormData) {
     return { success: false, message: "User ID is required" };
   }
 
-  // Prevent deleting yourself
   if (userId === user.id) {
     return { success: false, message: "Cannot delete your own account" };
   }
 
   try {
-    const users = await getUsersCollection();
-    await users.deleteOne({ id: userId });
+    await backendJson(`/api/users/${userId}`, {
+      method: "DELETE",
+    });
     return { success: true, message: "User account deleted successfully" };
-  } catch {
-    return { success: false, message: "Failed to delete user" };
+  } catch (error) {
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : "Failed to delete user",
+    };
   }
 }
