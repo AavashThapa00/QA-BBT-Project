@@ -16,7 +16,6 @@ import {
   CartesianGrid,
   BarChart,
   Bar,
-  Sector,
 } from "recharts";
 import {
   HiArrowLeft,
@@ -113,6 +112,33 @@ const MODULE_COLORS: Record<string, string> = {
   Other: "#6b7280",
 };
 
+const normalizeStatusKey = (status: unknown): StatusData["key"] | null => {
+  const raw = String(status ?? "").trim();
+  if (!raw) return null;
+
+  const normalized = raw
+    .toUpperCase()
+    .replace(/[-\s]+/g, "_")
+    .replace(/__+/g, "_");
+
+  if (normalized === "AS_IT_IS" || normalized === "ASITIS") {
+    return "AS_IT_IS";
+  }
+  if (normalized === "RE_OPENED" || normalized === "REOPENED") {
+    return "RE_OPENED";
+  }
+  if (normalized === "ON_HOLD") return "HOLD";
+  if (normalized === "HOLD") return "HOLD";
+  if (normalized === "OPEN") return "PENDING";
+  if (normalized === "PENDING") return "PENDING";
+  if (normalized === "CLOSED") return "FIXED";
+  if (normalized === "RESOLVED") return "FIXED";
+  if (normalized === "DONE") return "FIXED";
+  if (normalized === "FIXED") return "FIXED";
+
+  return null;
+};
+
 const getStatusLabel = (status: string) => {
   switch (status) {
     case "PENDING":
@@ -188,25 +214,9 @@ export default function AnalyticsPage() {
         };
 
         statusCounts.forEach((item) => {
-          const status = String(item.status);
-
-          switch (status) {
-            case "AS_IT_IS":
-              groupedCounts.AS_IT_IS += item.count;
-              break;
-            case "HOLD":
-              groupedCounts.HOLD += item.count;
-              break;
-            case "PENDING":
-              groupedCounts.PENDING += item.count;
-              break;
-            case "RE_OPENED":
-              groupedCounts.RE_OPENED += item.count;
-              break;
-            case "FIXED":
-              groupedCounts.FIXED += item.count;
-              break;
-          }
+          const normalizedKey = normalizeStatusKey(item.status);
+          if (!normalizedKey) return;
+          groupedCounts[normalizedKey] += item.count;
         });
 
         const chartData: StatusData[] = STATUS_GROUPS.map((group) => ({
@@ -269,6 +279,9 @@ export default function AnalyticsPage() {
     { total: 0, open: 0, fixed: 0 },
   );
 
+  const pieChartData = statusData.filter((item) => item.value > 0);
+  const isStatusDataEmpty = pieChartData.length === 0;
+
   return (
     <div className="min-h-screen bg-(--page-background) p-4 sm:p-6 lg:p-8">
       <div className="relative mx-auto w-full max-w-screen-2xl space-y-6">
@@ -310,75 +323,78 @@ export default function AnalyticsPage() {
             </p>
           </div>
           <div className="h-100">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={statusData}
-                  cx="50%"
-                  cy="50%"
-                  startAngle={90}
-                  endAngle={-270}
-                  labelLine={{
-                    stroke: "#94a3b8",
-                    strokeWidth: 1,
-                  }}
-                  label={renderPieLabel}
-                  outerRadius={130}
-                  innerRadius={74}
-                  fill="#8884d8"
-                  dataKey="value"
-                  paddingAngle={4}
-                  activeShape={(props) => (
-                    <Sector {...props} stroke="#e2e8f0" strokeWidth={2} />
-                  )}
-                >
-                  {statusData.map((entry, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={
-                        STATUS_GROUPS.find((group) => group.key === entry.key)
-                          ?.color || "#64748b"
-                      }
-                      stroke="#e2e8f0"
-                      strokeWidth={2}
-                    />
-                  ))}
-                </Pie>
-                <Tooltip
-                  cursor={{ fill: "transparent" }}
-                  contentStyle={{
-                    backgroundColor: "#ffffff",
-                    border: "1px solid #d1d5db",
-                    borderRadius: "12px",
-                    color: "#334155",
-                    fontSize: "14px",
-                    fontWeight: "500",
-                    padding: "10px 12px",
-                    boxShadow: "0 8px 24px -8px rgba(0, 0, 0, 0.2)",
-                  }}
-                  itemStyle={{
-                    color: "#334155",
-                  }}
-                />
-                <Legend
-                  wrapperStyle={{
-                    paddingTop: "20px",
-                  }}
-                  iconType="circle"
-                  formatter={(value) => (
-                    <span
-                      style={{
-                        color: "#64748b",
-                        fontSize: "13px",
-                        fontWeight: "500",
-                      }}
-                    >
-                      {value}
-                    </span>
-                  )}
-                />
-              </PieChart>
-            </ResponsiveContainer>
+            {isStatusDataEmpty ? (
+              <div className="flex h-full items-center justify-center rounded-xl border border-emerald-100 bg-emerald-50/30 text-sm text-(--muted-color)">
+                No status data available
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={pieChartData}
+                    cx="50%"
+                    cy="50%"
+                    startAngle={90}
+                    endAngle={-270}
+                    labelLine={{
+                      stroke: "#94a3b8",
+                      strokeWidth: 1,
+                    }}
+                    label={renderPieLabel}
+                    outerRadius={130}
+                    innerRadius={74}
+                    fill="#8884d8"
+                    dataKey="value"
+                    paddingAngle={4}
+                  >
+                    {pieChartData.map((entry, index) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={
+                          STATUS_GROUPS.find((group) => group.key === entry.key)
+                            ?.color || "#64748b"
+                        }
+                        stroke="#e2e8f0"
+                        strokeWidth={2}
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    cursor={{ fill: "transparent" }}
+                    contentStyle={{
+                      backgroundColor: "#ffffff",
+                      border: "1px solid #d1d5db",
+                      borderRadius: "12px",
+                      color: "#334155",
+                      fontSize: "14px",
+                      fontWeight: "500",
+                      padding: "10px 12px",
+                      boxShadow: "0 8px 24px -8px rgba(0, 0, 0, 0.2)",
+                    }}
+                    itemStyle={{
+                      color: "#334155",
+                    }}
+                  />
+                  <Legend
+                    wrapperStyle={{
+                      paddingTop: "20px",
+                    }}
+                    iconType="circle"
+                    formatter={(value) => (
+                      <span
+                        style={{
+                          color: "#64748b",
+                          fontSize: "13px",
+                          fontWeight: "500",
+                        }}
+                      >
+                        {value}
+                      </span>
+                    )}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </div>
 
