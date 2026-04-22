@@ -22,6 +22,17 @@ interface TeamDefect {
   dateReported: string | null;
 }
 
+const OPEN_DEFECT_STATUSES = [
+  "PENDING",
+  "RE_OPENED",
+  "HOLD",
+  "OPEN",
+  "IN_PROGRESS",
+  "ON_HOLD",
+];
+
+const CLOSED_DEFECT_STATUSES = ["FIXED", "AS_IT_IS", "CLOSED"];
+
 const getDefectsCollection = async () =>
   (await mongoCollections.defects()) as unknown as Collection<DefectDoc>;
 
@@ -51,16 +62,12 @@ export async function getTeamPerformance(): Promise<TeamMember[]> {
             total_defects: { $sum: 1 },
             open_defects: {
               $sum: {
-                $cond: [
-                  { $in: ["$status", ["PENDING", "RE_OPENED", "HOLD"]] },
-                  1,
-                  0,
-                ],
+                $cond: [{ $in: ["$status", OPEN_DEFECT_STATUSES] }, 1, 0],
               },
             },
             closed_defects: {
               $sum: {
-                $cond: [{ $in: ["$status", ["FIXED", "AS_IT_IS"]] }, 1, 0],
+                $cond: [{ $in: ["$status", CLOSED_DEFECT_STATUSES] }, 1, 0],
               },
             },
             high_severity_count: {
@@ -122,9 +129,7 @@ export async function getTeamDefectsByStatus(
   try {
     const defects = await getDefectsCollection();
     const statusFilter =
-      statusGroup === "open"
-        ? ["PENDING", "RE_OPENED", "HOLD"]
-        : ["FIXED", "AS_IT_IS"];
+      statusGroup === "open" ? OPEN_DEFECT_STATUSES : CLOSED_DEFECT_STATUSES;
 
     const hasTeamFilter = assignedTo !== "ALL";
     const query: Record<string, unknown> = { status: { $in: statusFilter } };

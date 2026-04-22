@@ -36,7 +36,6 @@ export async function POST(request: NextRequest) {
     }
 
     const {
-      createDefect,
       defectTitle,
       defectDescription,
       defectExpectedResult,
@@ -58,13 +57,16 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // If test failed and should create defect
-    if (createDefect && executionData.status === "FAIL" && defectTitle) {
+    // If test failed, log or refresh the linked defect record.
+    if (executionData.status === "FAIL") {
       await createTestCaseDefectForApi({
         testCaseId: executionData.testCaseId,
         cycleId: executionData.cycleId,
-        title: defectTitle,
-        description: defectDescription || "",
+        title: defectTitle || executionData.remarks || "Failed test case",
+        description:
+          defectDescription ||
+          executionData.remarks ||
+          "Failed during test execution",
         expectedResult: defectExpectedResult || "",
         priority: defectPriority || "HIGH",
         severity: executionData.severity || "HIGH",

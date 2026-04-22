@@ -102,6 +102,23 @@ export default function TestCaseExecutionPage() {
     severity: "HIGH",
   });
   const [remarks, setRemarks] = useState<Record<string, string>>({});
+  const [editingTestCaseId, setEditingTestCaseId] = useState<string | null>(
+    null,
+  );
+  const [editingTestCaseData, setEditingTestCaseData] = useState<{
+    title: string;
+    steps: string;
+    expectedResult: string;
+    executionStatus: TestExecutionStatus;
+    executionRemarks: string;
+  }>({
+    title: "",
+    steps: "",
+    expectedResult: "",
+    executionStatus: "NOT_RUN",
+    executionRemarks: "",
+  });
+  const [savingTestCaseId, setSavingTestCaseId] = useState<string | null>(null);
   const [isNewCycleModalOpen, setIsNewCycleModalOpen] = useState(false);
   const [newCycleFolderName, setNewCycleFolderName] = useState("");
   const [runSearch, setRunSearch] = useState("");
@@ -601,6 +618,141 @@ export default function TestCaseExecutionPage() {
     setRemarks((prev) => ({ ...prev, [testCaseId]: value }));
   };
 
+  const handleEditTestCase = (testCase: TestCaseWithExecution) => {
+    setEditingTestCaseId(testCase.id);
+    setEditingTestCaseData({
+      title: testCase.title,
+      steps: testCase.steps,
+      expectedResult: testCase.expectedResult || "",
+      executionStatus: testCase.executionStatus,
+      executionRemarks: remarks[testCase.id] ?? testCase.executionRemarks ?? "",
+    });
+  };
+
+  const handleSaveEditedTestCase = async () => {
+    if (!editingTestCaseId) return;
+    if (!selectedCycle) return;
+
+    if (
+      !editingTestCaseData.title.trim() ||
+      !editingTestCaseData.steps.trim()
+    ) {
+      setMessage({
+        type: "error",
+        text: "Title and steps are required",
+      });
+      return;
+    }
+
+    try {
+      setSavingTestCaseId(editingTestCaseId);
+      const response = await fetch("/api/v1/test-cases", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          testCaseId: editingTestCaseId,
+          title: editingTestCaseData.title.trim(),
+          steps: editingTestCaseData.steps.trim(),
+          expectedResult: editingTestCaseData.expectedResult.trim() || null,
+        }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        const editingTarget = testCases.find(
+          (tc) => tc.id === editingTestCaseId,
+        );
+        const executionResponse = await fetch("/api/v1/test-executions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            cycleId: selectedCycle,
+            testCaseId: editingTestCaseId,
+            status: editingTestCaseData.executionStatus,
+            remarks: editingTestCaseData.executionRemarks.trim() || null,
+            severity:
+              editingTestCaseData.executionStatus === "FAIL"
+                ? (editingTarget?.executionSeverity ?? "HIGH")
+                : null,
+            defectTitle:
+              editingTestCaseData.executionStatus === "FAIL"
+                ? `Failure in ${editingTarget?.testCaseId ?? "test case"} - ${editingTestCaseData.title.trim()}`
+                : undefined,
+            defectDescription:
+              editingTestCaseData.executionStatus === "FAIL"
+                ? editingTestCaseData.executionRemarks.trim() ||
+                  editingTestCaseData.steps.trim() ||
+                  "Failed during test execution"
+                : undefined,
+            defectExpectedResult:
+              editingTestCaseData.executionStatus === "FAIL"
+                ? editingTestCaseData.expectedResult.trim()
+                : undefined,
+            defectPriority:
+              editingTestCaseData.executionStatus === "FAIL"
+                ? "HIGH"
+                : undefined,
+          }),
+        });
+
+        const executionData = await executionResponse.json();
+        if (!executionData.success) {
+          setMessage({
+            type: "error",
+            text: "Failed to update execution status",
+          });
+          return;
+        }
+
+        setTestCases((prev) =>
+          prev.map((tc) =>
+            tc.id === editingTestCaseId
+              ? {
+                  ...tc,
+                  title: editingTestCaseData.title.trim(),
+                  steps: editingTestCaseData.steps.trim(),
+                  expectedResult: editingTestCaseData.expectedResult.trim(),
+                  executionStatus: editingTestCaseData.executionStatus,
+                  executionRemarks: editingTestCaseData.executionRemarks.trim(),
+                  executionSeverity:
+                    editingTestCaseData.executionStatus === "FAIL"
+                      ? (tc.executionSeverity ?? "HIGH")
+                      : null,
+                }
+              : tc,
+          ),
+        );
+        setMessage({ type: "success", text: "Test case updated successfully" });
+        setEditingTestCaseId(null);
+        setEditingTestCaseData({
+          title: "",
+          steps: "",
+          expectedResult: "",
+          executionStatus: "NOT_RUN",
+          executionRemarks: "",
+        });
+      } else {
+        setMessage({ type: "error", text: "Failed to update test case" });
+      }
+    } catch (error) {
+      console.error("Failed to update test case:", error);
+      setMessage({ type: "error", text: "Failed to update test case" });
+    } finally {
+      setSavingTestCaseId(null);
+    }
+  };
+
+  const handleCancelEditTestCase = () => {
+    setEditingTestCaseId(null);
+    setEditingTestCaseData({
+      title: "",
+      steps: "",
+      expectedResult: "",
+      executionStatus: "NOT_RUN",
+      executionRemarks: "",
+    });
+  };
+
   const handleImportSuccess = () => {
     // Refresh cycles list after successful import
     async function loadCycles() {
@@ -708,7 +860,20 @@ export default function TestCaseExecutionPage() {
       }
 
       const created = data.data as TestCycle;
-      setCycles((prev) => [created, ...prev]);
+
+      // Reload full cycle tree so server-side cloned scopes/cases appear immediately.
+      try {
+        const refreshResponse = await fetch("/api/v1/test-cycles");
+        const refreshData = await refreshResponse.json();
+        if (refreshData.success) {
+          setCycles((refreshData.data || []) as TestCycle[]);
+        } else {
+          setCycles((prev) => [created, ...prev]);
+        }
+      } catch {
+        setCycles((prev) => [created, ...prev]);
+      }
+
       setSelectedCycle(created.id);
       setNewChildCycleName("");
       setMessage({ type: "success", text: "Child test cycle created" });
@@ -1556,58 +1721,167 @@ export default function TestCaseExecutionPage() {
                           {group.items.length})
                         </td>
                       </tr>,
-                      ...group.items.map((testCase, idx) => (
-                        <tr
-                          key={testCase.id}
-                          className={`border-b border-emerald-50 ${idx % 2 === 0 ? "bg-emerald-50/20" : ""} transition-colors hover:bg-emerald-50/50`}
-                        >
-                          <td className="px-4 py-3 font-mono text-(--text-color)">
-                            {testCase.testCaseId}
-                          </td>
-                          <td className="max-w-sm wrap-break-word whitespace-normal px-4 py-3 text-(--text-color)">
-                            {testCase.title}
-                          </td>
-                          <td className="max-w-md whitespace-pre-line wrap-break-word px-4 py-3 text-xs align-top text-(--muted-color)">
-                            {testCase.steps}
-                          </td>
-                          <td className="px-4 py-3">
-                            <div
-                              className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold ${STATUS_COLORS[testCase.executionStatus].bg} ${STATUS_COLORS[testCase.executionStatus].text}`}
+                      ...group.items.map((testCase, idx) => {
+                        const isEditing = editingTestCaseId === testCase.id;
+
+                        if (isEditing) {
+                          return (
+                            <tr
+                              key={testCase.id}
+                              className="border-b border-emerald-50 bg-emerald-50"
                             >
-                              {testCase.executionStatus !== "NOT_RUN" &&
-                                STATUS_COLORS[testCase.executionStatus].icon}
-                              <span>
-                                {STATUS_LABELS[testCase.executionStatus]}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="px-4 py-3">
-                            {isAddMode ? (
-                              <input
-                                type="text"
-                                value={
-                                  remarks[testCase.id] ||
-                                  testCase.executionRemarks ||
-                                  ""
-                                }
-                                onChange={(e) =>
-                                  handleRemarkChange(
-                                    testCase.id,
-                                    e.target.value,
-                                  )
-                                }
-                                placeholder="Add remarks..."
-                                className="w-full rounded border border-emerald-200 bg-emerald-50/40 px-2 py-1 text-xs text-(--text-color) focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                              />
-                            ) : (
-                              <p className="max-w-md wrap-break-word text-xs text-(--text-color)">
-                                {testCase.executionRemarks || "—"}
-                              </p>
-                            )}
-                          </td>
-                          <td className="px-4 py-3">
-                            {isAddMode ? (
+                              <td className="px-4 py-3 font-mono text-(--text-color)">
+                                {testCase.testCaseId}
+                              </td>
+                              <td className="max-w-sm wrap-break-word whitespace-normal px-4 py-3">
+                                <input
+                                  type="text"
+                                  value={editingTestCaseData.title}
+                                  onChange={(e) =>
+                                    setEditingTestCaseData({
+                                      ...editingTestCaseData,
+                                      title: e.target.value,
+                                    })
+                                  }
+                                  placeholder="Test case title"
+                                  className="w-full rounded border border-emerald-300 bg-white px-2 py-1 text-sm text-(--text-color) focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                  autoFocus
+                                />
+                              </td>
+                              <td className="max-w-md whitespace-pre-line wrap-break-word px-4 py-3">
+                                <textarea
+                                  value={editingTestCaseData.steps}
+                                  onChange={(e) =>
+                                    setEditingTestCaseData({
+                                      ...editingTestCaseData,
+                                      steps: e.target.value,
+                                    })
+                                  }
+                                  placeholder="Test case steps"
+                                  className="w-full rounded border border-emerald-300 bg-white px-2 py-1 text-xs text-(--text-color) focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                  rows={3}
+                                />
+                              </td>
+                              <td className="px-4 py-3">
+                                <select
+                                  value={editingTestCaseData.executionStatus}
+                                  onChange={(e) =>
+                                    setEditingTestCaseData({
+                                      ...editingTestCaseData,
+                                      executionStatus: e.target
+                                        .value as TestExecutionStatus,
+                                    })
+                                  }
+                                  className="w-full rounded border border-emerald-300 bg-white px-2 py-1 text-xs text-(--text-color) focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                >
+                                  <option value="NOT_RUN">PENDING</option>
+                                  <option value="PASS">PASS</option>
+                                  <option value="FAIL">FAIL</option>
+                                </select>
+                              </td>
+                              <td className="px-4 py-3">
+                                <input
+                                  type="text"
+                                  value={editingTestCaseData.executionRemarks}
+                                  onChange={(e) =>
+                                    setEditingTestCaseData({
+                                      ...editingTestCaseData,
+                                      executionRemarks: e.target.value,
+                                    })
+                                  }
+                                  placeholder="Add remarks..."
+                                  className="w-full rounded border border-emerald-300 bg-white px-2 py-1 text-xs text-(--text-color) focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                />
+                              </td>
+                              <td className="px-4 py-3">
+                                <div className="flex flex-wrap items-center justify-center gap-1">
+                                  <AppButton
+                                    onClick={handleSaveEditedTestCase}
+                                    disabled={savingTestCaseId === testCase.id}
+                                    variant="successSoft"
+                                    size="sm"
+                                    className="py-1"
+                                  >
+                                    {savingTestCaseId === testCase.id
+                                      ? "..."
+                                      : "Save"}
+                                  </AppButton>
+                                  <AppButton
+                                    onClick={handleCancelEditTestCase}
+                                    disabled={savingTestCaseId === testCase.id}
+                                    variant="secondary"
+                                    size="sm"
+                                    className="py-1"
+                                  >
+                                    Cancel
+                                  </AppButton>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        }
+
+                        return (
+                          <tr
+                            key={testCase.id}
+                            className={`border-b border-emerald-50 ${idx % 2 === 0 ? "bg-emerald-50/20" : ""} transition-colors hover:bg-emerald-50/50`}
+                          >
+                            <td className="px-4 py-3 font-mono text-(--text-color)">
+                              {testCase.testCaseId}
+                            </td>
+                            <td className="max-w-sm wrap-break-word whitespace-normal px-4 py-3 text-(--text-color)">
+                              {testCase.title}
+                            </td>
+                            <td className="max-w-md whitespace-pre-line wrap-break-word px-4 py-3 text-xs align-top text-(--muted-color)">
+                              {testCase.steps}
+                            </td>
+                            <td className="px-4 py-3">
+                              <div
+                                className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold ${STATUS_COLORS[testCase.executionStatus].bg} ${STATUS_COLORS[testCase.executionStatus].text}`}
+                              >
+                                {testCase.executionStatus !== "NOT_RUN" &&
+                                  STATUS_COLORS[testCase.executionStatus].icon}
+                                <span>
+                                  {STATUS_LABELS[testCase.executionStatus]}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3">
+                              {isAddMode ? (
+                                <input
+                                  type="text"
+                                  value={
+                                    remarks[testCase.id] ||
+                                    testCase.executionRemarks ||
+                                    ""
+                                  }
+                                  onChange={(e) =>
+                                    handleRemarkChange(
+                                      testCase.id,
+                                      e.target.value,
+                                    )
+                                  }
+                                  placeholder="Add remarks..."
+                                  className="w-full rounded border border-emerald-200 bg-emerald-50/40 px-2 py-1 text-xs text-(--text-color) focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                                />
+                              ) : (
+                                <p className="max-w-md wrap-break-word text-xs text-(--text-color)">
+                                  {testCase.executionRemarks || "—"}
+                                </p>
+                              )}
+                            </td>
+                            <td className="px-4 py-3">
                               <div className="flex flex-wrap items-center justify-center gap-2">
+                                <AppButton
+                                  onClick={() => handleEditTestCase(testCase)}
+                                  disabled={savingId === testCase.id}
+                                  title="Edit test case"
+                                  variant="secondary"
+                                  size="sm"
+                                  className="py-1"
+                                >
+                                  Edit
+                                </AppButton>
                                 <AppButton
                                   onClick={() => handlePass(testCase.id)}
                                   disabled={savingId === testCase.id}
@@ -1654,14 +1928,10 @@ export default function TestCaseExecutionPage() {
                                   </AppButton>
                                 )}
                               </div>
-                            ) : (
-                              <span className="text-xs font-medium text-(--muted-color)">
-                                Read only
-                              </span>
-                            )}
-                          </td>
-                        </tr>
-                      )),
+                            </td>
+                          </tr>
+                        );
+                      }),
                     ])}
                   </tbody>
                 </table>
@@ -1693,37 +1963,138 @@ export default function TestCaseExecutionPage() {
                       <th className="px-4 py-3 text-left font-semibold text-(--heading-color)">
                         Remarks
                       </th>
+                      <th className="px-4 py-3 text-left font-semibold text-(--heading-color)">
+                        Actions
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
                     {testCases
                       .filter((tc) => tc.executionStatus === "PASS")
-                      .map((testCase, idx) => (
-                        <tr
-                          key={testCase.id}
-                          className={`border-b border-emerald-50 ${idx % 2 === 0 ? "bg-emerald-50/20" : ""} transition-colors hover:bg-emerald-50/50`}
-                        >
-                          <td className="px-4 py-3 font-mono text-(--text-color)">
-                            {testCase.testCaseId}
-                          </td>
-                          <td className="max-w-sm wrap-break-word whitespace-normal px-4 py-3 text-(--text-color)">
-                            {testCase.title}
-                          </td>
-                          <td className="px-4 py-3">
-                            <div
-                              className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold ${STATUS_COLORS["PASS"].bg} ${STATUS_COLORS["PASS"].text}`}
+                      .map((testCase, idx) => {
+                        const isEditing = editingTestCaseId === testCase.id;
+
+                        if (isEditing) {
+                          return (
+                            <tr
+                              key={testCase.id}
+                              className="border-b border-emerald-50 bg-emerald-50"
                             >
-                              {STATUS_COLORS["PASS"].icon}
-                              <span>PASS</span>
-                            </div>
-                          </td>
-                          <td className="px-4 py-3">
-                            <p className="max-w-md wrap-break-word text-xs text-(--text-color)">
-                              {testCase.executionRemarks || "—"}
-                            </p>
-                          </td>
-                        </tr>
-                      ))}
+                              <td className="px-4 py-3 font-mono text-(--text-color)">
+                                {testCase.testCaseId}
+                              </td>
+                              <td className="max-w-sm wrap-break-word whitespace-normal px-4 py-3">
+                                <input
+                                  type="text"
+                                  value={editingTestCaseData.title}
+                                  onChange={(e) =>
+                                    setEditingTestCaseData({
+                                      ...editingTestCaseData,
+                                      title: e.target.value,
+                                    })
+                                  }
+                                  placeholder="Test case title"
+                                  className="w-full rounded border border-emerald-300 bg-white px-2 py-1 text-sm text-(--text-color) focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                  autoFocus
+                                />
+                              </td>
+                              <td className="px-4 py-3">
+                                <select
+                                  value={editingTestCaseData.executionStatus}
+                                  onChange={(e) =>
+                                    setEditingTestCaseData({
+                                      ...editingTestCaseData,
+                                      executionStatus: e.target
+                                        .value as TestExecutionStatus,
+                                    })
+                                  }
+                                  className="w-full rounded border border-emerald-300 bg-white px-2 py-1 text-xs text-(--text-color) focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                >
+                                  <option value="NOT_RUN">PENDING</option>
+                                  <option value="PASS">PASS</option>
+                                  <option value="FAIL">FAIL</option>
+                                </select>
+                              </td>
+                              <td className="px-4 py-3">
+                                <input
+                                  type="text"
+                                  value={editingTestCaseData.executionRemarks}
+                                  onChange={(e) =>
+                                    setEditingTestCaseData({
+                                      ...editingTestCaseData,
+                                      executionRemarks: e.target.value,
+                                    })
+                                  }
+                                  placeholder="Add remarks..."
+                                  className="w-full rounded border border-emerald-300 bg-white px-2 py-1 text-xs text-(--text-color) focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                />
+                              </td>
+                              <td className="px-4 py-3">
+                                <div className="flex flex-wrap items-center justify-center gap-1">
+                                  <AppButton
+                                    onClick={handleSaveEditedTestCase}
+                                    disabled={savingTestCaseId === testCase.id}
+                                    variant="successSoft"
+                                    size="sm"
+                                    className="py-1"
+                                  >
+                                    {savingTestCaseId === testCase.id
+                                      ? "..."
+                                      : "Save"}
+                                  </AppButton>
+                                  <AppButton
+                                    onClick={handleCancelEditTestCase}
+                                    disabled={savingTestCaseId === testCase.id}
+                                    variant="secondary"
+                                    size="sm"
+                                    className="py-1"
+                                  >
+                                    Cancel
+                                  </AppButton>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        }
+
+                        return (
+                          <tr
+                            key={testCase.id}
+                            className={`border-b border-emerald-50 ${idx % 2 === 0 ? "bg-emerald-50/20" : ""} transition-colors hover:bg-emerald-50/50`}
+                          >
+                            <td className="px-4 py-3 font-mono text-(--text-color)">
+                              {testCase.testCaseId}
+                            </td>
+                            <td className="max-w-sm wrap-break-word whitespace-normal px-4 py-3 text-(--text-color)">
+                              {testCase.title}
+                            </td>
+                            <td className="px-4 py-3">
+                              <div
+                                className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold ${STATUS_COLORS["PASS"].bg} ${STATUS_COLORS["PASS"].text}`}
+                              >
+                                {STATUS_COLORS["PASS"].icon}
+                                <span>PASS</span>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3">
+                              <p className="max-w-md wrap-break-word text-xs text-(--text-color)">
+                                {testCase.executionRemarks || "—"}
+                              </p>
+                            </td>
+                            <td className="px-4 py-3">
+                              <AppButton
+                                onClick={() => handleEditTestCase(testCase)}
+                                disabled={savingId === testCase.id}
+                                variant="secondary"
+                                size="sm"
+                                className="py-1"
+                              >
+                                Edit
+                              </AppButton>
+                            </td>
+                          </tr>
+                        );
+                      })}
                   </tbody>
                 </table>
               </div>
@@ -1757,44 +2128,151 @@ export default function TestCaseExecutionPage() {
                       <th className="px-4 py-3 text-left font-semibold text-(--heading-color)">
                         Remarks
                       </th>
+                      <th className="px-4 py-3 text-left font-semibold text-(--heading-color)">
+                        Actions
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
                     {testCases
                       .filter((tc) => tc.executionStatus === "FAIL")
-                      .map((testCase, idx) => (
-                        <tr
-                          key={testCase.id}
-                          className={`border-b border-emerald-50 ${idx % 2 === 0 ? "bg-emerald-50/20" : ""} transition-colors hover:bg-emerald-50/50`}
-                        >
-                          <td className="px-4 py-3 font-mono text-(--text-color)">
-                            {testCase.testCaseId}
-                          </td>
-                          <td className="max-w-sm wrap-break-word whitespace-normal px-4 py-3 text-(--text-color)">
-                            {testCase.title}
-                          </td>
-                          <td className="px-4 py-3">
-                            <span
-                              className={`inline-block rounded px-2 py-1 text-xs font-semibold ${testCase.executionSeverity === "MAJOR" ? "bg-rose-100 text-rose-700" : testCase.executionSeverity === "HIGH" ? "bg-orange-100 text-orange-700" : testCase.executionSeverity === "MEDIUM" ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700"}`}
+                      .map((testCase, idx) => {
+                        const isEditing = editingTestCaseId === testCase.id;
+
+                        if (isEditing) {
+                          return (
+                            <tr
+                              key={testCase.id}
+                              className="border-b border-emerald-50 bg-emerald-50"
                             >
-                              {testCase.executionSeverity || "—"}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3">
-                            <div
-                              className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold ${STATUS_COLORS["FAIL"].bg} ${STATUS_COLORS["FAIL"].text}`}
-                            >
-                              {STATUS_COLORS["FAIL"].icon}
-                              <span>FAIL</span>
-                            </div>
-                          </td>
-                          <td className="px-4 py-3">
-                            <p className="max-w-md wrap-break-word text-xs text-(--text-color)">
-                              {testCase.executionRemarks || "—"}
-                            </p>
-                          </td>
-                        </tr>
-                      ))}
+                              <td className="px-4 py-3 font-mono text-(--text-color)">
+                                {testCase.testCaseId}
+                              </td>
+                              <td className="max-w-sm wrap-break-word whitespace-normal px-4 py-3">
+                                <input
+                                  type="text"
+                                  value={editingTestCaseData.title}
+                                  onChange={(e) =>
+                                    setEditingTestCaseData({
+                                      ...editingTestCaseData,
+                                      title: e.target.value,
+                                    })
+                                  }
+                                  placeholder="Test case title"
+                                  className="w-full rounded border border-emerald-300 bg-white px-2 py-1 text-sm text-(--text-color) focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                />
+                              </td>
+                              <td className="px-4 py-3">
+                                <span
+                                  className={`inline-block rounded px-2 py-1 text-xs font-semibold ${testCase.executionSeverity === "MAJOR" ? "bg-rose-100 text-rose-700" : testCase.executionSeverity === "HIGH" ? "bg-orange-100 text-orange-700" : testCase.executionSeverity === "MEDIUM" ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700"}`}
+                                >
+                                  {testCase.executionSeverity || "—"}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3">
+                                <select
+                                  value={editingTestCaseData.executionStatus}
+                                  onChange={(e) =>
+                                    setEditingTestCaseData({
+                                      ...editingTestCaseData,
+                                      executionStatus: e.target
+                                        .value as TestExecutionStatus,
+                                    })
+                                  }
+                                  className="w-full rounded border border-emerald-300 bg-white px-2 py-1 text-xs text-(--text-color) focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                >
+                                  <option value="NOT_RUN">PENDING</option>
+                                  <option value="PASS">PASS</option>
+                                  <option value="FAIL">FAIL</option>
+                                </select>
+                              </td>
+                              <td className="px-4 py-3">
+                                <input
+                                  type="text"
+                                  value={editingTestCaseData.executionRemarks}
+                                  onChange={(e) =>
+                                    setEditingTestCaseData({
+                                      ...editingTestCaseData,
+                                      executionRemarks: e.target.value,
+                                    })
+                                  }
+                                  placeholder="Add remarks..."
+                                  className="w-full rounded border border-emerald-300 bg-white px-2 py-1 text-xs text-(--text-color) focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                />
+                              </td>
+                              <td className="px-4 py-3">
+                                <div className="flex flex-wrap items-center justify-center gap-1">
+                                  <AppButton
+                                    onClick={handleSaveEditedTestCase}
+                                    disabled={savingTestCaseId === testCase.id}
+                                    variant="successSoft"
+                                    size="sm"
+                                    className="py-1"
+                                  >
+                                    {savingTestCaseId === testCase.id
+                                      ? "..."
+                                      : "Save"}
+                                  </AppButton>
+                                  <AppButton
+                                    onClick={handleCancelEditTestCase}
+                                    disabled={savingTestCaseId === testCase.id}
+                                    variant="secondary"
+                                    size="sm"
+                                    className="py-1"
+                                  >
+                                    Cancel
+                                  </AppButton>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        }
+
+                        return (
+                          <tr
+                            key={testCase.id}
+                            className={`border-b border-emerald-50 ${idx % 2 === 0 ? "bg-emerald-50/20" : ""} transition-colors hover:bg-emerald-50/50`}
+                          >
+                            <td className="px-4 py-3 font-mono text-(--text-color)">
+                              {testCase.testCaseId}
+                            </td>
+                            <td className="max-w-sm wrap-break-word whitespace-normal px-4 py-3 text-(--text-color)">
+                              {testCase.title}
+                            </td>
+                            <td className="px-4 py-3">
+                              <span
+                                className={`inline-block rounded px-2 py-1 text-xs font-semibold ${testCase.executionSeverity === "MAJOR" ? "bg-rose-100 text-rose-700" : testCase.executionSeverity === "HIGH" ? "bg-orange-100 text-orange-700" : testCase.executionSeverity === "MEDIUM" ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700"}`}
+                              >
+                                {testCase.executionSeverity || "—"}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3">
+                              <div
+                                className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold ${STATUS_COLORS["FAIL"].bg} ${STATUS_COLORS["FAIL"].text}`}
+                              >
+                                {STATUS_COLORS["FAIL"].icon}
+                                <span>FAIL</span>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3">
+                              <p className="max-w-md wrap-break-word text-xs text-(--text-color)">
+                                {testCase.executionRemarks || "—"}
+                              </p>
+                            </td>
+                            <td className="px-4 py-3">
+                              <AppButton
+                                onClick={() => handleEditTestCase(testCase)}
+                                disabled={savingId === testCase.id}
+                                variant="secondary"
+                                size="sm"
+                                className="py-1"
+                              >
+                                Edit
+                              </AppButton>
+                            </td>
+                          </tr>
+                        );
+                      })}
                   </tbody>
                 </table>
               </div>

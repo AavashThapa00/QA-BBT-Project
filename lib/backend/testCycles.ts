@@ -51,14 +51,19 @@ type DefectDoc = {
   testCaseId?: string | null;
   module: string;
   summary?: string | null;
+  descriptionSteps?: string | null;
   expectedResult?: string | null;
   actualResult?: string | null;
+  testType?: "smoke" | "cycle" | null;
+  testScenario?: string | null;
+  testSteps?: string | null;
   severity: string;
   priority: string;
   status: string;
   dateReported?: Date | null;
   dateFixed?: Date | null;
   qcStatusBbt?: string | null;
+  sourceFile?: string | null;
   createdAt?: Date;
 };
 
@@ -267,22 +272,40 @@ export async function createTestCycleNodeForApi(
         .sort({ moduleName: 1, sectionName: 1, testCaseId: 1 })
         .toArray();
 
-      const sourceScopes = await testCycles
-        .find(
-          {
-            kind: "folder",
-            parentId: sourceCycle.id,
-          },
-          {
-            projection: {
-              _id: 0,
-              name: 1,
-              description: 1,
-            },
-          },
-        )
-        .sort({ createdAt: 1 })
-        .toArray();
+      const siblingScopes =
+        siblingIds.length > 0
+          ? await testCycles
+              .find(
+                {
+                  kind: "folder",
+                  parentId: { $in: siblingIds },
+                },
+                {
+                  projection: {
+                    _id: 0,
+                    name: 1,
+                    description: 1,
+                    createdAt: 1,
+                  },
+                },
+              )
+              .sort({ createdAt: 1 })
+              .toArray()
+          : [];
+
+      const seenScopeNames = new Set<string>();
+      const dedupedScopes = siblingScopes
+        .map((scope) => ({
+          name: scope.name?.trim() || "",
+          description: scope.description ?? null,
+        }))
+        .filter((scope) => {
+          if (!scope.name) return false;
+          const key = scope.name.toLowerCase();
+          if (seenScopeNames.has(key)) return false;
+          seenScopeNames.add(key);
+          return true;
+        });
 
       const fallbackScopeNames = Array.from(
         new Set(
@@ -291,11 +314,8 @@ export async function createTestCycleNodeForApi(
       );
 
       const scopesToClone =
-        sourceScopes.length > 0
-          ? sourceScopes.map((scope) => ({
-              name: scope.name,
-              description: scope.description ?? null,
-            }))
+        dedupedScopes.length > 0
+          ? dedupedScopes
           : fallbackScopeNames.map((name) => ({
               name,
               description: null,
@@ -572,6 +592,68 @@ export async function createTestCaseForApi(payload: CreateTestCasePayload) {
   };
 }
 
+export interface UpdateTestCasePayload {
+  testCaseId: string;
+  title?: string;
+  steps?: string;
+  expectedResult?: string | null;
+  moduleName?: string | null;
+  sectionName?: string | null;
+}
+
+export async function updateTestCaseForApi(payload: UpdateTestCasePayload) {
+  try {
+    await ensureTestCaseCollections();
+    const testCases = await getTestCasesCollection();
+
+    const updateData: Record<string, string> = {};
+    if (payload.title !== undefined) updateData.title = payload.title.trim();
+    if (payload.steps !== undefined) updateData.steps = payload.steps.trim();
+    if (payload.expectedResult !== undefined)
+      updateData.expectedResult = (payload.expectedResult ?? "").trim();
+    if (payload.moduleName !== undefined)
+      updateData.moduleName = (payload.moduleName ?? "").trim();
+    if (payload.sectionName !== undefined)
+      updateData.sectionName = (payload.sectionName ?? "").trim();
+
+    const result = await testCases.updateOne(
+      { id: payload.testCaseId },
+      { $set: updateData },
+    );
+
+    if (result.matchedCount === 0) {
+      throw new Error("Test case not found");
+    }
+
+    const updated = await testCases.findOne(
+      { id: payload.testCaseId },
+      {
+        projection: {
+          _id: 0,
+          id: 1,
+          cycleId: 1,
+          testCaseId: 1,
+          moduleName: 1,
+          title: 1,
+          steps: 1,
+          sectionName: 1,
+          expectedResult: 1,
+          createdAt: 1,
+        },
+      },
+    );
+
+    if (!updated) {
+      throw new Error("Failed to retrieve updated test case");
+    }
+
+    return updated;
+  } catch (error) {
+    console.error("[Backend] Failed to update test case", error);
+    throw error;
+  }
+}
+
 export async function getTestExecutionsForCycleForApi(cycleId: string) {
   try {
     await ensureTestCaseCollections();
@@ -710,26 +792,77 @@ async function getTestCaseContext(testCaseRowId: string, cycleId: string) {
   const [testCase, cycle] = await Promise.all([
     testCases.findOne(
       { id: testCaseRowId, cycleId },
-      { projection: { _id: 0, testCaseId: 1, title: 1, expectedResult: 1 } },
+      {
+        projection: {
+          _id: 0,
+          testCaseId: 1,
+          moduleName: 1,
+          title: 1,
+          steps: 1,
+          sectionName: 1,
+          expectedResult: 1,
+        },
+      },
     ),
-    testCycles.findOne({ id: cycleId }, { projection: { _id: 0, name: 1 } }),
+    testCycles.findOne(
+      { id: cycleId },
+      { projection: { _id: 0, name: 1, parentId: 1 } },
+    ),
   ]);
 
   if (!testCase || !cycle) {
     throw new Error("Test case context not found for defect logging");
   }
 
+  const parentCycle = cycle.parentId
+    ? await testCycles.findOne(
+        { id: cycle.parentId },
+        { projection: { _id: 0, name: 1 } },
+      )
+    : null;
+
   return {
     businessTestCaseId: testCase.testCaseId,
+    moduleName: testCase.moduleName ?? null,
     title: testCase.title,
+    steps: testCase.steps,
+    sectionName: testCase.sectionName ?? null,
     expectedResult: testCase.expectedResult ?? null,
+    parentCycleName: parentCycle?.name ?? null,
     cycleName: cycle.name,
   };
 }
 
-function getExecutionModule(cycleName: string) {
+function getLegacyExecutionSheetType(cycleName: string) {
   return `Test Execution - ${cycleName}`;
 }
+
+function getSheetType(parentName: string | null, cycleName: string) {
+  const parentLabel = (parentName || "").trim();
+  const cycleLabel = cycleName.trim();
+  if (!parentLabel) return cycleLabel;
+  return `${parentLabel} - ${cycleLabel}`;
+}
+
+function getModuleName(parentName: string | null, scopeName: string | null) {
+  const parentLabel = (parentName || "").trim();
+  const scopeLabel = (scopeName || "").trim() || "General";
+  if (!parentLabel) return scopeLabel;
+  return `${parentLabel} - ${scopeLabel}`;
+}
+
+function escapeRegex(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+const OPEN_DEFECT_STATUSES = [
+  "PENDING",
+  "RE_OPENED",
+  "HOLD",
+  "OPEN",
+  "IN_PROGRESS",
+  "ON_HOLD",
+] as const;
 
 export async function closeResolvedTestCaseDefectsForApi(payload: {
   testCaseId: string;
@@ -743,18 +876,24 @@ export async function closeResolvedTestCaseDefectsForApi(payload: {
       payload.testCaseId,
       payload.cycleId,
     );
-    const moduleName = getExecutionModule(context.cycleName);
+    const sourceFile = getSheetType(context.parentCycleName, context.cycleName);
+    const legacySourceFile = getLegacyExecutionSheetType(context.cycleName);
+    const legacyModuleName = context.moduleName || context.cycleName;
     const today = new Date();
 
     await defects.updateMany(
       {
         testCaseId: context.businessTestCaseId,
-        module: moduleName,
-        status: { $in: ["OPEN", "IN_PROGRESS", "ON_HOLD"] },
+        status: { $in: [...OPEN_DEFECT_STATUSES] },
+        $or: [
+          { sourceFile },
+          { sourceFile: legacySourceFile },
+          { module: legacyModuleName },
+        ],
       },
       {
         $set: {
-          status: "CLOSED",
+          status: "FIXED",
           qcStatusBbt: "PASSED",
           dateFixed: today,
         },
@@ -779,14 +918,24 @@ export async function createTestCaseDefectForApi(
       payload.testCaseId,
       payload.cycleId,
     );
-    const moduleName = getExecutionModule(context.cycleName);
+    const sourceFile = getSheetType(context.parentCycleName, context.cycleName);
+    const legacySourceFile = getLegacyExecutionSheetType(context.cycleName);
+    const moduleName = getModuleName(
+      context.parentCycleName,
+      context.moduleName,
+    );
+    const legacyModuleName = context.moduleName || context.cycleName;
     const today = new Date();
 
     const existingOpenDefect = await defects.findOne(
       {
         testCaseId: context.businessTestCaseId,
-        module: moduleName,
-        status: { $in: ["OPEN", "IN_PROGRESS", "ON_HOLD"] },
+        status: { $in: [...OPEN_DEFECT_STATUSES] },
+        $or: [
+          { sourceFile },
+          { sourceFile: legacySourceFile },
+          { module: legacyModuleName },
+        ],
       },
       { sort: { createdAt: -1 }, projection: { _id: 0, id: 1 } },
     );
@@ -798,11 +947,19 @@ export async function createTestCaseDefectForApi(
           $set: {
             summary: payload.title,
             actualResult: payload.description,
+            expectedResult:
+              payload.expectedResult || context.expectedResult || "",
+            descriptionSteps: context.steps,
+            testType: "cycle",
+            testScenario: context.title,
+            testSteps: context.steps,
             severity: payload.severity,
             priority: payload.priority,
-            status: "OPEN",
+            status: "PENDING",
             qcStatusBbt: "FAILED",
             dateReported: today,
+            module: moduleName,
+            sourceFile,
           },
         },
       );
@@ -821,12 +978,17 @@ export async function createTestCaseDefectForApi(
       dateReported: today,
       module: moduleName,
       summary: payload.title,
+      descriptionSteps: context.steps,
       expectedResult: payload.expectedResult || context.expectedResult || "",
       actualResult: payload.description,
+      testType: "cycle",
+      testScenario: context.title,
+      testSteps: context.steps,
       severity: payload.severity,
       priority: payload.priority,
-      status: "OPEN",
-      qcStatusBbt: "PENDING",
+      status: "PENDING",
+      qcStatusBbt: "FAILED",
+      sourceFile,
       createdAt: new Date(),
     };
 
@@ -945,7 +1107,19 @@ export async function createTestCycleRunForApi(
       .toArray(),
     defects
       .find(
-        { module: getExecutionModule(cycle.name), testCaseId: { $ne: null } },
+        {
+          testCaseId: { $ne: null },
+          $or: [
+            { sourceFile: getLegacyExecutionSheetType(cycle.name) },
+            {
+              sourceFile: {
+                $regex: ` - ${escapeRegex(cycle.name)}$`,
+                $options: "i",
+              },
+            },
+            { module: getLegacyExecutionSheetType(cycle.name) },
+          ],
+        },
         {
           projection: {
             _id: 0,

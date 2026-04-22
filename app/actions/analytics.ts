@@ -53,6 +53,8 @@ const moduleExpr = {
   },
 };
 
+const CLOSED_DEFECT_STATUSES = ["FIXED", "AS_IT_IS", "CLOSED"];
+
 const getDefectsCollection = async () =>
   (await mongoCollections.defects()) as unknown as Collection<DefectDoc>;
 
@@ -63,7 +65,10 @@ export async function getDefectsByStatus(): Promise<StatusCount[]> {
       .aggregate<{
         _id: Status;
         count: number;
-      }>([{ $group: { _id: "$status", count: { $sum: 1 } } }, { $sort: { _id: 1 } }])
+      }>([
+        { $group: { _id: "$status", count: { $sum: 1 } } },
+        { $sort: { _id: 1 } },
+      ])
       .toArray();
 
     return result.map((row) => ({
@@ -86,7 +91,7 @@ export async function getAverageFixTimeByModule(): Promise<ModuleFixTime[]> {
         uncertain_count: number;
         avg_days: number | null;
       }>([
-        { $match: { status: { $in: ["FIXED", "AS_IT_IS"] } } },
+        { $match: { status: { $in: CLOSED_DEFECT_STATUSES } } },
         {
           $project: {
             main_module: moduleExpr,

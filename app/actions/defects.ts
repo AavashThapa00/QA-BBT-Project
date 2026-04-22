@@ -26,6 +26,21 @@ import { getCurrentUser } from "./auth";
 const getDefectsCollection = async () =>
   (await mongoCollections.defects()) as unknown as Collection<DefectDoc>;
 
+const OPEN_DEFECT_STATUSES = [
+  StatusEnum.PENDING,
+  StatusEnum.RE_OPENED,
+  StatusEnum.HOLD,
+  "OPEN",
+  "IN_PROGRESS",
+  "ON_HOLD",
+];
+
+const CLOSED_DEFECT_STATUSES = [
+  StatusEnum.FIXED,
+  StatusEnum.AS_IT_IS,
+  "CLOSED",
+];
+
 export async function getDefectMetrics(filters?: DefectFilters): Promise<{
   totalDefects: number;
   openDefects: number;
@@ -40,24 +55,10 @@ export async function getDefectMetrics(filters?: DefectFilters): Promise<{
       await Promise.all([
         defects.countDocuments(baseFilter),
         defects.countDocuments({
-          $and: [
-            baseFilter,
-            {
-              status: {
-                $in: [
-                  StatusEnum.PENDING,
-                  StatusEnum.RE_OPENED,
-                  StatusEnum.HOLD,
-                ],
-              },
-            },
-          ],
+          $and: [baseFilter, { status: { $in: OPEN_DEFECT_STATUSES } }],
         } as Filter<DefectDoc>),
         defects.countDocuments({
-          $and: [
-            baseFilter,
-            { status: { $in: [StatusEnum.FIXED, StatusEnum.AS_IT_IS] } },
-          ],
+          $and: [baseFilter, { status: { $in: CLOSED_DEFECT_STATUSES } }],
         } as Filter<DefectDoc>),
         defects.countDocuments({
           $and: [baseFilter, { severity: SeverityEnum.MAJOR }],
@@ -90,7 +91,11 @@ export async function getDefectsByModule(filters?: DefectFilters): Promise<
       .aggregate<{
         _id: string | null;
         count: number;
-      }>([{ $match: filter }, { $group: { _id: "$module", count: { $sum: 1 } } }, { $sort: { count: -1 } }])
+      }>([
+        { $match: filter },
+        { $group: { _id: "$module", count: { $sum: 1 } } },
+        { $sort: { count: -1 } },
+      ])
       .toArray();
 
     const moduleMap: Record<string, number> = {};
@@ -142,7 +147,11 @@ export async function getDefectsBySeverity(filters?: DefectFilters): Promise<
       .aggregate<{
         _id: Severity | null;
         count: number;
-      }>([{ $match: filter }, { $group: { _id: "$severity", count: { $sum: 1 } } }, { $sort: { count: -1 } }])
+      }>([
+        { $match: filter },
+        { $group: { _id: "$severity", count: { $sum: 1 } } },
+        { $sort: { count: -1 } },
+      ])
       .toArray();
     return result
       .filter((row) => !!row._id)
@@ -162,7 +171,9 @@ function normalizePriorityLabel(priority: string | null): string {
 }
 
 function normalizeStoredPriority(priority: string): string {
-  return normalizeEnumValue(priority, Object.values(SeverityEnum)) || priority.trim();
+  return (
+    normalizeEnumValue(priority, Object.values(SeverityEnum)) || priority.trim()
+  );
 }
 
 const PRIORITY_ORDER: Record<string, number> = {
@@ -508,7 +519,10 @@ export async function updateManualDefect(
   // Permission check: Only admin and super_admin can update status
   const user = await getCurrentUser();
   if (!user || (user.role !== "admin" && user.role !== "super_admin")) {
-    return { success: false, message: "Unauthorized: Only admins can update defects" };
+    return {
+      success: false,
+      message: "Unauthorized: Only admins can update defects",
+    };
   }
 
   const defects = await getDefectsCollection();
