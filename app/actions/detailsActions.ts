@@ -2,6 +2,7 @@
 
 import { backendJson } from "@/lib/backend/request";
 import { Defect } from "@/lib/types";
+import { getDefects } from "./defects";
 
 export async function getDefectById(id: string): Promise<Defect | null> {
   if (!id) return null;
@@ -17,10 +18,30 @@ export async function getDefectById(id: string): Promise<Defect | null> {
 
 export async function getAllDefectsSorted(): Promise<Defect[]> {
   try {
-    const response = await backendJson<{ items: Defect[] }>("/api/defects?page=1&pageSize=1000&sortBy=date&sortOrder=desc", {
-      method: "GET",
+    const firstPage = await getDefects(undefined, {
+      page: 1,
+      pageSize: 200,
+      sortBy: "date",
+      sortOrder: "desc",
     });
-    return response.items || [];
+
+    if (firstPage.totalPages <= 1) {
+      return firstPage.defects;
+    }
+
+    const defects = [...firstPage.defects];
+
+    for (let page = 2; page <= firstPage.totalPages; page++) {
+      const nextPage = await getDefects(undefined, {
+        page,
+        pageSize: 200,
+        sortBy: "date",
+        sortOrder: "desc",
+      });
+      defects.push(...nextPage.defects);
+    }
+
+    return defects;
   } catch {
     return [];
   }

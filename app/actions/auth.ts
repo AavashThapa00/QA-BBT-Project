@@ -73,7 +73,10 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
       method: "GET",
     });
     return normalizeUser(user);
-  } catch {
+  } catch (error) {
+    if (error instanceof Error && error.message === "Unauthorized") {
+      await clearSessionCookies();
+    }
     return null;
   }
 }

@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { logoutAction } from "@/app/actions/auth";
 
 const PUBLIC_ROUTES = ["/login", "/forgot-password", "/reset-password"];
 
@@ -29,6 +30,12 @@ export default function AuthSessionGuard() {
         if (!active) return;
 
         if (response.status === 401) {
+          try {
+            await logoutAction();
+          } catch {
+            // Ignore failures while clearing a stale session.
+          }
+
           router.replace("/login");
         }
       } catch {
