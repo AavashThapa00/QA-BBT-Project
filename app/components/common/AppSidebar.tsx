@@ -1,22 +1,22 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  HiHome,
-  HiChartBar,
-  HiViewList,
-  HiClipboardCheck,
-  HiUserCircle,
-  HiPlus,
-  HiLogout,
-  HiArrowRight,
-  HiMenu,
-  HiX,
-  HiShieldCheck,
-  HiAdjustments,
-} from "react-icons/hi";
+  LuBarChart3,
+  LuBug,
+  LuClipboardCheck,
+  LuFileSpreadsheet,
+  LuHome,
+  LuLogOut,
+  LuPanelLeftClose,
+  LuPanelLeftOpen,
+  LuPlay,
+  LuShieldCheck,
+  LuUserPlus,
+  LuUser,
+} from "react-icons/lu";
 import { toast } from "sonner";
 import { getCurrentUser, logoutAction } from "@/app/actions/auth";
 
@@ -27,18 +27,18 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { name: "Dashboard", href: "/", icon: HiHome },
-  { name: "Issue Sheet", href: "/issue-sheet", icon: HiViewList },
-  { name: "All Issues", href: "/all-defects", icon: HiAdjustments },
-  { name: "Test Execution", href: "/test-execution", icon: HiArrowRight },
-  { name: "Analytics", href: "/analytics", icon: HiChartBar },
-  { name: "QA Status", href: "/qc-dashboard", icon: HiClipboardCheck },
+  { name: "Dashboard", href: "/", icon: LuHome },
+  { name: "Issue Sheet", href: "/issue-sheet", icon: LuFileSpreadsheet },
+  { name: "All Issues", href: "/all-defects", icon: LuBug },
+  { name: "Test Execution", href: "/test-execution", icon: LuPlay },
+  { name: "Analytics", href: "/analytics", icon: LuBarChart3 },
+  { name: "QA Status", href: "/qc-dashboard", icon: LuClipboardCheck },
 ];
 
 function BrandLogo() {
   return (
-    <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-(--border-color) bg-(--surface-soft) text-(--heading-color)">
-      <HiShieldCheck className="h-5 w-5" aria-hidden="true" />
+    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-(--surface) text-(--heading-color)">
+      <LuShieldCheck className="h-5 w-5" aria-hidden="true" />
     </div>
   );
 }
@@ -46,14 +46,10 @@ function BrandLogo() {
 export default function AppSidebar() {
   const router = useRouter();
   const pathname = usePathname();
-  const menuRef = useRef<HTMLDivElement | null>(null);
   const [isAuthed, setIsAuthed] = useState(false);
-  const [isAuthResolved, setIsAuthResolved] = useState(false);
   const [authRole, setAuthRole] = useState<"super_admin" | "admin" | null>(
     null,
   );
-  const [userName, setUserName] = useState("");
-  const [menuOpen, setMenuOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
 
@@ -65,51 +61,17 @@ export default function AppSidebar() {
         if (!mounted) return;
         setIsAuthed(!!user);
         setAuthRole(user?.role ?? null);
-        setUserName(user?.name ?? "");
-        setIsAuthResolved(true);
       })
       .catch(() => {
         if (!mounted) return;
         setIsAuthed(false);
         setAuthRole(null);
-        setUserName("");
-        setIsAuthResolved(true);
       });
 
     return () => {
       mounted = false;
     };
   }, [pathname]);
-
-  useEffect(() => {
-    const handleClick = (event: MouseEvent | TouchEvent) => {
-      if (!menuRef.current) return;
-      if (!menuRef.current.contains(event.target as Node)) {
-        setMenuOpen(false);
-      }
-    };
-
-    if (menuOpen) {
-      document.addEventListener("mousedown", handleClick);
-      document.addEventListener("touchstart", handleClick);
-    }
-
-    return () => {
-      document.removeEventListener("mousedown", handleClick);
-      document.removeEventListener("touchstart", handleClick);
-    };
-  }, [menuOpen]);
-
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setMenuOpen(false);
-      }
-    };
-
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
-  }, []);
 
   if (
     pathname === "/login" ||
@@ -123,7 +85,6 @@ export default function AppSidebar() {
     if (isLoggingOut) return;
 
     setIsLoggingOut(true);
-    setMenuOpen(false);
 
     try {
       await toast.promise(logoutAction(), {
@@ -141,56 +102,69 @@ export default function AppSidebar() {
     }
   };
 
-  const userInitials = (userName || "User")
-    .split(" ")
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join("");
+  const isSettingsActive = pathname === "/profile";
+  const isAddAdminActive = pathname === "/super-admin";
 
   return (
     <aside
-      className={`sticky top-0 z-40 hidden h-screen border-r border-(--border-color) bg-(--surface) transition-all duration-300 lg:flex ${
-        isCollapsed ? "w-20" : "w-72"
+      className={`sticky top-2 hidden shrink-0 self-start overflow-hidden rounded-2xl bg-(--surface) py-3 shadow-card transition-[width,padding] duration-200 ease-out will-change-[width] lg:flex sm:top-3 lg:top-4 ${
+        isCollapsed ? "w-20 px-2" : "w-69 px-3"
       }`}
     >
-      <div className="flex h-full w-full flex-col overflow-hidden">
+      <div className="flex w-full flex-col">
         <div
-          className={`border-b border-(--border-color) ${
-            isCollapsed
-              ? "flex flex-col items-center gap-3 px-2 py-4"
-              : "flex items-center gap-3 px-4 py-4"
+          className={`rounded-2xl bg-(--surface-soft) py-3 ${
+            isCollapsed ? "px-2" : "px-3"
           }`}
         >
-          <Link href="/" className="flex items-center gap-3">
-            <BrandLogo />
-            {!isCollapsed && (
-              <div className="min-w-0">
-                <p className="text-xs uppercase tracking-[0.14em] text-(--muted-color)">
-                  IssueFixu
-                </p>
-                <p className="text-sm font-semibold text-(--heading-color)">
-                  Workspace
-                </p>
-              </div>
-            )}
-          </Link>
-          <button
-            type="button"
-            onClick={() => setIsCollapsed((prev) => !prev)}
-            className={`inline-flex items-center justify-center rounded-md border border-(--border-color) bg-(--surface-soft) text-(--text-color) transition-colors hover:bg-slate-100 ${
-              isCollapsed ? "h-10 w-10" : "ml-auto h-8 w-8 shrink-0"
+          <div
+            className={`flex items-center gap-2 ${
+              isCollapsed ? "justify-center" : "justify-between"
             }`}
-            aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
-            <span className="text-sm font-semibold">
-              {isCollapsed ? "›" : "‹"}
-            </span>
-          </button>
+            {!isCollapsed && (
+              <Link
+                href="/"
+                className="flex min-w-0 items-center gap-3"
+                title="Workspace"
+              >
+                <BrandLogo />
+                <div className="min-w-0 overflow-hidden">
+                  <div className="min-w-0">
+                    <p className="text-[11px] uppercase tracking-[0.16em] text-(--muted-color)">
+                      Workspace
+                    </p>
+                    <p className="truncate text-lg font-semibold text-(--heading-color)">
+                      IssueFixu
+                    </p>
+                  </div>
+                </div>
+              </Link>
+            )}
+
+            <button
+              type="button"
+              onClick={() => setIsCollapsed((prev) => !prev)}
+              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-(--muted-color) transition-colors hover:bg-(--surface) hover:text-(--heading-color)"
+              aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+              title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            >
+              {isCollapsed ? (
+                <LuPanelLeftOpen className="h-4.5 w-4.5" />
+              ) : (
+                <LuPanelLeftClose className="h-4.5 w-4.5" />
+              )}
+            </button>
+          </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-3">
-          <nav className="space-y-1.5">
+        <div className={`mt-4 ${isCollapsed ? "" : "pr-1"}`}>
+          {!isCollapsed && (
+            <p className="px-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-(--muted-color)">
+              Menu
+            </p>
+          )}
+          <nav className="mt-2 space-y-1.5">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = pathname === item.href;
@@ -199,149 +173,112 @@ export default function AppSidebar() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex items-center gap-3 rounded-xl border px-3 py-3 text-sm font-medium transition-colors ${
+                  title={item.name}
+                  className={`group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors duration-150 ${
                     isActive
-                      ? "border-slate-300 bg-slate-100 text-slate-900"
-                      : "border-transparent text-(--text-color) hover:border-(--border-color) hover:bg-slate-50"
-                  }`}
-                  title={isCollapsed ? item.name : undefined}
+                      ? "bg-(--surface-soft) text-(--heading-color)"
+                      : "text-(--text-color) hover:bg-(--surface-soft)"
+                  } ${isCollapsed ? "justify-center px-2" : ""}`}
                 >
-                  <Icon className="h-4 w-4 shrink-0" />
-                  {!isCollapsed && (
-                    <span className="truncate">{item.name}</span>
-                  )}
+                  <span
+                    className={`absolute left-0 top-1/2 h-7 w-1 -translate-y-1/2 rounded-r ${
+                      isActive
+                        ? "bg-(--primary-color)"
+                        : "bg-transparent group-hover:bg-(--primary-color)/40"
+                    }`}
+                  />
+                  <Icon className="h-4.5 w-4.5 shrink-0" />
+                  <span
+                    className={`truncate whitespace-nowrap transition-opacity duration-150 ${
+                      isCollapsed ? "w-0 opacity-0" : "w-auto opacity-100"
+                    }`}
+                    aria-hidden={isCollapsed}
+                  >
+                    {item.name}
+                  </span>
                 </Link>
               );
             })}
           </nav>
         </div>
 
-        <div className="border-t border-(--border-color) p-3">
-          {!isCollapsed && (
-            <div className="mb-3 rounded-xl border border-(--border-color) bg-(--surface-soft) p-3">
-              <p className="text-xs uppercase tracking-[0.12em] text-(--muted-color)">
-                Account
-              </p>
-              <p className="mt-1 truncate text-sm font-semibold text-(--heading-color)">
-                {isAuthResolved && isAuthed ? userName : "Guest"}
-              </p>
-            </div>
+        <div className="mt-4 h-px bg-(--border-color)/55" />
+
+        {!isCollapsed && (
+          <p className="mt-3 px-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-(--muted-color)">
+            General
+          </p>
+        )}
+
+        <div className="mt-1 shrink-0 space-y-1.5">
+          <Link
+            href="/profile"
+            title="Settings"
+            className={`flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
+              isSettingsActive
+                ? "bg-(--surface-soft) text-(--heading-color)"
+                : "text-(--text-color) hover:bg-(--surface-soft)"
+            } ${isCollapsed ? "justify-center px-2" : ""}`}
+            aria-label="Settings"
+          >
+            <LuUser className="h-4.5 w-4.5" />
+            <span
+              className={`truncate whitespace-nowrap transition-opacity duration-150 ${
+                isCollapsed ? "w-0 opacity-0" : "w-auto opacity-100"
+              }`}
+              aria-hidden={isCollapsed}
+            >
+              Settings
+            </span>
+          </Link>
+
+          {authRole === "super_admin" && (
+            <Link
+              href="/super-admin"
+              title="Add Admin"
+              className={`flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
+                isAddAdminActive
+                  ? "bg-(--surface-soft) text-(--heading-color)"
+                  : "text-(--text-color) hover:bg-(--surface-soft)"
+              } ${isCollapsed ? "justify-center px-2" : ""}`}
+              aria-label="Add Admin"
+            >
+              <LuUserPlus className="h-4.5 w-4.5" />
+              <span
+                className={`truncate whitespace-nowrap transition-opacity duration-150 ${
+                  isCollapsed ? "w-0 opacity-0" : "w-auto opacity-100"
+                }`}
+                aria-hidden={isCollapsed}
+              >
+                Add Admin
+              </span>
+            </Link>
           )}
 
-          {isAuthResolved ? (
-            isAuthed ? (
-              <div className="space-y-2" ref={menuRef}>
-                <button
-                  type="button"
-                  onClick={() => setMenuOpen((prev) => !prev)}
-                  className="flex w-full items-center justify-between gap-3 rounded-xl border border-(--border-color) px-3 py-3 text-left text-sm font-medium text-(--text-color) hover:bg-slate-50"
-                  aria-haspopup="menu"
-                  aria-expanded={menuOpen}
-                >
-                  <span className="flex items-center gap-3">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-200 text-xs font-semibold text-slate-700">
-                      {userInitials || "U"}
-                    </span>
-                    {!isCollapsed && <span className="truncate">Profile</span>}
-                  </span>
-                  {!isCollapsed && <HiMenu className="h-4 w-4" />}
-                </button>
-
-                {!isCollapsed && (
-                  <div
-                    role="menu"
-                    className={`overflow-hidden rounded-xl border border-(--border-color) bg-(--surface) shadow-lg transition-all duration-200 ease-out ${
-                      menuOpen
-                        ? "max-h-64 translate-y-0 opacity-100"
-                        : "pointer-events-none max-h-0 -translate-y-1 opacity-0"
-                    }`}
-                  >
-                    <Link
-                      href="/profile"
-                      className="flex items-center gap-2 px-4 py-3 text-sm text-(--text-color) hover:bg-slate-50"
-                      role="menuitem"
-                      onClick={() => setMenuOpen(false)}
-                    >
-                      <HiUserCircle className="h-4 w-4" />
-                      Profile
-                    </Link>
-                    {authRole === "super_admin" && (
-                      <Link
-                        href="/super-admin"
-                        className="flex items-center gap-2 px-4 py-3 text-sm text-(--text-color) hover:bg-slate-50"
-                        role="menuitem"
-                        onClick={() => setMenuOpen(false)}
-                      >
-                        <HiPlus className="h-4 w-4" />
-                        Add Admin
-                      </Link>
-                    )}
-                    <button
-                      type="button"
-                      onClick={handleLogout}
-                      disabled={isLoggingOut}
-                      className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm text-(--text-color) hover:bg-slate-50"
-                      role="menuitem"
-                    >
-                      <HiLogout className="h-4 w-4" />
-                      Logout
-                    </button>
-                  </div>
-                )}
-
-                {isCollapsed && (
-                  <div
-                    role="menu"
-                    className={`overflow-hidden rounded-xl border border-(--border-color) bg-(--surface) shadow-lg transition-all duration-200 ease-out ${
-                      menuOpen
-                        ? "max-h-64 translate-y-0 opacity-100"
-                        : "pointer-events-none max-h-0 -translate-y-1 opacity-0"
-                    }`}
-                  >
-                    <Link
-                      href="/profile"
-                      className="flex items-center gap-2 px-4 py-3 text-sm text-(--text-color) hover:bg-slate-50"
-                      role="menuitem"
-                      onClick={() => setMenuOpen(false)}
-                    >
-                      <HiUserCircle className="h-4 w-4" />
-                      Profile
-                    </Link>
-                    {authRole === "super_admin" && (
-                      <Link
-                        href="/super-admin"
-                        className="flex items-center gap-2 px-4 py-3 text-sm text-(--text-color) hover:bg-slate-50"
-                        role="menuitem"
-                        onClick={() => setMenuOpen(false)}
-                      >
-                        <HiPlus className="h-4 w-4" />
-                        Add Admin
-                      </Link>
-                    )}
-                    <button
-                      type="button"
-                      onClick={handleLogout}
-                      disabled={isLoggingOut}
-                      className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm text-(--text-color) hover:bg-slate-50"
-                      role="menuitem"
-                    >
-                      <HiLogout className="h-4 w-4" />
-                      Logout
-                    </button>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <Link
-                href="/login"
-                className="flex items-center gap-3 rounded-xl border border-(--border-color) px-3 py-3 text-sm font-medium text-(--text-color) hover:bg-slate-50"
+          {isAuthed && (
+            <>
+              <div className="my-1 h-px bg-(--border-color)/50" />
+              <button
+                type="button"
+                onClick={handleLogout}
+                disabled={isLoggingOut}
+                className={`flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-(--text-color) transition-colors hover:bg-rose-500/10 hover:text-rose-200 ${
+                  isCollapsed ? "justify-center px-2" : ""
+                }`}
+                title={isLoggingOut ? "Logging out..." : "Logout"}
+                aria-label="Logout"
               >
-                <HiUserCircle className="h-4 w-4" />
-                {!isCollapsed && <span>Login</span>}
-              </Link>
-            )
-          ) : (
-            <div className="h-12 rounded-xl border border-(--border-color) bg-(--surface-soft) animate-pulse" />
+                <LuLogOut className="h-4.5 w-4.5" />
+                <span
+                  className={`truncate whitespace-nowrap transition-opacity duration-150 ${
+                    isCollapsed ? "w-0 opacity-0" : "w-auto opacity-100"
+                  }`}
+                  aria-hidden={isCollapsed}
+                >
+                  {isLoggingOut ? "Logging out..." : "Logout"}
+                </span>
+              </button>
+            </>
           )}
         </div>
       </div>
