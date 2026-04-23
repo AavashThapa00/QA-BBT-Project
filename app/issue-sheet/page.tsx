@@ -96,6 +96,42 @@ const QC_STATUS_COLORS: Record<QCStatusBBT, string> = {
   FAILED: "bg-red-100 text-red-700 border-red-200",
 };
 
+const ROW_BACKGROUND_COLORS: Record<QCStatusBBT, string> = {
+  PASSED: "bg-emerald-50/80",
+  PENDING: "bg-amber-50/80",
+  REJECTED: "bg-orange-50/80",
+  FAILED: "bg-red-50/80",
+};
+
+const PRIORITY_COLORS_LOW_BG: Record<string, string> = {
+  LOW: "bg-emerald-100/40 text-emerald-700 border-emerald-200",
+  MEDIUM: "bg-amber-100/40 text-amber-700 border-amber-200",
+  HIGH: "bg-rose-50/40 text-rose-700 border-rose-200",
+  MAJOR: "bg-red-100/40 text-red-700 border-red-200",
+};
+
+const SEVERITY_COLORS_LOW_BG: Record<Severity, string> = {
+  LOW: "bg-emerald-100/40 text-emerald-700 border-emerald-200",
+  MEDIUM: "bg-amber-100/40 text-amber-700 border-amber-200",
+  HIGH: "bg-rose-50/40 text-rose-700 border-rose-200",
+  MAJOR: "bg-red-100/40 text-red-700 border-red-200",
+};
+
+const STATUS_COLORS_LOW_BG: Record<Status, string> = {
+  PENDING: "bg-amber-100/40 text-amber-700 border-amber-200",
+  FIXED: "bg-green-100/40 text-green-700 border-green-200",
+  HOLD: "bg-rose-100/40 text-rose-700 border-rose-200",
+  AS_IT_IS: "bg-slate-100/40 text-slate-700 border-slate-200",
+  RE_OPENED: "bg-orange-100/40 text-orange-700 border-orange-200",
+};
+
+const QC_STATUS_COLORS_LOW_BG: Record<QCStatusBBT, string> = {
+  PASSED: "bg-green-100/40 text-green-700 border-green-200",
+  PENDING: "bg-amber-100/40 text-amber-700 border-amber-200",
+  REJECTED: "bg-orange-100/40 text-orange-700 border-orange-200",
+  FAILED: "bg-red-100/40 text-red-700 border-red-200",
+};
+
 const STATUS_COLORS: Record<Status, string> = {
   PENDING: "bg-amber-100 text-amber-700 border-amber-200",
   FIXED: "bg-green-100 text-green-700 border-green-200",
@@ -139,6 +175,10 @@ function toQcStatusLabel(qcStatus: QCStatusBBT): string {
   if (qcStatus === "PENDING") return "Pending";
   if (qcStatus === "REJECTED") return "Rejected";
   return qcStatus;
+}
+
+function getRowBackgroundColor(qcStatus: QCStatusBBT): string {
+  return ROW_BACKGROUND_COLORS[qcStatus] || "bg-slate-50/30";
 }
 
 type DropdownOption<T extends string | number> = {
@@ -204,11 +244,14 @@ function QcStatusDropdown({
   value,
   onChange,
   className,
+  lowBg,
 }: {
   value: QCStatusBBT;
   onChange: (value: QCStatusBBT) => void;
   className?: string;
+  lowBg?: boolean;
 }) {
+  const colorMap = lowBg ? QC_STATUS_COLORS_LOW_BG : QC_STATUS_COLORS;
   return (
     <DropdownField
       value={value}
@@ -217,7 +260,7 @@ function QcStatusDropdown({
         value: qcStatus,
         label: toQcStatusLabel(qcStatus),
       }))}
-      buttonClassName={`${QC_STATUS_COLORS[value] || "border-(--border-color) bg-(--surface-soft) text-(--text-color)"} ${className || ""}`}
+      buttonClassName={`${colorMap[value] || "border-(--border-color) bg-(--surface-soft) text-(--text-color)"} ${className || ""}`}
     />
   );
 }
@@ -1305,6 +1348,9 @@ export default function IssueSheetPage() {
                       <h2 className="text-xl font-bold text-(--heading-color)">
                         Issue Sheet
                       </h2>
+                      <p className="text-xs text-(--muted-color) sm:text-sm">
+                        Background color of rows indicate QC status.
+                      </p>
                     </div>
 
                     <div className="flex flex-col gap-2 text-xs text-(--muted-color) sm:flex-row sm:items-center sm:gap-3">
@@ -1385,7 +1431,7 @@ export default function IssueSheetPage() {
                           Severity
                         </th>
                         <th className="w-34 px-4 py-3 text-xs font-semibold uppercase tracking-wider">
-                          Status
+                          Dev Status
                         </th>
                         <th className="w-34 px-4 py-3 text-xs font-semibold uppercase tracking-wider">
                           QC Status
@@ -1429,9 +1475,9 @@ export default function IssueSheetPage() {
                           return (
                             <tr
                               key={row.id}
-                              className={`group animate-in fade-in border-t border-(--border-color) transition-all duration-500 hover:bg-emerald-50 ${
+                              className={`group animate-in fade-in border-t border-(--border-color) transition-all duration-500 ${getRowBackgroundColor(row.qcStatusBbt)} ${
                                 rowDirty
-                                  ? "bg-amber-50/10 ring-1 ring-inset ring-amber-200/35"
+                                  ? "ring-1 ring-inset ring-amber-200/35"
                                   : ""
                               }`}
                               style={{ animationDelay: `${idx * 50}ms` }}
@@ -1502,7 +1548,7 @@ export default function IssueSheetPage() {
                                     value: priority,
                                     label: toPriorityLabel(priority),
                                   }))}
-                                  buttonClassName={`rounded-full px-3 py-1.5 text-xs font-semibold ${PRIORITY_COLORS[normalizePriorityValue(row.priority)] || "border-slate-200 bg-slate-100 text-slate-700"}`}
+                                  buttonClassName={`rounded-full px-3 py-1.5 text-xs font-semibold ${PRIORITY_COLORS_LOW_BG[normalizePriorityValue(row.priority)] || "border-slate-200 bg-slate-100/40 text-slate-700"}`}
                                 />
                               </td>
                               <td className="px-4 py-3 align-top">
@@ -1517,7 +1563,7 @@ export default function IssueSheetPage() {
                                       label: toPriorityLabel(severity),
                                     }),
                                   )}
-                                  buttonClassName={`rounded-full px-3 py-1.5 text-xs font-semibold ${SEVERITY_COLORS[row.severity] || "border-slate-200 bg-slate-100 text-slate-700"}`}
+                                  buttonClassName={`rounded-full px-3 py-1.5 text-xs font-semibold ${SEVERITY_COLORS_LOW_BG[row.severity] || "border-slate-200 bg-slate-100/40 text-slate-700"}`}
                                 />
                               </td>
                               <td className="px-4 py-3 align-top">
@@ -1532,7 +1578,7 @@ export default function IssueSheetPage() {
                                       label: STATUS_LABELS[status] || status,
                                     }),
                                   )}
-                                  buttonClassName={`rounded-full px-3 py-1.5 text-xs font-semibold ${STATUS_COLORS[row.status] || "border-slate-200 bg-slate-100 text-slate-700"}`}
+                                  buttonClassName={`rounded-full px-3 py-1.5 text-xs font-semibold ${STATUS_COLORS_LOW_BG[row.status] || "border-slate-200 bg-slate-100/40 text-slate-700"}`}
                                 />
                               </td>
                               <td className="px-4 py-3 align-top">
@@ -1545,7 +1591,8 @@ export default function IssueSheetPage() {
                                       qcStatusBbt,
                                     )
                                   }
-                                  className="w-full px-3 py-1.5 text-xs"
+                                  lowBg
+                                  className="w-full px-3 py-1.5 text-xs font-semibold rounded-full"
                                 />
                               </td>
                               <td className="w-55 min-w-55 px-4 py-3 align-top">
