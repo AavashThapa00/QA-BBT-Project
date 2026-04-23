@@ -24,6 +24,7 @@ export interface Defect {
     qcStatusBbt: QCStatusBBT;
     sourceFile?: string;
     createdAt: Date;
+    updatedAt: Date;
 }
 
 // Export enum values

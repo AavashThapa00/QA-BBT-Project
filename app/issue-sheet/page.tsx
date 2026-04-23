@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   Listbox,
@@ -17,13 +17,12 @@ import {
   HiChevronDown,
   HiPlus,
   HiCheck,
-  HiCheckCircle,
-  HiExclamationCircle,
   HiRefresh,
   HiTrash,
   HiEye,
   HiX,
 } from "react-icons/hi";
+import { toast } from "sonner";
 import AppButton from "@/app/components/common/AppButton";
 import CSVUpload from "@/app/components/uploads/CSVUpload";
 import {
@@ -61,6 +60,7 @@ interface EditableRow {
   issueTestDate: string;
   fixedDate: string;
   sheetType: string;
+  updatedAt: string;
 }
 
 type TestType = "smoke" | "cycle";
@@ -287,6 +287,7 @@ function mapDefectToRow(defect: Defect): EditableRow {
     issueTestDate: toInputDate(defect.dateReported),
     fixedDate: toInputDate(defect.dateFixed),
     sheetType: defect.sourceFile || "Smoke Testing Sheet",
+    updatedAt: defect.updatedAt ? new Date(defect.updatedAt).toISOString() : "",
   };
 }
 
@@ -312,6 +313,82 @@ export default function IssueSheetPage() {
   const [initialRowsById, setInitialRowsById] = useState<
     Record<string, EditableRow>
   >({});
+  const [serverRowsById, setServerRowsById] = useState<
+    Record<string, EditableRow>
+  >({});
+  const [conflictedRowsById, setConflictedRowsById] = useState<
+    Record<string, boolean>
+  >({});
+  const pendingEchoIdsRef = useRef<Map<string, number>>(new Map());
+
+  const queuePendingEcho = (id?: string) => {
+    if (id) {
+      pendingEchoIdsRef.current.set(id, Date.now());
+    }
+  };
+
+  const shouldIgnoreEcho = (id?: string) => {
+    if (!id) return false;
+
+    const startedAt = pendingEchoIdsRef.current.get(id);
+    if (!startedAt) return false;
+
+    if (Date.now() - startedAt <= 5000) {
+      return true;
+    }
+
+    pendingEchoIdsRef.current.delete(id);
+    return false;
+  };
+
+  const isEditableRowDirty = (
+    row: EditableRow,
+    baseline: EditableRow | undefined,
+  ) => {
+    if (!baseline) return false;
+
+    return (
+      row.issueTestDate !== baseline.issueTestDate ||
+      row.fixedDate !== baseline.fixedDate ||
+      row.priority !== baseline.priority ||
+      row.severity !== baseline.severity ||
+      row.status !== baseline.status ||
+      row.qcStatusBbt !== baseline.qcStatusBbt
+    );
+  };
+
+  const isRowDirty = (row: EditableRow) =>
+    isEditableRowDirty(row, initialRowsById[row.id]);
+
+  const clearConflict = (id: string) => {
+    setConflictedRowsById((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+  };
+
+  const applyServerRow = (serverRow: EditableRow) => {
+    setRows((prev) =>
+      prev.map((row) => (row.id === serverRow.id ? { ...serverRow } : row)),
+    );
+    setInitialRowsById((prev) => ({
+      ...prev,
+      [serverRow.id]: { ...serverRow },
+    }));
+    setServerRowsById((prev) => ({
+      ...prev,
+      [serverRow.id]: { ...serverRow },
+    }));
+    clearConflict(serverRow.id);
+  };
+
+  const refreshFromConflict = (defect: Defect) => {
+    applyServerRow(mapDefectToRow(defect));
+    toast.info(
+      "That row was updated in another tab, so we loaded the latest version and cleared your draft.",
+    );
+  };
 
   const totalRows = rows.length;
   const totalPages = Math.max(1, Math.ceil(totalRows / pageSize));
@@ -342,9 +419,13 @@ export default function IssueSheetPage() {
       const defects = await getManualDefects(250);
       const mappedRows = defects.map(mapDefectToRow);
       setRows(mappedRows);
+      setServerRowsById(
+        Object.fromEntries(mappedRows.map((row) => [row.id, row])),
+      );
       setInitialRowsById(
         Object.fromEntries(mappedRows.map((row) => [row.id, row])),
       );
+      setConflictedRowsById({});
     } catch {
       setError("Failed to load issue sheet");
     } finally {
@@ -363,30 +444,84 @@ export default function IssueSheetPage() {
     const socket = getRealtimeSocket();
     if (!socket) return;
 
-    const hasDirtyRows = () =>
-      rows.some((row) => {
-        const baseline = initialRowsById[row.id];
-        if (!baseline) return false;
-
-        return (
-          row.issueTestDate !== baseline.issueTestDate ||
-          row.fixedDate !== baseline.fixedDate ||
-          row.priority !== baseline.priority ||
-          row.severity !== baseline.severity ||
-          row.status !== baseline.status ||
-          row.qcStatusBbt !== baseline.qcStatusBbt
-        );
-      });
-
-    const handleDefectChanged = (_event: DefectChangeEvent) => {
-      if (hasDirtyRows()) {
-        setMessage(
-          "New updates are available. Save or discard local changes to sync.",
-        );
+    const handleDefectChanged = (event: DefectChangeEvent) => {
+      if (shouldIgnoreEcho(event.defectId)) {
         return;
       }
 
-      void loadRows({ silent: true });
+      void (async () => {
+        try {
+          const defects = await getManualDefects(250);
+          const latestRows = defects.map(mapDefectToRow);
+          const latestById = Object.fromEntries(
+            latestRows.map((row) => [row.id, row]),
+          );
+
+          const nextRowsById = new Map<string, EditableRow>();
+          const nextInitialRowsById = { ...initialRowsById };
+          const nextServerRowsById = { ...latestById };
+          const nextConflicts = new Set<string>();
+
+          const currentRowsById = new Map(rows.map((row) => [row.id, row]));
+          let conflictCount = 0;
+
+          for (const latestRow of latestRows) {
+            const currentRow = currentRowsById.get(latestRow.id);
+            const baseline = initialRowsById[latestRow.id];
+
+            if (!currentRow) {
+              nextRowsById.set(latestRow.id, latestRow);
+              nextInitialRowsById[latestRow.id] = latestRow;
+              continue;
+            }
+
+            const currentDirty = isEditableRowDirty(currentRow, baseline);
+            const remoteChanged = isEditableRowDirty(latestRow, baseline);
+
+            if (!currentDirty) {
+              nextRowsById.set(latestRow.id, latestRow);
+              nextInitialRowsById[latestRow.id] = latestRow;
+            } else if (!remoteChanged) {
+              nextRowsById.set(currentRow.id, currentRow);
+            } else {
+              nextRowsById.set(currentRow.id, currentRow);
+              nextConflicts.add(currentRow.id);
+              conflictCount += 1;
+            }
+          }
+
+          for (const currentRow of rows) {
+            if (latestById[currentRow.id]) continue;
+
+            const baseline = initialRowsById[currentRow.id];
+            if (isEditableRowDirty(currentRow, baseline)) {
+              nextRowsById.set(currentRow.id, currentRow);
+              nextConflicts.add(currentRow.id);
+              conflictCount += 1;
+            }
+          }
+
+          const mergedRows = Array.from(nextRowsById.values());
+          setRows(mergedRows);
+          setInitialRowsById(nextInitialRowsById);
+          setServerRowsById(nextServerRowsById);
+          setConflictedRowsById(
+            Object.fromEntries(
+              Array.from(nextConflicts).map((id) => [id, true]),
+            ),
+          );
+
+          if (conflictCount > 0) {
+            toast.info(
+              conflictCount === 1
+                ? "That row was updated in another tab, so we loaded the latest version and cleared your draft."
+                : `${conflictCount} rows were updated in another tab, so we loaded the latest versions and cleared your drafts.`,
+            );
+          }
+        } catch {
+          // Keep the current sheet view if the background sync fails.
+        }
+      })();
     };
 
     socket.on(DEFECTS_CHANGED_EVENT, handleDefectChanged);
@@ -397,14 +532,18 @@ export default function IssueSheetPage() {
   }, [initialRowsById, loadRows, rows]);
 
   useEffect(() => {
-    if (message || error) {
-      const timer = setTimeout(() => {
-        setMessage(null);
-        setError(null);
-      }, 5000);
-      return () => clearTimeout(timer);
+    if (message) {
+      toast.success(message);
+      setMessage(null);
     }
-  }, [message, error]);
+  }, [message]);
+
+  useEffect(() => {
+    if (error) {
+      toast.error(error);
+      setError(null);
+    }
+  }, [error]);
 
   useEffect(() => {
     setCurrentPage((prev) => Math.min(prev, totalPages));
@@ -416,32 +555,23 @@ export default function IssueSheetPage() {
     );
   };
 
-  const isRowDirty = (row: EditableRow) => {
-    const baseline = initialRowsById[row.id];
-    if (!baseline) return false;
-
-    return (
-      row.issueTestDate !== baseline.issueTestDate ||
-      row.fixedDate !== baseline.fixedDate ||
-      row.priority !== baseline.priority ||
-      row.severity !== baseline.severity ||
-      row.status !== baseline.status ||
-      row.qcStatusBbt !== baseline.qcStatusBbt
-    );
-  };
-
   const onResetRow = (id: string) => {
+    const serverRow = serverRowsById[id];
     const baseline = initialRowsById[id];
-    if (!baseline) return;
+    const resetRow = serverRow || baseline;
+    if (!resetRow) return;
 
     setRows((prev) =>
-      prev.map((row) => (row.id === id ? { ...baseline } : row)),
+      prev.map((row) => (row.id === id ? { ...resetRow } : row)),
     );
+    setInitialRowsById((prev) => ({ ...prev, [id]: { ...resetRow } }));
+    clearConflict(id);
   };
 
   const onSaveRow = async (row: EditableRow) => {
     if (!isRowDirty(row)) return;
 
+    queuePendingEcho(row.id);
     setSavingId(row.id);
     setMessage(null);
     setError(null);
@@ -453,9 +583,21 @@ export default function IssueSheetPage() {
       severity: row.severity,
       status: row.status,
       qcStatusBbt: row.qcStatusBbt,
+      updatedAt: initialRowsById[row.id]?.updatedAt,
     });
 
     if (!result.success) {
+      const conflictDetails = result as {
+        conflict?: boolean;
+        details?: { defect?: Defect };
+      };
+
+      if (conflictDetails.conflict && conflictDetails.details?.defect) {
+        refreshFromConflict(conflictDetails.details.defect);
+        setSavingId(null);
+        return;
+      }
+
       setError(result.message);
       setSavingId(null);
       return;
@@ -475,8 +617,12 @@ export default function IssueSheetPage() {
     setError(null);
 
     let successCount = 0;
+    const savedIds: string[] = [];
+    let refreshedCount = 0;
 
     for (const row of dirtyRows) {
+      queuePendingEcho(row.id);
+
       const result = await updateManualDefect(row.id, {
         issueTestDate: row.issueTestDate,
         fixedDate: row.fixedDate || null,
@@ -484,20 +630,49 @@ export default function IssueSheetPage() {
         severity: row.severity,
         status: row.status,
         qcStatusBbt: row.qcStatusBbt,
+        updatedAt: initialRowsById[row.id]?.updatedAt,
       });
 
       if (result.success) {
         successCount += 1;
+        savedIds.push(row.id);
         setInitialRowsById((prev) => ({ ...prev, [row.id]: { ...row } }));
+      } else {
+        const conflictDetails = result as {
+          conflict?: boolean;
+          details?: { defect?: Defect };
+        };
+
+        if (conflictDetails.conflict && conflictDetails.details?.defect) {
+          refreshFromConflict(conflictDetails.details.defect);
+          refreshedCount += 1;
+          continue;
+        }
       }
     }
 
     if (successCount === dirtyRows.length) {
-      setMessage(`Saved ${successCount} row${successCount === 1 ? "" : "s"}`);
-    } else {
-      setError(
-        `Saved ${successCount}/${dirtyRows.length} rows. Please retry remaining changes.`,
+      setMessage(
+        successCount === 1
+          ? "Issue updated successfully"
+          : `Saved ${successCount} rows successfully`,
       );
+    } else {
+      if (successCount > 0) {
+        toast.success(
+          successCount === 1
+            ? "1 row saved successfully."
+            : `${successCount} rows saved successfully.`,
+        );
+      }
+
+      if (refreshedCount > 0) {
+        toast.info(
+          refreshedCount === 1
+            ? "That row was updated in another tab, so we loaded the latest version and cleared your draft."
+            : `${refreshedCount} rows were updated in other tabs, so we loaded the latest versions and cleared your drafts.`,
+        );
+      }
     }
 
     setIsBulkSaving(false);
@@ -527,6 +702,7 @@ export default function IssueSheetPage() {
     setMessage(result.message);
     setNewIssue(DEFAULT_NEW_ISSUE);
     setIsCreateModalOpen(false);
+    queuePendingEcho(result.id);
     await loadRows();
     setCreating(false);
   };
@@ -578,6 +754,7 @@ export default function IssueSheetPage() {
       return next;
     });
     setMessage(result.message);
+    queuePendingEcho(id);
     setDeletingId(null);
   };
 
@@ -1114,26 +1291,6 @@ export default function IssueSheetPage() {
                 </Dialog>
               </Transition>
 
-              {/* Messages */}
-              {message && (
-                <div
-                  className={`flex items-center gap-3 rounded-lg border border-emerald-200 bg-emerald-50 p-4 animate-in fade-in slide-in-from-top duration-300 transition-all`}
-                >
-                  <HiCheckCircle className="h-5 w-5 shrink-0 text-emerald-600" />
-                  <p className="text-sm font-medium text-emerald-700">
-                    {message}
-                  </p>
-                </div>
-              )}
-              {error && (
-                <div
-                  className={`flex items-center gap-3 rounded-lg border border-rose-200 bg-rose-50 p-4 animate-in fade-in slide-in-from-top duration-300 transition-all`}
-                >
-                  <HiExclamationCircle className="h-5 w-5 shrink-0 text-rose-600" />
-                  <p className="text-sm font-medium text-rose-700">{error}</p>
-                </div>
-              )}
-
               {/* Issue Sheet Table */}
               <div
                 className={`overflow-hidden rounded-2xl border border-(--border-color) bg-(--surface) shadow-card transition-all duration-1000 transform ${
@@ -1148,12 +1305,6 @@ export default function IssueSheetPage() {
                       <h2 className="text-xl font-bold text-(--heading-color)">
                         Issue Sheet
                       </h2>
-                      <p className="mt-1.5 flex items-center gap-2 text-xs text-(--muted-color)">
-                        <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 font-semibold text-emerald-700">
-                          {rows.length}
-                        </span>
-                        Use Open to view details and Remove to delete issues.
-                      </p>
                     </div>
 
                     <div className="flex flex-col gap-2 text-xs text-(--muted-color) sm:flex-row sm:items-center sm:gap-3">
@@ -1295,6 +1446,11 @@ export default function IssueSheetPage() {
                                   <span className="whitespace-nowrap">
                                     {row.testCaseId || "-"}
                                   </span>
+                                  {conflictedRowsById[row.id] && (
+                                    <span className="rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-[11px] font-semibold text-rose-700">
+                                      Conflict
+                                    </span>
+                                  )}
                                   {rowDirty && (
                                     <span className="text-[11px] font-semibold text-amber-700">
                                       Unsaved
@@ -1403,7 +1559,8 @@ export default function IssueSheetPage() {
                                             savingId === row.id ||
                                             isBulkSaving ||
                                             deletingId === row.id ||
-                                            openingId === row.id
+                                            openingId === row.id ||
+                                            conflictedRowsById[row.id] === true
                                           }
                                           title="Save changes"
                                           aria-label="Save changes"

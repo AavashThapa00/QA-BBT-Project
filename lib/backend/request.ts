@@ -52,11 +52,18 @@ export async function backendJson<T>(path: string, init: RequestInit = {}) {
   if (!response.ok || !payload) {
     const message =
       payload && !payload.success ? payload.error.message : `Request failed with status ${response.status}`;
-    throw new Error(message);
+    const error = new Error(message) as Error & { details?: unknown; status?: number };
+    if (payload && !payload.success) {
+      error.details = payload.error.details;
+    }
+    error.status = response.status;
+    throw error;
   }
 
   if (!payload.success) {
-    throw new Error(payload.error.message);
+    const error = new Error(payload.error.message) as Error & { details?: unknown };
+    error.details = payload.error.details;
+    throw error;
   }
 
   return payload.data;

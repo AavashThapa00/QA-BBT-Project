@@ -60,6 +60,7 @@ interface ManualDefectUpdateInput {
   severity?: Severity;
   status?: Status;
   qcStatusBbt?: QCStatusBBT;
+  updatedAt?: string;
 }
 
 function buildQuery(filters?: DefectFilters, pagination?: PaginationParams) {
@@ -304,7 +305,10 @@ export async function createManualDefect(
 export async function updateManualDefect(
   id: string,
   updates: ManualDefectUpdateInput,
-): Promise<{ success: boolean; message: string }> {
+): Promise<
+  | { success: true; message: string }
+  | { success: false; message: string; conflict?: boolean; details?: { defect?: Defect } }
+> {
   if (!id) {
     return { success: false, message: "Defect ID is required" };
   }
@@ -335,6 +339,10 @@ export async function updateManualDefect(
     setData.qcStatusBbt = updates.qcStatusBbt;
   }
 
+  if (updates.updatedAt !== undefined) {
+    setData.updatedAt = updates.updatedAt;
+  }
+
   if (Object.keys(setData).length === 0) {
     return { success: false, message: "No fields to update" };
   }
@@ -347,6 +355,17 @@ export async function updateManualDefect(
     });
     return { success: true, message: "Issue updated successfully" };
   } catch (error) {
+    const conflictDetails = error as Error & { details?: unknown };
+    if (conflictDetails.message === "This issue was updated in another tab.") {
+      const defect = conflictDetails.details as { defect?: Defect } | undefined;
+      return {
+        success: false,
+        message: "This issue was updated in another tab.",
+        conflict: true,
+        details: defect,
+      };
+    }
+
     return {
       success: false,
       message: error instanceof Error ? error.message : "Failed to update issue",
