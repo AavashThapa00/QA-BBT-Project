@@ -103,7 +103,7 @@ export default function QCDashboardPage() {
 
   return (
     <div className="min-h-screen">
-      <div className="relative mx-auto w-full max-w-screen-2xl space-y-6">
+      <div className="relative mx-auto w-full max-w-screen-2xl space-y-6 px-4 py-6 sm:px-6">
         <div className="flex items-center justify-between animate-in fade-in duration-500">
           <div>
             <Link

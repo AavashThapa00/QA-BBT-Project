@@ -245,7 +245,7 @@ export default function AllDefectsPage() {
   return (
     <div className="min-h-screen">
       {/* Header - Constrained Width */}
-      <div className="w-full sticky top-0 z-10 border-b border-(--border-color) bg-(--surface) px-4 py-4 shadow-sm sm:px-6 lg:px-8">
+      <div className="w-full sticky top-0 z-10 border-b border-(--border-color) bg-(--surface) px-4 py-4 shadow-sm sm:px-6">
         <div className="mx-auto w-full max-w-screen-2xl">
           <div className="flex items-center justify-between gap-4">
             <div>
@@ -266,7 +266,7 @@ export default function AllDefectsPage() {
       </div>
 
       {/* Main Content - Constrained Width */}
-      <div className="w-full px-4 py-6 sm:px-6 lg:px-8">
+      <div className="w-full px-4 py-6 sm:px-6">
         <div className="mx-auto w-full max-w-screen-2xl">
           {/* Module Navigation */}
           <div className="mb-6 flex gap-2 overflow-x-auto pb-2">

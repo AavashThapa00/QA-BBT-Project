@@ -85,7 +85,7 @@ export function PageSkeleton({ variant = "dashboard" }: PageSkeletonProps) {
   if (variant === "detail") {
     return (
       <div className="min-h-screen">
-        <div className="mx-auto w-full max-w-screen-2xl animate-pulse space-y-6">
+        <div className="mx-auto w-full max-w-screen-2xl animate-pulse space-y-6 px-4 py-6 sm:px-6">
           <div className="h-4 w-40 rounded bg-(--surface-soft)" />
           <div className="rounded-2xl border border-(--border-color) bg-(--surface) p-6 shadow-sm">
             <div className="h-4 w-28 rounded bg-(--surface-soft)" />
@@ -112,7 +112,7 @@ export function PageSkeleton({ variant = "dashboard" }: PageSkeletonProps) {
   if (variant === "form") {
     return (
       <div className="min-h-screen">
-        <div className="mx-auto w-full max-w-screen-2xl animate-pulse space-y-6">
+        <div className="mx-auto w-full max-w-screen-2xl animate-pulse space-y-6 px-4 py-6 sm:px-6">
           <div className="h-4 w-40 rounded bg-(--surface-soft)" />
           <div className="rounded-2xl border border-(--border-color) bg-(--surface) p-6 shadow-sm">
             <div className="h-4 w-48 rounded bg-(--surface-soft)" />
@@ -146,7 +146,7 @@ export function PageSkeleton({ variant = "dashboard" }: PageSkeletonProps) {
   if (variant === "table") {
     return (
       <div className="min-h-screen">
-        <div className="mx-auto w-full max-w-screen-2xl animate-pulse space-y-6">
+        <div className="mx-auto w-full max-w-screen-2xl animate-pulse space-y-6 px-4 py-6 sm:px-6">
           <div className="h-4 w-40 rounded bg-(--surface-soft)" />
           <div className="rounded-2xl border border-(--border-color) bg-(--surface) p-6 shadow-sm">
             <div className="h-4 w-44 rounded bg-(--surface-soft)" />
@@ -176,7 +176,7 @@ export function PageSkeleton({ variant = "dashboard" }: PageSkeletonProps) {
 
   return (
     <div className="min-h-screen">
-      <div className="mx-auto w-full max-w-screen-2xl animate-pulse space-y-6">
+      <div className="mx-auto w-full max-w-screen-2xl animate-pulse space-y-6 px-4 py-6 sm:px-6">
         <div className="flex items-center justify-between">
           <div>
             <div className="h-4 w-36 rounded bg-(--surface-soft)" />
