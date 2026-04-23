@@ -1,8 +1,21 @@
 "use client";
 
-import React, { useState, useCallback, useEffect, useMemo } from "react";
+import React, {
+  Fragment,
+  useState,
+  useCallback,
+  useEffect,
+  useMemo,
+} from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
+import {
+  Dialog,
+  DialogPanel,
+  DialogTitle,
+  Transition,
+  TransitionChild,
+} from "@headlessui/react";
 import ExportDefectsPanel from "@/app/components/exports/ExportDefectsPanel";
 import {
   HiDownload,
@@ -10,8 +23,7 @@ import {
   HiChartBar,
   HiExclamationCircle,
   HiFilter,
-  HiChevronDown,
-  HiChevronUp,
+  HiX,
 } from "react-icons/hi";
 import MetricsCard from "@/app/components/dashboard/MetricsCard";
 import FilterPanel from "@/app/components/filters/FilterPanel";
@@ -228,6 +240,7 @@ export default function Home() {
   };
 
   const handleExportCSV = () => {
+    setIsFilterPanelOpen(false);
     setIsExportPanelOpen(true);
   };
 
@@ -292,49 +305,145 @@ export default function Home() {
     // Reset quick metric drill-down whenever sidebar filters change.
     setMetricQuickFilter(null);
     setFilters(newFilters);
+    setIsFilterPanelOpen(false);
   };
 
   const activeFilterChips = useMemo(() => {
-    const chips: string[] = [];
+    const chips: Array<{ id: string; label: string; onRemove: () => void }> =
+      [];
 
     if (metricQuickFilter?.label) {
-      chips.push(`Metric: ${metricQuickFilter.label}`);
+      chips.push({
+        id: "metric",
+        label: `Metric: ${metricQuickFilter.label}`,
+        onRemove: () => {
+          setMetricQuickFilter(null);
+          fetchTableData(
+            1,
+            state.sortBy || "date",
+            state.sortOrder || "desc",
+            filters,
+          );
+        },
+      });
     }
 
-    if (tableFilters.searchTerm?.trim()) {
-      chips.push(`Search: ${tableFilters.searchTerm.trim()}`);
+    if (filters.searchTerm?.trim()) {
+      chips.push({
+        id: "search",
+        label: `Search: ${filters.searchTerm.trim()}`,
+        onRemove: () => {
+          setFilters((prev) => {
+            const next = { ...prev };
+            delete next.searchTerm;
+            return next;
+          });
+        },
+      });
     }
 
-    if (tableFilters.dateFrom) {
-      chips.push(
-        `From: ${new Date(tableFilters.dateFrom).toLocaleDateString()}`,
-      );
+    if (filters.dateFrom) {
+      chips.push({
+        id: "dateFrom",
+        label: `From: ${new Date(filters.dateFrom).toLocaleDateString()}`,
+        onRemove: () => {
+          setFilters((prev) => {
+            const next = { ...prev };
+            delete next.dateFrom;
+            return next;
+          });
+        },
+      });
     }
 
-    if (tableFilters.dateTo) {
-      chips.push(`To: ${new Date(tableFilters.dateTo).toLocaleDateString()}`);
+    if (filters.dateTo) {
+      chips.push({
+        id: "dateTo",
+        label: `To: ${new Date(filters.dateTo).toLocaleDateString()}`,
+        onRemove: () => {
+          setFilters((prev) => {
+            const next = { ...prev };
+            delete next.dateTo;
+            return next;
+          });
+        },
+      });
     }
 
-    if (tableFilters.priority?.length) {
-      chips.push(`Priority: ${tableFilters.priority.join(", ")}`);
+    if (filters.priority?.length) {
+      filters.priority.forEach((priority) => {
+        chips.push({
+          id: `priority:${priority}`,
+          label: `Priority: ${priority}`,
+          onRemove: () => {
+            setFilters((prev) => {
+              const current = prev.priority || [];
+              const nextPriority = current.filter((item) => item !== priority);
+              const next = { ...prev };
+              if (nextPriority.length) {
+                next.priority = nextPriority;
+              } else {
+                delete next.priority;
+              }
+              return next;
+            });
+          },
+        });
+      });
     }
 
-    if (tableFilters.status?.length) {
-      chips.push(`Status: ${tableFilters.status.join(", ")}`);
+    if (filters.status?.length) {
+      filters.status.forEach((status) => {
+        chips.push({
+          id: `status:${status}`,
+          label: `Status: ${status}`,
+          onRemove: () => {
+            setFilters((prev) => {
+              const current = prev.status || [];
+              const nextStatus = current.filter((item) => item !== status);
+              const next = { ...prev };
+              if (nextStatus.length) {
+                next.status = nextStatus;
+              } else {
+                delete next.status;
+              }
+              return next;
+            });
+          },
+        });
+      });
     }
 
-    if (tableFilters.module?.length) {
-      const moduleLabel =
-        tableFilters.module.length > 3
-          ? `${tableFilters.module.slice(0, 3).join(", ")} +${
-              tableFilters.module.length - 3
-            } more`
-          : tableFilters.module.join(", ");
-      chips.push(`Modules: ${moduleLabel}`);
+    if (filters.module?.length) {
+      filters.module.forEach((moduleName) => {
+        chips.push({
+          id: `module:${moduleName}`,
+          label: `Module: ${moduleName}`,
+          onRemove: () => {
+            setFilters((prev) => {
+              const current = prev.module || [];
+              const nextModules = current.filter((item) => item !== moduleName);
+              const next = { ...prev };
+              if (nextModules.length) {
+                next.module = nextModules;
+              } else {
+                delete next.module;
+              }
+              return next;
+            });
+          },
+        });
+      });
     }
 
     return chips;
-  }, [tableFilters, metricQuickFilter]);
+  }, [
+    fetchTableData,
+    filters,
+    metricQuickFilter,
+    state.sortBy,
+    state.sortOrder,
+  ]);
 
   const hasActiveTableFilters = activeFilterChips.length > 0;
 
@@ -346,6 +455,72 @@ export default function Home() {
         onClose={() => setIsExportPanelOpen(false)}
         currentFilters={filters}
       />
+
+      {/* Filters Dialog */}
+      <Transition appear show={isFilterPanelOpen} as={Fragment}>
+        <Dialog
+          as="div"
+          className="relative z-60"
+          onClose={setIsFilterPanelOpen}
+        >
+          <TransitionChild
+            as={Fragment}
+            enter="ease-out duration-200"
+            enterFrom="opacity-0"
+            enterTo="opacity-100"
+            leave="ease-in duration-150"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
+          >
+            <div className="fixed inset-0 bg-slate-950/45 backdrop-blur-sm" />
+          </TransitionChild>
+
+          <div className="fixed inset-0 overflow-y-auto p-4 sm:p-6">
+            <div className="flex min-h-full items-center justify-center">
+              <TransitionChild
+                as={Fragment}
+                enter="ease-out duration-200"
+                enterFrom="opacity-0 translate-y-4 scale-95"
+                enterTo="opacity-100 translate-y-0 scale-100"
+                leave="ease-in duration-150"
+                leaveFrom="opacity-100 translate-y-0 scale-100"
+                leaveTo="opacity-0 translate-y-4 scale-95"
+              >
+                <DialogPanel className="w-full max-w-3xl overflow-visible rounded-2xl border border-(--border-color) bg-(--surface) shadow-panel">
+                  <div className="flex items-start justify-between gap-3 border-b border-(--border-color) bg-(--surface-soft) px-3 py-3 sm:px-4">
+                    <div>
+                      <DialogTitle className="text-base font-semibold text-(--heading-color) sm:text-lg">
+                        Refine Dashboard Filters
+                      </DialogTitle>
+                      <p className="mt-1 text-xs text-(--muted-color) sm:text-sm">
+                        Adjust date range, module, status, and priority.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setIsFilterPanelOpen(false)}
+                      className="rounded-lg border border-(--border-color) bg-(--surface) p-2 text-(--muted-color) transition-colors hover:border-(--primary-color) hover:text-(--heading-color)"
+                      aria-label="Close filters"
+                    >
+                      <HiX className="h-4.5 w-4.5" />
+                    </button>
+                  </div>
+
+                  <div className="p-3 sm:p-4">
+                    <FilterPanel
+                      onFiltersChange={handleFiltersChange}
+                      availableModules={state.availableModules}
+                      isLoading={state.isLoading || !moduleSeverityLoaded}
+                      showSearch={false}
+                      compact
+                    />
+                  </div>
+                </DialogPanel>
+              </TransitionChild>
+            </div>
+          </div>
+        </Dialog>
+      </Transition>
 
       {/* Main Content */}
       <div
@@ -367,16 +542,11 @@ export default function Home() {
               </div>
               <div className="flex gap-2">
                 <button
-                  onClick={() => setIsFilterPanelOpen((prev) => !prev)}
+                  onClick={() => setIsFilterPanelOpen(true)}
                   className="inline-flex items-center gap-1 rounded-md border border-(--border-color) bg-(--surface) px-3 py-2 text-sm font-medium text-(--heading-color) transition-colors hover:border-(--primary-color) hover:bg-slate-50"
                 >
                   <HiFilter className="h-4 w-4" />
-                  <span>Filters</span>
-                  {isFilterPanelOpen ? (
-                    <HiChevronUp className="h-4 w-4" />
-                  ) : (
-                    <HiChevronDown className="h-4 w-4" />
-                  )}
+                  <span>Open Filters</span>
                 </button>
                 <button
                   onClick={() => router.push("/all-defects")}
@@ -394,21 +564,29 @@ export default function Home() {
             </div>
           </div>
 
-          <div
-            className={`overflow-hidden rounded-xl border border-(--border-color) bg-(--surface) shadow-sm transition-all duration-200 ${
-              isFilterPanelOpen
-                ? "max-h-[1200px] p-4 opacity-100"
-                : "max-h-0 border-transparent p-0 opacity-0"
-            }`}
-          >
-            {isFilterPanelOpen ? (
-              <FilterPanel
-                onFiltersChange={handleFiltersChange}
-                availableModules={state.availableModules}
-                isLoading={state.isLoading || !moduleSeverityLoaded}
-              />
-            ) : null}
-          </div>
+          {hasActiveTableFilters ? (
+            <div className="rounded-xl border border-(--primary-color) bg-slate-50 px-4 py-3 shadow-sm ring-1 ring-blue-100">
+              <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-(--muted-color)">
+                <HiFilter className="h-3.5 w-3.5" />
+                Applied Filters ({activeFilterChips.length})
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {activeFilterChips.map((chip) => (
+                  <button
+                    key={chip.id}
+                    type="button"
+                    onClick={chip.onRemove}
+                    className="inline-flex items-center gap-1 rounded-full border border-(--border-color) bg-white px-2.5 py-1 text-xs font-medium text-(--text-color) transition-colors hover:border-(--primary-color)"
+                    title={`Remove ${chip.label}`}
+                    aria-label={`Remove ${chip.label}`}
+                  >
+                    <span>{chip.label}</span>
+                    <HiX className="h-3.5 w-3.5 text-(--muted-color)" />
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : null}
 
           {state.isLoading ? (
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -552,28 +730,11 @@ export default function Home() {
                 </button>
               </div>
 
-              {hasActiveTableFilters ? (
-                <div className="rounded-lg border border-(--border-color) bg-slate-50 px-3 py-2.5">
-                  <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-(--muted-color)">
-                    <HiFilter className="h-3.5 w-3.5" />
-                    Active Filters ({activeFilterChips.length})
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {activeFilterChips.map((chip) => (
-                      <span
-                        key={chip}
-                        className="rounded-full border border-(--border-color) bg-white px-2.5 py-1 text-xs font-medium text-(--text-color)"
-                      >
-                        {chip}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <div className="rounded-xl border border-(--border-color) bg-slate-50 px-3 py-2 text-xs text-(--muted-color)">
-                  No active filters. You are viewing the full issues list.
-                </div>
-              )}
+              <div className="rounded-xl border border-(--border-color) bg-slate-50 px-3 py-2 text-xs text-(--muted-color)">
+                {hasActiveTableFilters
+                  ? "Use Applied Filters above to remove filters quickly."
+                  : "No active filters. You are viewing the full issues list."}
+              </div>
             </div>
             {state.isLoading ? (
               <SkeletonTable />

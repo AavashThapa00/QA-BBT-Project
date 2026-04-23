@@ -21,6 +21,8 @@ interface FilterPanelProps {
   onFiltersChange: (filters: DefectFilters) => void;
   availableModules?: string[];
   isLoading?: boolean;
+  showSearch?: boolean;
+  compact?: boolean;
 }
 
 interface MultiSelectDropdownProps {
@@ -68,7 +70,11 @@ function MultiSelectDropdown({
             <HiChevronDown className="h-4 w-4 text-(--muted-color)" />
           </ListboxButton>
 
-          <ListboxOptions className="absolute z-30 mt-1 max-h-56 w-full overflow-auto rounded-md border border-(--border-color) bg-(--surface) p-1 shadow-md focus:outline-none">
+          <ListboxOptions
+            anchor={{ to: "bottom start", gap: 6, padding: 12 }}
+            style={{ width: "var(--button-width)" }}
+            className="z-30 max-h-56 overflow-auto rounded-md border border-(--border-color) bg-(--surface) p-1 shadow-md focus:outline-none"
+          >
             {options.map((option) => (
               <ListboxOption
                 key={option.value}
@@ -125,6 +131,8 @@ export default function FilterPanel({
   onFiltersChange,
   availableModules = [],
   isLoading = false,
+  showSearch = true,
+  compact = false,
 }: FilterPanelProps) {
   const [searchInput, setSearchInput] = useState<string>("");
   const [dateFrom, setDateFrom] = useState<string>("");
@@ -153,7 +161,7 @@ export default function FilterPanel({
     label: module,
   }));
 
-  const hasSearch = searchInput.trim().length >= 3;
+  const hasSearch = showSearch && searchInput.trim().length >= 3;
   const hasAnyFilter =
     hasSearch ||
     Boolean(dateFrom) ||
@@ -248,7 +256,13 @@ export default function FilterPanel({
   };
 
   return (
-    <div className="rounded-xl border border-(--border-color) bg-(--surface) p-4 shadow-sm">
+    <div
+      className={
+        compact
+          ? "rounded-xl"
+          : "rounded-xl border border-(--border-color) bg-(--surface) p-4 shadow-sm"
+      }
+    >
       <div className="mb-4 flex items-start justify-between gap-4">
         <div>
           <h3 className="flex items-center gap-2 text-base font-semibold text-(--heading-color)">
@@ -259,44 +273,46 @@ export default function FilterPanel({
       </div>
 
       {/* Search Bar */}
-      <div className="mb-4">
-        <div className="relative flex flex-col gap-2">
-          <div className="relative flex-1">
-            <HiSearch className="absolute left-2 top-3.25 w-4 h-4 text-(--muted-color) pointer-events-none" />
-            <input
-              type="text"
-              placeholder="Search by issue or module"
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              onKeyDown={handleSearchKeyPress}
+      {showSearch ? (
+        <div className="mb-4">
+          <div className="relative flex flex-col gap-2">
+            <div className="relative flex-1">
+              <HiSearch className="absolute left-2 top-3.25 w-4 h-4 text-(--muted-color) pointer-events-none" />
+              <input
+                type="text"
+                placeholder="Search by issue or module"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                onKeyDown={handleSearchKeyPress}
+                disabled={isLoading}
+                className="w-full pl-8 placeholder:text-sm pr-2 py-2.5 border border-(--border-color) rounded-md text-sm text-(--text-color) bg-(--surface-soft) placeholder-(--muted-color) focus:outline-none focus:ring-2 focus:ring-(--primary-color) focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed hover:border-(--primary-color) transition-colors"
+              />
+              {searchInput && searchInput.length >= 3 && (
+                <button
+                  onClick={handleClearSearch}
+                  className="absolute right-2 top-3.5 text-(--muted-color) hover:text-(--heading-color) transition-colors"
+                  title="Clear search"
+                >
+                  <HiX className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+            <button
+              onClick={applyFilters}
               disabled={isLoading}
-              className="w-full pl-8 placeholder:text-sm pr-2 py-2.5 border border-(--border-color) rounded-md text-sm text-(--text-color) bg-(--surface-soft) placeholder-(--muted-color) focus:outline-none focus:ring-2 focus:ring-(--primary-color) focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed hover:border-(--primary-color) transition-colors"
-            />
-            {searchInput && searchInput.length >= 3 && (
-              <button
-                onClick={handleClearSearch}
-                className="absolute right-2 top-3.5 text-(--muted-color) hover:text-(--heading-color) transition-colors"
-                title="Clear search"
-              >
-                <HiX className="w-4 h-4" />
-              </button>
-            )}
+              className="bg-(--primary-color) hover:bg-(--primary-hover-color) text-white font-medium rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2 whitespace-nowrap justify-center px-4 py-2 text-sm"
+            >
+              <HiSearch className="w-4 h-4" />
+              <span>Search</span>
+            </button>
           </div>
-          <button
-            onClick={applyFilters}
-            disabled={isLoading}
-            className="bg-(--primary-color) hover:bg-(--primary-hover-color) text-white font-medium rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2 whitespace-nowrap justify-center px-4 py-2 text-sm"
-          >
-            <HiSearch className="w-4 h-4" />
-            <span>Search</span>
-          </button>
+          {searchInput.trim().length > 0 && searchInput.trim().length < 3 && (
+            <p className="mt-2 text-xs text-amber-700">
+              Enter at least 3 characters to apply search.
+            </p>
+          )}
         </div>
-        {searchInput.trim().length > 0 && searchInput.trim().length < 3 && (
-          <p className="mt-2 text-xs text-amber-700">
-            Enter at least 3 characters to apply search.
-          </p>
-        )}
-      </div>
+      ) : null}
 
       <div className="grid grid-cols-1 gap-4">
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -375,7 +391,9 @@ export default function FilterPanel({
           onClick={applyFilters}
           disabled={
             isLoading ||
-            (searchInput.trim().length > 0 && searchInput.trim().length < 3)
+            (showSearch &&
+              searchInput.trim().length > 0 &&
+              searchInput.trim().length < 3)
           }
           className="bg-(--primary-color) hover:bg-(--primary-hover-color) text-white font-medium rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex-1 px-4 py-2 text-sm"
         >
