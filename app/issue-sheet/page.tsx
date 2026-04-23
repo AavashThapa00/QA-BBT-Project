@@ -544,7 +544,7 @@ export default function IssueSheetPage() {
   ];
 
   return (
-    <div className="min-h-screen w-full overflow-x-hidden bg-(--page-background)">
+    <div className="min-h-screen w-full overflow-x-hidden">
       <div className="flex min-h-screen w-full">
         <aside aria-hidden="true" className="hidden">
           <div className="sticky top-0 h-screen">

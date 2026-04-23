@@ -106,7 +106,7 @@ export default function ProfilePage() {
   const profileCompleteness = user.phone ? 100 : 75;
 
   return (
-    <div className="min-h-screen bg-(--page-background)">
+    <div className="min-h-screen">
       <div className="mx-auto w-full max-w-screen-2xl px-4 py-6 sm:px-6 lg:py-10">
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <Link

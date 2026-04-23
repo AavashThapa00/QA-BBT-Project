@@ -88,7 +88,7 @@ function ResetPasswordContent() {
   }, [router, state?.success]);
 
   return (
-    <div className="min-h-screen bg-(--page-background) px-6 py-10">
+    <div className="min-h-screen px-6 py-10">
       <div className="mx-auto flex min-h-[calc(100vh-5rem)] w-full max-w-md items-center justify-center">
         <div className="w-full overflow-hidden rounded-4xl border border-(--border-color) bg-(--surface-elevated) shadow-dialog">
           <div className="h-1 bg-(--primary-color)" />

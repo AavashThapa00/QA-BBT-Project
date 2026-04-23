@@ -28,7 +28,7 @@ export default function AppShellFrame({
 
         <div className="flex min-w-0 flex-1 flex-col">
           <AppShellHeader />
-          <main className="mt-2 flex-1 rounded-2xl bg-(--surface-soft)/65 p-3 shadow-card sm:mt-3 sm:p-4 lg:p-5">
+          <main className="mt-2 flex-1 rounded-2xl bg-(--surface-soft)/65 mx-3 shadow-card sm:mt-3 sm:mx-4">
             {children}
           </main>
         </div>

@@ -283,7 +283,7 @@ export default function AnalyticsPage() {
   const isStatusDataEmpty = pieChartData.length === 0;
 
   return (
-    <div className="min-h-screen bg-(--page-background) p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen">
       <div className="relative mx-auto w-full max-w-screen-2xl space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between animate-in fade-in duration-500">

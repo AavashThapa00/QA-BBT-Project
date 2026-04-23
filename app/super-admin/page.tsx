@@ -114,7 +114,7 @@ export default function SuperAdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-(--page-background)">
+    <div className="min-h-screen">
       {/* Header - Constrained Width */}
       <div className="w-full px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 pb-8 animate-in fade-in duration-500">
         <div className="mx-auto w-full max-w-screen-2xl">

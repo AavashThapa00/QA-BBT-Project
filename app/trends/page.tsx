@@ -89,7 +89,7 @@ export default function TrendsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-(--page-background) p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen">
       <div className="mx-auto w-full max-w-screen-2xl space-y-6">
         <div className="flex items-center justify-between animate-in fade-in duration-500">
           <div>

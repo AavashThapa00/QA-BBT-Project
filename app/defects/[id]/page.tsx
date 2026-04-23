@@ -113,7 +113,7 @@ export default function DefectDetailPage() {
 
   if (error || !defect) {
     return (
-      <div className="min-h-screen bg-(--page-background)">
+      <div className="min-h-screen">
         <div className="w-full px-4 py-8 sm:px-6 lg:px-10 xl:px-12">
           <AppButton
             onClick={() => router.back()}
@@ -135,7 +135,7 @@ export default function DefectDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-(--page-background)">
+    <div className="min-h-screen">
       {/* Header */}
       <div className="sticky top-0 z-40 border-b border-(--border-color) bg-(--surface) shadow-sm">
         <div className="w-full px-4 py-6 sm:px-6 lg:px-10 xl:px-12">

@@ -243,7 +243,7 @@ export default function AllDefectsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-(--page-background)">
+    <div className="min-h-screen">
       {/* Header - Constrained Width */}
       <div className="w-full sticky top-0 z-10 border-b border-(--border-color) bg-(--surface) px-4 py-4 shadow-sm sm:px-6 lg:px-8">
         <div className="mx-auto w-full max-w-screen-2xl">

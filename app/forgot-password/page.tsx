@@ -76,7 +76,7 @@ export default function ForgotPasswordPage() {
   }, [state]);
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-(--page-background)">
+    <div className="relative min-h-screen overflow-hidden">
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(148,163,184,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,0.08)_1px,transparent_1px)] bg-size-[44px_44px] opacity-30" />
       <div className="pointer-events-none absolute -left-28 top-0 h-136 w-136 rounded-full bg-(--primary-color)/20 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-28 right-0 h-136 w-136 rounded-full bg-(--accent-color)/18 blur-3xl" />

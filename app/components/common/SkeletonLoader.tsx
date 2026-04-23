@@ -63,7 +63,7 @@ type PageSkeletonProps = {
 export function PageSkeleton({ variant = "dashboard" }: PageSkeletonProps) {
   if (variant === "auth") {
     return (
-      <div className="min-h-screen bg-(--page-background) px-6 py-10">
+      <div className="min-h-screen px-6 py-10">
         <div className="mx-auto flex min-h-[calc(100vh-5rem)] w-full max-w-md items-center justify-center">
           <div className="w-full animate-pulse overflow-hidden rounded-4xl border border-(--border-color) bg-(--surface-elevated) shadow-dialog">
             <div className="h-1 bg-(--surface-soft)" />
@@ -84,7 +84,7 @@ export function PageSkeleton({ variant = "dashboard" }: PageSkeletonProps) {
 
   if (variant === "detail") {
     return (
-      <div className="min-h-screen bg-(--page-background) p-4 sm:p-6 lg:p-8">
+      <div className="min-h-screen">
         <div className="mx-auto w-full max-w-screen-2xl animate-pulse space-y-6">
           <div className="h-4 w-40 rounded bg-(--surface-soft)" />
           <div className="rounded-2xl border border-(--border-color) bg-(--surface) p-6 shadow-sm">
@@ -111,7 +111,7 @@ export function PageSkeleton({ variant = "dashboard" }: PageSkeletonProps) {
 
   if (variant === "form") {
     return (
-      <div className="min-h-screen bg-(--page-background) p-4 sm:p-6 lg:p-8">
+      <div className="min-h-screen">
         <div className="mx-auto w-full max-w-screen-2xl animate-pulse space-y-6">
           <div className="h-4 w-40 rounded bg-(--surface-soft)" />
           <div className="rounded-2xl border border-(--border-color) bg-(--surface) p-6 shadow-sm">
@@ -145,7 +145,7 @@ export function PageSkeleton({ variant = "dashboard" }: PageSkeletonProps) {
 
   if (variant === "table") {
     return (
-      <div className="min-h-screen bg-(--page-background) p-4 sm:p-6 lg:p-8">
+      <div className="min-h-screen">
         <div className="mx-auto w-full max-w-screen-2xl animate-pulse space-y-6">
           <div className="h-4 w-40 rounded bg-(--surface-soft)" />
           <div className="rounded-2xl border border-(--border-color) bg-(--surface) p-6 shadow-sm">
@@ -175,7 +175,7 @@ export function PageSkeleton({ variant = "dashboard" }: PageSkeletonProps) {
   }
 
   return (
-    <div className="min-h-screen bg-(--page-background) p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen">
       <div className="mx-auto w-full max-w-screen-2xl animate-pulse space-y-6">
         <div className="flex items-center justify-between">
           <div>

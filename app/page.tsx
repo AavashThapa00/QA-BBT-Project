@@ -339,7 +339,7 @@ export default function Home() {
   const hasActiveTableFilters = activeFilterChips.length > 0;
 
   return (
-    <div className="min-h-screen bg-(--page-background)">
+    <div className="min-h-screen">
       {/* Export Panel Modal */}
       <ExportDefectsPanel
         isOpen={isExportPanelOpen}
