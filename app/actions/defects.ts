@@ -77,6 +77,7 @@ function buildQuery(filters?: DefectFilters, pagination?: PaginationParams) {
     if (filters.dateTo instanceof Date) query.set("dateTo", filters.dateTo.toISOString());
     if (filters.searchTerm) query.set("search", filters.searchTerm);
     if (filters.severity?.length) query.set("severity", filters.severity.join(","));
+    if (filters.priority?.length) query.set("priority", filters.priority.join(","));
     if (filters.status?.length) query.set("status", filters.status.join(","));
     if (filters.module?.length) query.set("module", filters.module.join(","));
   }

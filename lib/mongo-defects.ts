@@ -71,7 +71,7 @@ export function buildDefectMongoFilter(
   if (filters?.module?.length) {
     andClauses.push({
       $or: filters.module.map((m) => ({
-        module: { $regex: `^${escapeRegex(m)}`, $options: "i" },
+        module: { $regex: escapeRegex(m), $options: "i" },
       })),
     } as Filter<DefectDoc>);
   }
