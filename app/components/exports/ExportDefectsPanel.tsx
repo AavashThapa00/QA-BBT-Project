@@ -124,7 +124,7 @@ export default function ExportDefectsPanel({
       const allDefects = await exportAllDefects(exportFilters);
 
       if (allDefects.length === 0) {
-        setError("No defects found matching the selected criteria.");
+        setError("No issues found matching the selected criteria.");
         setIsLoading(false);
         return;
       }
@@ -138,7 +138,7 @@ export default function ExportDefectsPanel({
       onClose();
     } catch (err) {
       const message =
-        err instanceof Error ? err.message : "Failed to export defects";
+        err instanceof Error ? err.message : "Failed to export issues";
       setError(message);
     } finally {
       setIsLoading(false);
@@ -183,7 +183,7 @@ export default function ExportDefectsPanel({
                     </div>
                     <div>
                       <DialogTitle className="text-lg font-bold text-(--heading-color)">
-                        Export Defects
+                        Export Issues
                       </DialogTitle>
                       <p className="text-xs text-(--muted-color)">
                         Download a clean Excel file with project and date
@@ -304,7 +304,7 @@ export default function ExportDefectsPanel({
                     ) : (
                       <>
                         <HiDownload className="h-4 w-4" />
-                        <span>Export Defects</span>
+                        <span>Export Issues</span>
                       </>
                     )}
                   </button>

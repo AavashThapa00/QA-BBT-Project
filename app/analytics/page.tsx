@@ -316,10 +316,10 @@ export default function AnalyticsPage() {
                 <path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z" />
                 <path d="M12 2.252A8.014 8.014 0 0117.748 8H12V2.252z" />
               </svg>
-              Defect Status Distribution
+              Issue Status Distribution
             </h2>
             <p className="mt-1 text-xs text-(--muted-color)">
-              Overview of all defects by current status
+              Overview of all issues by current status
             </p>
           </div>
           <div className="h-100">
@@ -484,10 +484,10 @@ export default function AnalyticsPage() {
           <div className="mb-6">
             <h2 className="flex items-center gap-2 text-lg font-semibold text-(--heading-color)">
               <HiTrendingUp className="h-5 w-5 text-(--primary-color)" />
-              Monthly Defect Trends
+              Monthly Issue Trends
             </h2>
             <p className="mt-1 text-xs text-(--muted-color)">
-              Reported vs Fixed defects by month
+              Reported vs fixed issues by month
             </p>
           </div>
           <div className="h-87.5">

@@ -698,7 +698,7 @@ export default function IssueSheetPage() {
                                 Upload CSV
                               </DialogTitle>
                               <p className="mt-1 text-xs text-(--muted-color) sm:text-sm">
-                                Upload issue sheets from CSV. Imported defects
+                                Upload issue sheets from CSV. Imported issues
                                 will appear in the table.
                               </p>
                             </div>

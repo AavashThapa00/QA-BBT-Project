@@ -250,14 +250,14 @@ export default function AllDefectsPage() {
           <div className="flex items-center justify-between gap-4">
             <div>
               <p className="text-xs uppercase tracking-[0.14em] text-(--muted-color)">
-                All Defects
+                All Issues
               </p>
               <h1 className="text-xl font-semibold text-(--heading-color)">
                 Issue Explorer
               </h1>
             </div>
             <p className="text-sm text-(--muted-color)">
-              {filteredDefects.length} defect
+              {filteredDefects.length} issue
               {filteredDefects.length !== 1 ? "s" : ""}
               {selectedModule !== "ALL" && ` in ${selectedModule}`}
             </p>
@@ -396,7 +396,7 @@ export default function AllDefectsPage() {
             <PageSkeleton variant="table" />
           ) : filteredDefects.length === 0 ? (
             <div className="text-center py-20">
-              <p className="text-(--muted-color)">No defects found</p>
+              <p className="text-(--muted-color)">No issues found</p>
             </div>
           ) : (
             <div className="space-y-4">

@@ -104,7 +104,7 @@ export default function TrendsPage() {
               Trends & Insights
             </h1>
             <p className="mt-1 text-sm text-(--muted-color)">
-              Defect patterns and trends over time
+              Issue patterns and trends over time
             </p>
           </div>
         </div>
@@ -114,10 +114,10 @@ export default function TrendsPage() {
           <div className="mb-6">
             <h2 className="flex items-center gap-2 text-lg font-semibold text-(--heading-color)">
               <HiTrendingUp className="h-5 w-5 text-(--primary-color)" />
-              Monthly Defect Trends
+              Monthly Issue Trends
             </h2>
             <p className="mt-1 text-xs text-(--muted-color)">
-              Reported vs Fixed defects by month
+              Reported vs fixed issues by month
             </p>
           </div>
           <div className="h-87.5">
