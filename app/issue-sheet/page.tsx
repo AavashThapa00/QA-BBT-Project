@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Listbox,
@@ -34,6 +34,11 @@ import {
   updateManualDefect,
 } from "@/app/actions/defects";
 import { getDefectById } from "@/app/actions/detailsActions";
+import {
+  DEFECTS_CHANGED_EVENT,
+  DefectChangeEvent,
+  getRealtimeSocket,
+} from "@/lib/realtime/socket";
 import {
   Defect,
   Severity,
@@ -328,8 +333,10 @@ export default function IssueSheetPage() {
     return pages;
   };
 
-  const loadRows = async () => {
-    setLoading(true);
+  const loadRows = useCallback(async (options?: { silent?: boolean }) => {
+    if (!options?.silent) {
+      setLoading(true);
+    }
     setError(null);
     try {
       const defects = await getManualDefects(250);
@@ -341,14 +348,53 @@ export default function IssueSheetPage() {
     } catch {
       setError("Failed to load issue sheet");
     } finally {
-      setLoading(false);
+      if (!options?.silent) {
+        setLoading(false);
+      }
     }
-  };
+  }, []);
 
   useEffect(() => {
     setPageLoaded(true);
-    loadRows();
-  }, []);
+    void loadRows();
+  }, [loadRows]);
+
+  useEffect(() => {
+    const socket = getRealtimeSocket();
+    if (!socket) return;
+
+    const hasDirtyRows = () =>
+      rows.some((row) => {
+        const baseline = initialRowsById[row.id];
+        if (!baseline) return false;
+
+        return (
+          row.issueTestDate !== baseline.issueTestDate ||
+          row.fixedDate !== baseline.fixedDate ||
+          row.priority !== baseline.priority ||
+          row.severity !== baseline.severity ||
+          row.status !== baseline.status ||
+          row.qcStatusBbt !== baseline.qcStatusBbt
+        );
+      });
+
+    const handleDefectChanged = (_event: DefectChangeEvent) => {
+      if (hasDirtyRows()) {
+        setMessage(
+          "New updates are available. Save or discard local changes to sync.",
+        );
+        return;
+      }
+
+      void loadRows({ silent: true });
+    };
+
+    socket.on(DEFECTS_CHANGED_EVENT, handleDefectChanged);
+
+    return () => {
+      socket.off(DEFECTS_CHANGED_EVENT, handleDefectChanged);
+    };
+  }, [initialRowsById, loadRows, rows]);
 
   useEffect(() => {
     if (message || error) {

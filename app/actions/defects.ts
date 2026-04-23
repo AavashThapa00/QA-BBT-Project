@@ -33,7 +33,7 @@ interface TrendRow {
 
 const MAX_BACKEND_PAGE_SIZE = 200;
 
-interface ManualDefectInput {
+export interface ManualDefectInput {
   testCaseId?: string;
   module: string;
   descriptionSteps?: string;
