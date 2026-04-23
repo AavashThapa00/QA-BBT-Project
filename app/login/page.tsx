@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { toast } from "sonner";
 import { AuthBrandingSection } from "@/app/components/common/AuthBrandingSection";
 import {
@@ -110,6 +111,7 @@ export default function LoginPage() {
   const [challengeId, setChallengeId] = useState("");
   const [email, setEmail] = useState("");
   const [devCode, setDevCode] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const requestToastKeyRef = useRef("");
   const verifyToastKeyRef = useRef("");
   const verifyRedirectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
@@ -122,7 +124,7 @@ export default function LoginPage() {
   >(async (_prevState, formData) => {
     const result = await requestLoginCodeAction(formData);
 
-    if (result.success && result.challengeId) {
+    if (result.success && "challengeId" in result && result.challengeId) {
       setChallengeId(result.challengeId);
       setEmail(result.email || "");
       setDevCode(result.code || "");
@@ -230,13 +232,29 @@ export default function LoginPage() {
                   <label className="mb-2 block text-sm font-medium text-(--heading-color)">
                     Password
                   </label>
-                  <input
-                    name="password"
-                    type="password"
-                    required
-                    className={fieldClassName}
-                    placeholder="********"
-                  />
+                  <div className="relative">
+                    <input
+                      name="password"
+                      type={showPassword ? "text" : "password"}
+                      required
+                      className={`${fieldClassName} pr-12`}
+                      placeholder="********"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((prev) => !prev)}
+                      className="absolute right-2 -bottom-2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-(--muted-color) transition-colors hover:bg-(--surface-elevated) hover:text-(--heading-color) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--primary-color)/35"
+                      aria-label={
+                        showPassword ? "Hide password" : "Show password"
+                      }
+                    >
+                      {showPassword ? (
+                        <FaEyeSlash className="h-4 w-4" aria-hidden="true" />
+                      ) : (
+                        <FaEye className="h-4 w-4" aria-hidden="true" />
+                      )}
+                    </button>
+                  </div>
                 </div>
 
                 <div className="flex justify-end">
