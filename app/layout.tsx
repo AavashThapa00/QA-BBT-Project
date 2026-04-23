@@ -95,7 +95,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
         suppressHydrationWarning
         className={`${poppins.className} ${geistMono.variable} antialiased`}
@@ -114,6 +114,20 @@ export default function RootLayout({
             operatingSystem: "Web",
             description: appDescription,
           })}
+        </Script>
+        <Script id="issuefixu-theme-init" strategy="beforeInteractive">
+          {`(() => {
+            try {
+              const storageKey = 'issuefixu-theme';
+              const storedTheme = window.localStorage.getItem(storageKey);
+              const theme = storedTheme === 'light' ? 'light' : 'dark';
+              document.documentElement.dataset.theme = theme;
+              document.documentElement.style.colorScheme = theme;
+            } catch (error) {
+              document.documentElement.dataset.theme = 'dark';
+              document.documentElement.style.colorScheme = 'dark';
+            }
+          })();`}
         </Script>
         <Providers>
           <AuthSessionGuard />
