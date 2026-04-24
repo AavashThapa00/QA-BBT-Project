@@ -136,6 +136,9 @@ export default function FilterPanel({
   showSearch = true,
   compact = false,
 }: FilterPanelProps) {
+  const normalizePriorityValue = (value: string) =>
+    value.trim().toUpperCase() === "CRITICAL" ? "MAJOR" : value;
+
   const [searchInput, setSearchInput] = useState<string>("");
   const [dateFrom, setDateFrom] = useState<string>("");
   const [dateTo, setDateTo] = useState<string>("");
@@ -154,17 +157,17 @@ export default function FilterPanel({
     setSearchInput(currentFilters?.searchTerm ?? "");
     setDateFrom(toInputDate(currentFilters?.dateFrom));
     setDateTo(toInputDate(currentFilters?.dateTo));
-    setPriorities(currentFilters?.priority ?? []);
+    setPriorities((currentFilters?.priority ?? []).map(normalizePriorityValue));
     setModules(currentFilters?.module ?? []);
     setStatuses(currentFilters?.status ?? []);
   }, [currentFilters]);
 
-  const priorityOptions = ["CRITICAL", "HIGH", "MEDIUM", "LOW"].map(
-    (priority) => ({
-      value: priority,
-      label: priority,
-    }),
-  );
+  const priorityOptions = [
+    { value: "MAJOR", label: "Critical" },
+    { value: "HIGH", label: "HIGH" },
+    { value: "MEDIUM", label: "MEDIUM" },
+    { value: "LOW", label: "LOW" },
+  ];
 
   const statusOptions = [
     { value: StatusEnum.PENDING, label: "Pending" },
@@ -230,12 +233,14 @@ export default function FilterPanel({
   // Apply filters when user clicks the button or presses Enter
   const applyFilters = () => {
     const filters: DefectFilters = {};
+    const normalizedPriorities = priorities.map(normalizePriorityValue);
 
     if (searchInput && searchInput.length >= 3)
       filters.searchTerm = searchInput;
     if (dateFrom) filters.dateFrom = new Date(dateFrom);
     if (dateTo) filters.dateTo = new Date(dateTo);
-    if (priorities.length > 0) filters.priority = priorities;
+    if (normalizedPriorities.length > 0)
+      filters.priority = normalizedPriorities;
     if (modules.length > 0) filters.module = modules;
     if (statuses.length > 0) filters.status = statuses as Status[];
 
@@ -244,13 +249,16 @@ export default function FilterPanel({
 
   const applyLastDays = (days: number) => {
     const { fromValue, toValue } = getRangeDates(days);
+    const normalizedPriorities = priorities.map(normalizePriorityValue);
 
     setDateFrom(fromValue);
     setDateTo(toValue);
 
     onFiltersChange({
       ...(hasSearch ? { searchTerm: searchInput } : {}),
-      ...(priorities.length > 0 ? { priority: priorities } : {}),
+      ...(normalizedPriorities.length > 0
+        ? { priority: normalizedPriorities }
+        : {}),
       ...(modules.length > 0 ? { module: modules } : {}),
       ...(statuses.length > 0 ? { status: statuses as Status[] } : {}),
       dateFrom: new Date(fromValue),

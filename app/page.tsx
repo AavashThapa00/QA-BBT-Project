@@ -284,8 +284,8 @@ export default function Home() {
         filterLabel = "Closed Defects";
         break;
       case "critical":
-        // Show only major severity defects (regardless of status)
-        newFilters = { severity: ["MAJOR"] };
+        // Show only major priority defects (regardless of status)
+        newFilters = { priority: ["MAJOR"] };
         filterLabel = "Critical Priority Issues";
         break;
     }
