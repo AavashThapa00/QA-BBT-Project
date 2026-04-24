@@ -475,8 +475,8 @@ export default function Home() {
             <div className="fixed inset-0 bg-slate-950/45 backdrop-blur-sm" />
           </TransitionChild>
 
-          <div className="fixed inset-0 overflow-y-auto p-4 sm:p-6">
-            <div className="flex min-h-full items-center justify-center">
+          <div className="fixed inset-0 overflow-hidden p-4 sm:p-6">
+            <div className="flex h-full items-center justify-center">
               <TransitionChild
                 as={Fragment}
                 enter="ease-out duration-200"
@@ -486,7 +486,7 @@ export default function Home() {
                 leaveFrom="opacity-100 translate-y-0 scale-100"
                 leaveTo="opacity-0 translate-y-4 scale-95"
               >
-                <DialogPanel className="w-full max-w-3xl overflow-visible rounded-2xl border border-(--border-color) bg-(--surface) shadow-panel">
+                <DialogPanel className="flex h-full max-h-[calc(100vh-2rem)] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-(--border-color) bg-(--surface) shadow-panel sm:max-h-[calc(100vh-3rem)]">
                   <div className="flex items-start rounded-2xl justify-between gap-3 border-b border-(--border-color) bg-(--surface-soft) px-3 py-3 sm:px-4">
                     <div>
                       <DialogTitle className="text-base font-semibold text-(--heading-color) sm:text-lg">
@@ -506,7 +506,7 @@ export default function Home() {
                     </button>
                   </div>
 
-                  <div className="p-3 sm:p-4">
+                  <div className="overflow-y-auto p-3 sm:p-4">
                     <FilterPanel
                       onFiltersChange={handleFiltersChange}
                       currentFilters={filters}

@@ -164,8 +164,8 @@ export default function ExportDefectsPanel({
           <div className="fixed inset-0 overlay-backdrop backdrop-blur-sm" />
         </TransitionChild>
 
-        <div className="fixed inset-0 overflow-y-auto">
-          <div className="flex min-h-full items-center justify-center p-4">
+        <div className="fixed inset-0 overflow-hidden p-4">
+          <div className="flex h-full items-center justify-center">
             <TransitionChild
               as={Fragment}
               enter="ease-out duration-200"
@@ -175,7 +175,7 @@ export default function ExportDefectsPanel({
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-95"
             >
-              <DialogPanel className="w-full max-w-xl overflow-hidden rounded-2xl border border-(--border-color) bg-(--surface) shadow-2xl">
+              <DialogPanel className="flex h-full max-h-[calc(100vh-2rem)] w-full max-w-xl flex-col overflow-hidden rounded-2xl border border-(--border-color) bg-(--surface) shadow-2xl">
                 <div className="border-b border-(--border-color) bg-(--surface-soft) px-6 py-4">
                   <div className="flex items-center gap-3">
                     <div className="rounded-lg bg-(--primary-color) p-2 text-white">
@@ -200,7 +200,7 @@ export default function ExportDefectsPanel({
                   </div>
                 </div>
 
-                <div className="space-y-5 px-6 py-5">
+                <div className="space-y-5 overflow-y-auto px-6 py-5">
                   <div>
                     <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-(--muted-color)">
                       Project

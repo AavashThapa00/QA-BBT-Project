@@ -1,7 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import Link from "next/link";
+import {
+  Dialog,
+  DialogPanel,
+  DialogTitle,
+  Transition,
+  TransitionChild,
+} from "@headlessui/react";
 import {
   PieChart,
   Pie,
@@ -820,113 +827,142 @@ export default function AnalyticsPage() {
           )}
         </div>
 
-        {isModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center overlay-backdrop p-4 backdrop-blur-sm animate-in fade-in duration-300">
-            <div className="max-h-200 w-full max-w-4xl overflow-hidden rounded-2xl border border-(--border-color) bg-(--surface) shadow-xl animate-in zoom-in duration-300">
-              <div className="flex items-center justify-between border-b border-(--border-color) bg-(--surface-soft) px-6 py-4">
-                <div>
-                  <h3 className="text-lg font-bold text-(--heading-color)">
-                    {selectedTeam === "ALL" ? "All Teams" : selectedTeam} -{" "}
-                    {selectedType === "open" ? "Open" : "Fixed"} Defects
-                  </h3>
-                  <p className="mt-1 text-xs text-(--muted-color)">
-                    Click outside or close to exit
-                  </p>
-                </div>
-                <AppButton
-                  type="button"
-                  onClick={closeModal}
-                  variant="secondary"
-                  size="icon"
-                  aria-label="Close modal"
+        <Transition appear show={isModalOpen} as={Fragment}>
+          <Dialog as="div" className="relative z-50" onClose={closeModal}>
+            <TransitionChild
+              as={Fragment}
+              enter="ease-out duration-200"
+              enterFrom="opacity-0"
+              enterTo="opacity-100"
+              leave="ease-in duration-150"
+              leaveFrom="opacity-100"
+              leaveTo="opacity-0"
+            >
+              <div className="fixed inset-0 overlay-backdrop backdrop-blur-sm" />
+            </TransitionChild>
+
+            <div className="fixed inset-0 overflow-hidden p-4">
+              <div className="flex h-full items-center justify-center">
+                <TransitionChild
+                  as={Fragment}
+                  enter="ease-out duration-200"
+                  enterFrom="opacity-0 translate-y-4 scale-95"
+                  enterTo="opacity-100 translate-y-0 scale-100"
+                  leave="ease-in duration-150"
+                  leaveFrom="opacity-100 translate-y-0 scale-100"
+                  leaveTo="opacity-0 translate-y-4 scale-95"
                 >
-                  <HiX className="h-5 w-5" />
-                </AppButton>
-              </div>
-
-              <div className="max-h-175 overflow-auto p-6">
-                {modalLoading ? (
-                  <div className="flex h-48 items-center justify-center">
-                    <div className="flex flex-col items-center gap-4">
-                      <div className="h-12 w-12 animate-spin rounded-full border-2 border-emerald-200 border-t-(--primary-color)"></div>
-                      <p className="text-sm font-medium text-(--muted-color)">
-                        Loading defects...
-                      </p>
+                  <DialogPanel className="flex h-full max-h-[calc(100vh-2rem)] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-(--border-color) bg-(--surface) shadow-xl">
+                    <div className="flex items-center justify-between border-b border-(--border-color) bg-(--surface-soft) px-6 py-4">
+                      <div>
+                        <DialogTitle className="text-lg font-bold text-(--heading-color)">
+                          {selectedTeam === "ALL" ? "All Teams" : selectedTeam}{" "}
+                          - {selectedType === "open" ? "Open" : "Fixed"} Defects
+                        </DialogTitle>
+                        <p className="mt-1 text-xs text-(--muted-color)">
+                          Click outside or close to exit
+                        </p>
+                      </div>
+                      <AppButton
+                        type="button"
+                        onClick={closeModal}
+                        variant="secondary"
+                        size="icon"
+                        aria-label="Close modal"
+                      >
+                        <HiX className="h-5 w-5" />
+                      </AppButton>
                     </div>
-                  </div>
-                ) : selectedDefects.length === 0 ? (
-                  <div className="rounded-xl border border-(--border-color) bg-(--surface-soft) p-8 py-12 text-center text-(--muted-color)">
-                    No defects found for this selection
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-sm">
-                      <thead>
-                        <tr className="sticky top-0 z-10 border-b border-emerald-100 bg-emerald-50/60">
-                          <th className="px-4 py-4 text-xs font-semibold uppercase tracking-wide text-(--heading-color)">
-                            Test Case ID
-                          </th>
-                          <th className="px-4 py-4 text-xs font-semibold uppercase tracking-wide text-(--heading-color)">
-                            Module
-                          </th>
-                          <th className="px-4 py-4 text-xs font-semibold uppercase tracking-wide text-(--heading-color)">
-                            Status
-                          </th>
-                          <th className="px-4 py-4 text-xs font-semibold uppercase tracking-wide text-(--heading-color)">
-                            Date Reported
-                          </th>
-                          <th className="px-4 py-4 text-xs font-semibold uppercase tracking-wide text-(--heading-color)">
-                            Summary
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {selectedDefects.map((defect) => {
-                          const statusLabel = getStatusLabel(defect.status);
 
-                          return (
-                            <tr
-                              key={defect.id}
-                              className="group border-b border-emerald-50 transition-all duration-200 hover:bg-emerald-50/40"
-                            >
-                              <td className="px-4 py-3 font-mono text-xs text-(--text-color)">
-                                {defect.testCaseId || defect.id.substring(0, 8)}
-                              </td>
-                              <td className="px-4 py-3 text-(--text-color)">
-                                <span className="inline-flex items-center rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700">
-                                  {defect.module}
-                                </span>
-                              </td>
-                              <td className="px-4 py-3">
-                                <span
-                                  className="rounded px-2 py-1 text-xs font-semibold"
-                                  style={{
-                                    backgroundColor: `${STATUS_BADGE_COLORS[statusLabel] || "#6b7280"}20`,
-                                    color:
-                                      STATUS_BADGE_COLORS[statusLabel] ||
-                                      "#6b7280",
-                                  }}
-                                >
-                                  {statusLabel}
-                                </span>
-                              </td>
-                              <td className="px-4 py-3 text-xs text-(--muted-color)">
-                                {defect.dateReported || "N/A"}
-                              </td>
-                              <td className="max-w-xs truncate px-4 py-3 text-(--text-color)">
-                                {defect.summary || "N/A"}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
+                    <div className="overflow-y-auto p-6">
+                      {modalLoading ? (
+                        <div className="flex h-48 items-center justify-center">
+                          <div className="flex flex-col items-center gap-4">
+                            <div className="h-12 w-12 animate-spin rounded-full border-2 border-emerald-200 border-t-(--primary-color)"></div>
+                            <p className="text-sm font-medium text-(--muted-color)">
+                              Loading defects...
+                            </p>
+                          </div>
+                        </div>
+                      ) : selectedDefects.length === 0 ? (
+                        <div className="rounded-xl border border-(--border-color) bg-(--surface-soft) p-8 py-12 text-center text-(--muted-color)">
+                          No defects found for this selection
+                        </div>
+                      ) : (
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-left text-sm">
+                            <thead>
+                              <tr className="sticky top-0 z-10 border-b border-emerald-100 bg-emerald-50/60">
+                                <th className="px-4 py-4 text-xs font-semibold uppercase tracking-wide text-(--heading-color)">
+                                  Test Case ID
+                                </th>
+                                <th className="px-4 py-4 text-xs font-semibold uppercase tracking-wide text-(--heading-color)">
+                                  Module
+                                </th>
+                                <th className="px-4 py-4 text-xs font-semibold uppercase tracking-wide text-(--heading-color)">
+                                  Status
+                                </th>
+                                <th className="px-4 py-4 text-xs font-semibold uppercase tracking-wide text-(--heading-color)">
+                                  Date Reported
+                                </th>
+                                <th className="px-4 py-4 text-xs font-semibold uppercase tracking-wide text-(--heading-color)">
+                                  Summary
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {selectedDefects.map((defect) => {
+                                const statusLabel = getStatusLabel(
+                                  defect.status,
+                                );
+
+                                return (
+                                  <tr
+                                    key={defect.id}
+                                    className="group border-b border-emerald-50 transition-all duration-200 hover:bg-emerald-50/40"
+                                  >
+                                    <td className="px-4 py-3 font-mono text-xs text-(--text-color)">
+                                      {defect.testCaseId ||
+                                        defect.id.substring(0, 8)}
+                                    </td>
+                                    <td className="px-4 py-3 text-(--text-color)">
+                                      <span className="inline-flex items-center rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700">
+                                        {defect.module}
+                                      </span>
+                                    </td>
+                                    <td className="px-4 py-3">
+                                      <span
+                                        className="whitespace-nowrap rounded px-2 py-1 text-xs font-semibold"
+                                        style={{
+                                          backgroundColor: `${STATUS_BADGE_COLORS[statusLabel] || "#6b7280"}20`,
+                                          color:
+                                            STATUS_BADGE_COLORS[statusLabel] ||
+                                            "#6b7280",
+                                        }}
+                                      >
+                                        {statusLabel}
+                                      </span>
+                                    </td>
+                                    <td className="px-4 py-3 text-xs text-(--muted-color)">
+                                      {defect.dateReported || "N/A"}
+                                    </td>
+                                    <td className="max-w-xs truncate px-4 py-3 text-(--text-color)">
+                                      {defect.summary || "N/A"}
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+                  </DialogPanel>
+                </TransitionChild>
               </div>
             </div>
-          </div>
-        )}
+          </Dialog>
+        </Transition>
       </div>
     </div>
   );

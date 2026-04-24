@@ -107,9 +107,11 @@ function MultiSelectDropdown({
           {selectedOptions.map((option) => (
             <span
               key={option.value}
-              className="inline-flex items-center gap-1 rounded-full border border-(--border-color) bg-(--surface-soft) px-2 py-0.5 text-xs text-(--text-color)"
+              className="inline-flex items-center gap-1 whitespace-nowrap rounded-full border border-(--border-color) bg-(--surface-soft) px-2 py-0.5 text-xs text-(--text-color)"
             >
-              <span className="max-w-30 truncate">{option.label}</span>
+              <span className="max-w-30 truncate whitespace-nowrap">
+                {option.label}
+              </span>
               <button
                 type="button"
                 onClick={() => removeSelectedValue(option.value)}

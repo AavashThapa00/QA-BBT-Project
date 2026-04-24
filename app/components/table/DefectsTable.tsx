@@ -352,7 +352,7 @@ export default function DefectsTable({
                   </td>
                   <td className="whitespace-nowrap px-6 py-4">
                     <span
-                      className={`inline-flex items-center rounded-md px-2 py-1 text-[11px] font-semibold leading-4 ${
+                      className={`inline-flex items-center whitespace-nowrap rounded-md px-2 py-1 text-[11px] font-semibold leading-4 ${
                         STATUS_COLORS[defect.status]
                       }`}
                     >
