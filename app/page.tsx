@@ -487,7 +487,7 @@ export default function Home() {
                 leaveTo="opacity-0 translate-y-4 scale-95"
               >
                 <DialogPanel className="w-full max-w-3xl overflow-visible rounded-2xl border border-(--border-color) bg-(--surface) shadow-panel">
-                  <div className="flex items-start justify-between gap-3 border-b border-(--border-color) bg-(--surface-soft) px-3 py-3 sm:px-4">
+                  <div className="flex items-start rounded-2xl justify-between gap-3 border-b border-(--border-color) bg-(--surface-soft) px-3 py-3 sm:px-4">
                     <div>
                       <DialogTitle className="text-base font-semibold text-(--heading-color) sm:text-lg">
                         Refine Dashboard Filters
@@ -509,6 +509,7 @@ export default function Home() {
                   <div className="p-3 sm:p-4">
                     <FilterPanel
                       onFiltersChange={handleFiltersChange}
+                      currentFilters={filters}
                       availableModules={state.availableModules}
                       isLoading={state.isLoading || !moduleSeverityLoaded}
                       showSearch={false}

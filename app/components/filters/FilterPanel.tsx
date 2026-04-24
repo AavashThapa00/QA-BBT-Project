@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Listbox,
   ListboxButton,
@@ -19,6 +19,7 @@ import { StatusEnum, type DefectFilters } from "@/lib/types";
 
 interface FilterPanelProps {
   onFiltersChange: (filters: DefectFilters) => void;
+  currentFilters?: DefectFilters;
   availableModules?: string[];
   isLoading?: boolean;
   showSearch?: boolean;
@@ -129,6 +130,7 @@ function MultiSelectDropdown({
 
 export default function FilterPanel({
   onFiltersChange,
+  currentFilters,
   availableModules = [],
   isLoading = false,
   showSearch = true,
@@ -140,6 +142,22 @@ export default function FilterPanel({
   const [priorities, setPriorities] = useState<string[]>([]);
   const [modules, setModules] = useState<string[]>([]);
   const [statuses, setStatuses] = useState<string[]>([]);
+
+  useEffect(() => {
+    const toInputDate = (value?: Date) => {
+      if (!value) return "";
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return "";
+      return date.toISOString().slice(0, 10);
+    };
+
+    setSearchInput(currentFilters?.searchTerm ?? "");
+    setDateFrom(toInputDate(currentFilters?.dateFrom));
+    setDateTo(toInputDate(currentFilters?.dateTo));
+    setPriorities(currentFilters?.priority ?? []);
+    setModules(currentFilters?.module ?? []);
+    setStatuses(currentFilters?.status ?? []);
+  }, [currentFilters]);
 
   const priorityOptions = ["CRITICAL", "HIGH", "MEDIUM", "LOW"].map(
     (priority) => ({
