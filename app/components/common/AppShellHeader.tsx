@@ -11,7 +11,7 @@ import {
   Transition,
 } from "@headlessui/react";
 import { HiOutlineBell, HiOutlineSearch, HiOutlineMail } from "react-icons/hi";
-import { LuChevronDown, LuLogOut, LuUser } from "react-icons/lu";
+import { LuChevronDown, LuLogOut, LuShield, LuUser } from "react-icons/lu";
 import { toast } from "sonner";
 import { getCurrentUser, logoutAction } from "@/app/actions/auth";
 
@@ -189,7 +189,7 @@ export default function AppShellHeader() {
                                 focus
                                   ? "bg-(--surface-soft) text-(--heading-color)"
                                   : "text-(--text-color)"
-                              }`}
+                              } focus:outline-none focus-visible:outline-none focus-visible:ring-0`}
                             >
                               <LuUser className="h-4.5 w-4.5" />
                               <span>Profile</span>
@@ -206,9 +206,9 @@ export default function AppShellHeader() {
                                   focus
                                     ? "bg-(--surface-soft) text-(--heading-color)"
                                     : "text-(--text-color)"
-                                }`}
+                                } focus:outline-none focus-visible:outline-none focus-visible:ring-0`}
                               >
-                                <LuUser className="h-4.5 w-4.5" />
+                                <LuShield className="h-4.5 w-4.5" />
                                 <span>Admin Console</span>
                               </Link>
                             )}
@@ -225,7 +225,7 @@ export default function AppShellHeader() {
                                 focus
                                   ? "bg-(--surface-soft) text-(--heading-color)"
                                   : "text-(--text-color)"
-                              } disabled:opacity-60`}
+                              } focus:outline-none focus-visible:outline-none focus-visible:ring-0 disabled:opacity-60`}
                             >
                               <LuLogOut className="h-4.5 w-4.5 text-rose-500" />
                               <span>

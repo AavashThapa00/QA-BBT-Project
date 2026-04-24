@@ -12,8 +12,8 @@ import {
   LuPanelLeftClose,
   LuPanelLeftOpen,
   LuPlay,
+  LuShield,
   LuShieldCheck,
-  LuUserPlus,
 } from "react-icons/lu";
 import { getCurrentUser } from "@/app/actions/auth";
 
@@ -77,7 +77,7 @@ export default function AppSidebar() {
     authRole === "super_admin"
       ? [
           ...navItems,
-          { name: "Admin Console", href: "/super-admin", icon: LuUserPlus },
+          { name: "Admin Console", href: "/super-admin", icon: LuShield },
         ]
       : navItems;
 
