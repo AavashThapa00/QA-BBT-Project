@@ -2,23 +2,20 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import {
   LuBarChart3,
   LuBug,
   LuClipboardCheck,
   LuFileSpreadsheet,
   LuHome,
-  LuLogOut,
   LuPanelLeftClose,
   LuPanelLeftOpen,
   LuPlay,
   LuShieldCheck,
   LuUserPlus,
-  LuUser,
 } from "react-icons/lu";
-import { toast } from "sonner";
-import { getCurrentUser, logoutAction } from "@/app/actions/auth";
+import { getCurrentUser } from "@/app/actions/auth";
 
 interface NavItem {
   name: string;
@@ -44,13 +41,10 @@ function BrandLogo() {
 }
 
 export default function AppSidebar() {
-  const router = useRouter();
   const pathname = usePathname();
-  const [isAuthed, setIsAuthed] = useState(false);
   const [authRole, setAuthRole] = useState<"super_admin" | "admin" | null>(
     null,
   );
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   useEffect(() => {
@@ -59,12 +53,10 @@ export default function AppSidebar() {
     getCurrentUser()
       .then((user) => {
         if (!mounted) return;
-        setIsAuthed(!!user);
         setAuthRole(user?.role ?? null);
       })
       .catch(() => {
         if (!mounted) return;
-        setIsAuthed(false);
         setAuthRole(null);
       });
 
@@ -81,37 +73,21 @@ export default function AppSidebar() {
     return null;
   }
 
-  const handleLogout = async () => {
-    if (isLoggingOut) return;
-
-    setIsLoggingOut(true);
-
-    try {
-      await toast.promise(logoutAction(), {
-        loading: "Logging out...",
-        success: (result) => result?.message || "Logged out successfully",
-        error: (error) => (error as Error)?.message || "Failed to log out",
-      });
-
-      router.push("/login");
-      router.refresh();
-    } catch (error) {
-      toast.error((error as Error)?.message || "Failed to log out");
-    } finally {
-      setIsLoggingOut(false);
-    }
-  };
-
-  const isSettingsActive = pathname === "/profile";
-  const isAddAdminActive = pathname === "/super-admin";
+  const items =
+    authRole === "super_admin"
+      ? [
+          ...navItems,
+          { name: "Admin Console", href: "/super-admin", icon: LuUserPlus },
+        ]
+      : navItems;
 
   return (
     <aside
-      className={`sticky top-2 hidden shrink-0 self-start overflow-hidden rounded-2xl bg-(--surface) py-3 shadow-card transition-[width,padding] duration-200 ease-out will-change-[width] lg:flex sm:top-3 lg:top-4 ${
+      className={`sticky top-2 hidden h-[calc(100vh-2rem)] shrink-0 overflow-hidden rounded-2xl bg-(--surface) py-3 shadow-card transition-[width,padding] duration-200 ease-out will-change-[width] lg:flex sm:top-3 lg:top-4 ${
         isCollapsed ? "w-20 px-2" : "w-69 px-3"
       }`}
     >
-      <div className="flex w-full flex-col">
+      <div className="flex h-full w-full flex-col">
         <div
           className={`rounded-2xl bg-(--surface-soft) py-3 ${
             isCollapsed ? "px-2" : "px-3"
@@ -165,7 +141,7 @@ export default function AppSidebar() {
             </p>
           )}
           <nav className="mt-2 space-y-1.5">
-            {navItems.map((item) => {
+            {items.map((item) => {
               const Icon = item.icon;
               const isActive = pathname === item.href;
 
@@ -200,86 +176,6 @@ export default function AppSidebar() {
               );
             })}
           </nav>
-        </div>
-
-        <div className="mt-4 h-px bg-(--border-color)/55" />
-
-        {!isCollapsed && (
-          <p className="mt-3 px-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-(--muted-color)">
-            General
-          </p>
-        )}
-
-        <div className="mt-1 shrink-0 space-y-1.5">
-          <Link
-            href="/profile"
-            title="Settings"
-            className={`flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
-              isSettingsActive
-                ? "bg-(--surface-soft) text-(--heading-color)"
-                : "text-(--text-color) hover:bg-(--surface-soft)"
-            } ${isCollapsed ? "justify-center px-2" : ""}`}
-            aria-label="Settings"
-          >
-            <LuUser className="h-4.5 w-4.5" />
-            <span
-              className={`truncate whitespace-nowrap transition-opacity duration-150 ${
-                isCollapsed ? "w-0 opacity-0" : "w-auto opacity-100"
-              }`}
-              aria-hidden={isCollapsed}
-            >
-              Settings
-            </span>
-          </Link>
-
-          {authRole === "super_admin" && (
-            <Link
-              href="/super-admin"
-              title="Add Admin"
-              className={`flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
-                isAddAdminActive
-                  ? "bg-(--surface-soft) text-(--heading-color)"
-                  : "text-(--text-color) hover:bg-(--surface-soft)"
-              } ${isCollapsed ? "justify-center px-2" : ""}`}
-              aria-label="Add Admin"
-            >
-              <LuUserPlus className="h-4.5 w-4.5" />
-              <span
-                className={`truncate whitespace-nowrap transition-opacity duration-150 ${
-                  isCollapsed ? "w-0 opacity-0" : "w-auto opacity-100"
-                }`}
-                aria-hidden={isCollapsed}
-              >
-                Add Admin
-              </span>
-            </Link>
-          )}
-
-          {isAuthed && (
-            <>
-              <div className="my-1 h-px bg-(--border-color)/50" />
-              <button
-                type="button"
-                onClick={handleLogout}
-                disabled={isLoggingOut}
-                className={`flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-(--text-color) transition-colors hover:bg-rose-500/10 hover:text-rose-200 ${
-                  isCollapsed ? "justify-center px-2" : ""
-                }`}
-                title={isLoggingOut ? "Logging out..." : "Logout"}
-                aria-label="Logout"
-              >
-                <LuLogOut className="h-4.5 w-4.5" />
-                <span
-                  className={`truncate whitespace-nowrap transition-opacity duration-150 ${
-                    isCollapsed ? "w-0 opacity-0" : "w-auto opacity-100"
-                  }`}
-                  aria-hidden={isCollapsed}
-                >
-                  {isLoggingOut ? "Logging out..." : "Logout"}
-                </span>
-              </button>
-            </>
-          )}
         </div>
       </div>
     </aside>

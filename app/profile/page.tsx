@@ -113,7 +113,6 @@ export default function ProfilePage() {
     .map((part) => part[0]?.toUpperCase())
     .join("");
 
-  const profileCompleteness = user.phone ? 100 : 75;
   const hasAdminTools = user.role === "super_admin";
   const hasFileHistory = uploadedFiles.length > 0;
 
@@ -151,25 +150,34 @@ export default function ProfilePage() {
                   {user.role === "super_admin" ? "Super Admin" : "Admin"}
                 </span>
 
-                <div className="mt-6 space-y-3 rounded-2xl border border-(--border-color) bg-(--surface-soft) p-4">
-                  <div className="flex items-center justify-between text-xs uppercase tracking-wide text-(--muted-color)">
-                    <span>Profile Completion</span>
-                    <span className="font-semibold text-(--heading-color)">
-                      {profileCompleteness}%
-                    </span>
+                {hasAdminTools ? (
+                  <div className="mt-6 rounded-2xl border border-(--border-color) bg-(--surface-soft) p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-(--muted-color)">
+                      Admin Access
+                    </p>
+                    <p className="mt-2 text-sm text-(--muted-color)">
+                      Open Admin Console to manage admin accounts and platform
+                      access.
+                    </p>
+                    <Link
+                      href="/super-admin"
+                      className="mt-3 inline-flex rounded-xl bg-(--primary-color) px-3.5 py-2 text-sm font-semibold text-(--on-primary) shadow-glow transition-colors hover:bg-(--primary-hover-color)"
+                    >
+                      Open Admin Console
+                    </Link>
                   </div>
-                  <div className="h-2 rounded-full bg-emerald-100">
-                    <div
-                      className="h-2 rounded-full bg-(--primary-color)"
-                      style={{ width: `${profileCompleteness}%` }}
-                    />
+                ) : (
+                  <div className="mt-6 space-y-3 rounded-2xl border border-(--border-color) bg-(--surface-soft) p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-(--muted-color)">
+                      Profile Status
+                    </p>
+                    <p className="text-xs text-(--muted-color)">
+                      {user.phone
+                        ? "Your account profile is complete."
+                        : "Add your phone number to complete your profile."}
+                    </p>
                   </div>
-                  <p className="text-xs text-(--muted-color)">
-                    {user.phone
-                      ? "Your account profile is complete."
-                      : "Add your phone number to complete your profile."}
-                  </p>
-                </div>
+                )}
               </div>
             </div>
           </aside>
@@ -227,19 +235,6 @@ export default function ProfilePage() {
                   >
                     Security
                   </Tab>
-                  {hasAdminTools && (
-                    <Tab
-                      className={({ selected }) =>
-                        `rounded-xl px-4 py-2 text-sm font-semibold outline-none transition-all duration-200 ${
-                          selected
-                            ? "bg-(--primary-color) text-(--on-primary) shadow-glow"
-                            : "text-(--muted-color) hover:bg-(--surface) hover:text-(--heading-color)"
-                        }`
-                      }
-                    >
-                      Admin
-                    </Tab>
-                  )}
                   {hasFileHistory && (
                     <Tab
                       className={({ selected }) =>
@@ -480,33 +475,6 @@ export default function ProfilePage() {
                       </form>
                     </section>
                   </TabPanel>
-
-                  {hasAdminTools && (
-                    <TabPanel className="outline-none">
-                      <section className="animate-in fade-in-up rounded-3xl border border-emerald-200 bg-linear-to-r from-emerald-50/70 to-lime-50/60 p-6 shadow-sm duration-500 sm:p-7">
-                        <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
-                          <div>
-                            <p className="text-xs uppercase tracking-[0.14em] text-emerald-700">
-                              Super Admin Tools
-                            </p>
-                            <h3 className="mt-1 text-xl font-semibold text-(--heading-color)">
-                              Admin Management
-                            </h3>
-                            <p className="mt-2 text-sm text-(--muted-color)">
-                              Create accounts, adjust roles, and maintain
-                              platform access.
-                            </p>
-                          </div>
-                          <Link
-                            href="/super-admin"
-                            className="inline-flex rounded-xl bg-(--primary-color) px-5 py-2.5 text-sm font-semibold text-(--on-primary) shadow-glow transition-colors hover:bg-(--primary-hover-color)"
-                          >
-                            Open Admin Console
-                          </Link>
-                        </div>
-                      </section>
-                    </TabPanel>
-                  )}
 
                   {hasFileHistory && (
                     <TabPanel className="outline-none">

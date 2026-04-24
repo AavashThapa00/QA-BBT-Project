@@ -23,7 +23,7 @@ export default function AppShellFrame({
 
   return (
     <div className="min-h-screen">
-      <div className="mx-auto flex items-start gap-2 bg-(--surface)/70 p-2 shadow-panel backdrop-blur-sm sm:gap-3 sm:p-3">
+      <div className="mx-auto flex min-h-screen items-stretch gap-2 bg-(--surface)/70 p-2 shadow-panel backdrop-blur-sm sm:gap-3 sm:p-3">
         <AppSidebar />
 
         <div className="flex min-w-0 flex-1 flex-col">
