@@ -189,7 +189,7 @@ export default function SuperAdminPage() {
             )}
           </div>
 
-          <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-5 grid grid-cols-1 gap-3  sm:grid-cols-3">
             <div className="rounded-xl border border-(--border-color) bg-(--surface-soft) px-4 py-3">
               <p className="text-xs uppercase tracking-wide text-(--muted-color)">
                 Total Users
@@ -212,14 +212,6 @@ export default function SuperAdminPage() {
               </p>
               <p className="mt-1 text-2xl font-semibold text-(--heading-color)">
                 {adminCount}
-              </p>
-            </div>
-            <div className="rounded-xl border border-(--border-color) bg-(--surface-soft) px-4 py-3">
-              <p className="text-xs uppercase tracking-wide text-(--muted-color)">
-                Your Access
-              </p>
-              <p className="mt-1 text-2xl font-semibold text-(--heading-color)">
-                Root
               </p>
             </div>
           </div>
