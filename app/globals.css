@@ -387,6 +387,13 @@ html[data-theme="light"] {
   color-scheme: light;
 }
 
+html[data-theme-initializing="true"] *,
+html[data-theme-initializing="true"] *::before,
+html[data-theme-initializing="true"] *::after {
+  transition: none !important;
+  animation: none !important;
+}
+
 body {
   min-height: 100vh;
   background:

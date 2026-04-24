@@ -16,6 +16,7 @@ type ThemeContextValue = {
 };
 
 const THEME_STORAGE_KEY = "issuefixu-theme";
+const THEME_COOKIE_KEY = "issuefixu-theme";
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
@@ -23,6 +24,11 @@ function applyTheme(theme: ThemeMode) {
   const root = document.documentElement;
   root.dataset.theme = theme;
   root.style.colorScheme = theme;
+}
+
+function persistTheme(theme: ThemeMode) {
+  window.localStorage.setItem(THEME_STORAGE_KEY, theme);
+  document.cookie = `${THEME_COOKIE_KEY}=${theme}; path=/; max-age=31536000; samesite=lax`;
 }
 
 export default function ThemeProvider({
@@ -35,20 +41,23 @@ export default function ThemeProvider({
       return "dark";
     }
 
+    const domTheme = document.documentElement.dataset.theme;
+    if (domTheme === "light" || domTheme === "dark") {
+      return domTheme;
+    }
+
     const storedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
     return storedTheme === "light" ? "light" : "dark";
   });
 
   useEffect(() => {
-    const storedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
-    const initialTheme: ThemeMode = storedTheme === "light" ? "light" : "dark";
-    setThemeState(initialTheme);
-    applyTheme(initialTheme);
+    applyTheme(theme);
+    persistTheme(theme);
   }, []);
 
   const setTheme = (nextTheme: ThemeMode) => {
     setThemeState(nextTheme);
-    window.localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
+    persistTheme(nextTheme);
     applyTheme(nextTheme);
   };
 

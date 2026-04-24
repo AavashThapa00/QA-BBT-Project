@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { Geist_Mono, Poppins } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
@@ -24,6 +25,7 @@ const appUrl = process.env.APP_BASE_URL || "http://localhost:3000";
 const ogImage = "/ogImage.png";
 const ogImageUrl = new URL(ogImage, appUrl).toString();
 const faviconUrl = "/favicon.ico?v=20260412";
+const THEME_COOKIE_KEY = "issuefixu-theme";
 
 export const metadata: Metadata = {
   metadataBase: new URL(appUrl),
@@ -89,13 +91,22 @@ export const metadata: Metadata = {
   category: "technology",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const cookieStore = await cookies();
+  const cookieTheme = cookieStore.get(THEME_COOKIE_KEY)?.value;
+  const initialTheme = cookieTheme === "light" ? "light" : "dark";
+
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html
+      lang="en"
+      suppressHydrationWarning
+      data-theme={initialTheme}
+      style={{ colorScheme: initialTheme }}
+    >
       <body
         suppressHydrationWarning
         className={`${poppins.className} ${geistMono.variable} antialiased`}
@@ -119,13 +130,29 @@ export default function RootLayout({
           {`(() => {
             try {
               const storageKey = 'issuefixu-theme';
+              const cookieKey = 'issuefixu-theme';
+              const root = document.documentElement;
+              root.dataset.themeInitializing = 'true';
               const storedTheme = window.localStorage.getItem(storageKey);
-              const theme = storedTheme === 'light' ? 'light' : 'dark';
-              document.documentElement.dataset.theme = theme;
-              document.documentElement.style.colorScheme = theme;
+              const presetTheme = root.dataset.theme === 'light' || root.dataset.theme === 'dark'
+                ? root.dataset.theme
+                : null;
+              const theme = storedTheme === 'light' || storedTheme === 'dark'
+                ? storedTheme
+                : (presetTheme ?? 'dark');
+
+              root.dataset.theme = theme;
+              root.style.colorScheme = theme;
+              window.localStorage.setItem(storageKey, theme);
+              document.cookie = cookieKey + '=' + theme + '; path=/; max-age=31536000; samesite=lax';
+
+              requestAnimationFrame(() => {
+                delete root.dataset.themeInitializing;
+              });
             } catch (error) {
               document.documentElement.dataset.theme = 'dark';
               document.documentElement.style.colorScheme = 'dark';
+              delete document.documentElement.dataset.themeInitializing;
             }
           })();`}
         </Script>
