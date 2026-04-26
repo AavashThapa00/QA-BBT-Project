@@ -40,7 +40,7 @@ export const metadata: Metadata = {
     "QA defect tracking",
     "bug tracking",
     "quality assurance dashboard",
-    "test execution analytics",
+    "test cycle analytics",
     "software quality metrics",
     "defect management",
     "test cycle monitoring",

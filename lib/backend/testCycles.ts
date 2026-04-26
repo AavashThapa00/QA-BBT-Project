@@ -834,7 +834,7 @@ async function getTestCaseContext(testCaseRowId: string, cycleId: string) {
 }
 
 function getLegacyExecutionSheetType(cycleName: string) {
-  return `Test Execution - ${cycleName}`;
+  return `Test Cycle - ${cycleName}`;
 }
 
 function getSheetType(parentName: string | null, cycleName: string) {

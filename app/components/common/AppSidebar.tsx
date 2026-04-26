@@ -25,10 +25,10 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { name: "Dashboard", href: "/", icon: LuHome },
-  { name: "Issue Sheet", href: "/issue-sheet", icon: LuFileSpreadsheet },
+  { name: "Smoke Sheet", href: "/issue-sheet", icon: LuFileSpreadsheet },
   { name: "All Issues", href: "/all-defects", icon: LuBug },
-  { name: "Test Execution", href: "/test-execution", icon: LuPlay },
-  { name: "Analytics", href: "/analytics", icon: LuBarChart3 },
+  { name: "Test Cycle", href: "/test-execution", icon: LuPlay },
+  { name: "Analytics & Performance", href: "/analytics", icon: LuBarChart3 },
   { name: "QA Status", href: "/qc-dashboard", icon: LuClipboardCheck },
 ];
 

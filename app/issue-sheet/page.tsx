@@ -804,9 +804,9 @@ export default function IssueSheetPage() {
   const dirtyCount = rows.filter((row) => isRowDirty(row)).length;
   const sidebarItems = [
     { href: "/", label: "Dashboard", badge: "DB" },
-    { href: "/issue-sheet", label: "Issue Sheet", badge: "IS" },
-    { href: "/analytics", label: "Analytics", badge: "AN" },
-    { href: "/test-execution", label: "Test Execution", badge: "TE" },
+    { href: "/issue-sheet", label: "Smoke Sheet", badge: "SS" },
+    { href: "/analytics", label: "Analytics & Performance", badge: "AP" },
+    { href: "/test-execution", label: "Test Cycle", badge: "TC" },
   ];
 
   return (
@@ -879,7 +879,7 @@ export default function IssueSheetPage() {
             <div className="mx-auto w-full max-w-screen-2xl">
               <div className="space-y-1">
                 <h1 className="text-2xl font-bold text-(--heading-color) sm:text-3xl lg:text-4xl">
-                  Issue Sheet
+                  Smoke Sheet
                 </h1>
                 <p className="max-w-2xl text-xs text-(--muted-color) sm:text-sm">
                   Track and manage issues in one place. Import from CSV, or add
