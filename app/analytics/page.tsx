@@ -33,10 +33,12 @@ import {
 } from "react-icons/hi";
 import AppButton from "@/app/components/common/AppButton";
 import { PageSkeleton } from "@/app/components/common/SkeletonLoader";
+import DefectsTrendChart from "@/app/components/dashboard/DefectsTrendChart";
 import {
   getDefectsByStatus,
   getAverageFixTimeByModule,
 } from "@/app/actions/analytics";
+import { getDefectsTrend } from "@/app/actions/defects";
 import {
   getTeamPerformance,
   getTeamDefectsByStatus,
@@ -92,6 +94,11 @@ interface TeamDefect {
   summary: string | null;
   status: string;
   dateReported: string | null;
+}
+
+interface DefectsTrendData {
+  date: string;
+  count: number;
 }
 
 const STATUS_GROUPS = [
@@ -188,6 +195,7 @@ export default function AnalyticsPage() {
   const [monthlyTrends, setMonthlyTrends] = useState<MonthlyTrend[]>([]);
   const [severityTrends, setSeverityTrends] = useState<SeverityTrend[]>([]);
   const [moduleTrends, setModuleTrends] = useState<ModuleTrend[]>([]);
+  const [defectsTrend, setDefectsTrend] = useState<DefectsTrendData[]>([]);
   const [teamData, setTeamData] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -202,13 +210,14 @@ export default function AnalyticsPage() {
     async function fetchData() {
       setLoading(true);
       try {
-        const [statusCounts, fixTimes, monthly, severity, module, team] =
+        const [statusCounts, fixTimes, monthly, severity, module, trend, team] =
           await Promise.all([
             getDefectsByStatus(),
             getAverageFixTimeByModule(),
             getMonthlyTrends(),
             getSeverityTrends(),
             getModuleTrends(),
+            getDefectsTrend({}, "day"),
             getTeamPerformance(),
           ]);
 
@@ -237,6 +246,7 @@ export default function AnalyticsPage() {
         setMonthlyTrends(monthly);
         setSeverityTrends(severity);
         setModuleTrends(module);
+        setDefectsTrend(trend);
         setTeamData(team);
       } catch (error) {
         console.error("Error fetching analytics data:", error);
@@ -485,6 +495,9 @@ export default function AnalyticsPage() {
             </div>
           )}
         </div>
+
+        {/* Monthly Trends */}
+        <DefectsTrendChart data={defectsTrend} title="Issues Trend Over Time" />
 
         {/* Monthly Trends */}
         <div className="rounded-2xl border border-emerald-100 bg-white p-6 shadow-sm transition-all duration-300 animate-in fade-in-up">

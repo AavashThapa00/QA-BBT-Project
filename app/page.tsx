@@ -36,7 +36,6 @@ import {
   getDefectMetrics,
   getDefectsByModule,
   getDefectsByPriority,
-  getDefectsTrend,
   getDefects,
   getAverageResolutionTime,
 } from "@/app/actions/defects";
@@ -45,7 +44,6 @@ import {
   DashboardMetrics,
   DefectByModule,
   DefectByPriority,
-  DefectTrend,
   Defect,
 } from "@/lib/types";
 
@@ -59,11 +57,6 @@ const DefectsByPriorityChart = dynamic(
   { ssr: false, loading: () => <SkeletonChart /> },
 );
 
-const DefectsTrendChart = dynamic(
-  () => import("@/app/components/dashboard/DefectsTrendChart"),
-  { ssr: false, loading: () => <SkeletonChart /> },
-);
-
 const DefectsTable = dynamic(
   () => import("@/app/components/table/DefectsTable"),
   { ssr: false, loading: () => <SkeletonTable /> },
@@ -73,7 +66,6 @@ interface DashboardState {
   metrics: DashboardMetrics | null;
   defectsByModule: DefectByModule[];
   defectsByPriority: DefectByPriority[];
-  defectsTrend: DefectTrend[];
   defects: Defect[];
   averageResolutionTime: number;
   totalRecords: number;
@@ -96,7 +88,6 @@ export default function Home() {
     metrics: null,
     defectsByModule: [],
     defectsByPriority: [],
-    defectsTrend: [],
     defects: [],
     averageResolutionTime: 0,
     totalRecords: 0,
@@ -144,14 +135,12 @@ export default function Home() {
       try {
         const [
           metricsData,
-          trendData,
           defectsResponse,
           avgResolutionTime,
           moduleData,
           priorityData,
         ] = await Promise.all([
           getDefectMetrics(filters),
-          getDefectsTrend(filters, "day"),
           getDefects(filters, {
             page: pageNum,
             pageSize: 10,
@@ -168,7 +157,6 @@ export default function Home() {
           metrics: metricsData,
           defectsByModule: moduleData,
           defectsByPriority: priorityData,
-          defectsTrend: trendData,
           defects: defectsResponse.defects,
           totalRecords: defectsResponse.total,
           currentPage: defectsResponse.page,
@@ -673,31 +661,6 @@ export default function Home() {
               </>
             )}
           </div>
-
-          <div className="rounded-xl border border-(--border-color) bg-(--surface) p-3.5 shadow-sm sm:p-4">
-            {state.isLoading ? (
-              <SkeletonChart />
-            ) : (
-              <DefectsTrendChart data={state.defectsTrend} />
-            )}
-          </div>
-
-          {/* Additional Metrics */}
-          {state.isLoading ? (
-            <SkeletonCard />
-          ) : state.averageResolutionTime > 0 ? (
-            <div className="rounded-xl border border-(--border-color) bg-(--surface) p-4 shadow-sm transition-colors">
-              <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-(--muted-color)">
-                Average Resolution Time
-              </h3>
-              <p className="text-4xl font-bold text-(--heading-color)">
-                {state.averageResolutionTime}
-              </p>
-              <p className="mt-1 text-sm text-(--muted-color)">
-                days to resolve issues
-              </p>
-            </div>
-          ) : null}
 
           {/* Data Table */}
           <div
