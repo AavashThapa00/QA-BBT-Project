@@ -1,7 +1,5 @@
-"use client";
-
-import React, { useEffect, useState } from "react";
-import { useRouter, useParams } from "next/navigation";
+import React from "react";
+import Link from "next/link";
 import { getDefectById } from "@/app/actions/detailsActions";
 import { Defect } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
@@ -12,7 +10,6 @@ import {
   HiClock,
 } from "react-icons/hi";
 import AppButton from "@/app/components/common/AppButton";
-import { PageSkeleton } from "@/app/components/common/SkeletonLoader";
 
 const STATUS_LABELS: Record<string, string> = {
   PENDING: "Pending",
@@ -78,51 +75,37 @@ function migrateDefectStatus(defect: Defect): Defect {
   };
 }
 
-export default function DefectDetailPage() {
-  const router = useRouter();
-  const params = useParams();
-  const id = params.id as string;
+export default async function DefectDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
 
-  const [defect, setDefect] = useState<Defect | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  let defect: Defect | null = null;
+  let error: string | null = null;
 
-  useEffect(() => {
-    const fetchDefect = async () => {
-      try {
-        const data = await getDefectById(id);
-        if (data) {
-          setDefect(migrateDefectStatus(data));
-        } else {
-          setError("Defect not found");
-        }
-      } catch (err) {
-        setError("Failed to fetch defect details");
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchDefect();
-  }, [id]);
-
-  if (loading) {
-    return <PageSkeleton variant="detail" />;
+  try {
+    const data = await getDefectById(id);
+    defect = data ? migrateDefectStatus(data) : null;
+    if (!defect) {
+      error = "Defect not found";
+    }
+  } catch (fetchError) {
+    error = "Failed to fetch defect details";
+    console.error(fetchError);
   }
 
   if (error || !defect) {
     return (
       <div className="min-h-screen">
         <div className="w-full px-4 py-8 sm:px-6 lg:px-10 xl:px-12">
-          <AppButton
-            onClick={() => router.back()}
-            variant="secondary"
-            className="mb-6"
-          >
-            <HiArrowLeft className="w-5 h-5" />
-            Back
-          </AppButton>
+          <Link href="/all-defects" className="inline-block">
+            <AppButton variant="secondary" className="mb-6">
+              <HiArrowLeft className="w-5 h-5" />
+              Back
+            </AppButton>
+          </Link>
           <div className="rounded-2xl border border-(--border-color) bg-(--surface) p-8 text-center shadow-sm">
             <HiExclamationCircle className="mx-auto mb-4 h-12 w-12 text-rose-500" />
             <p className="text-lg text-(--text-color)">
@@ -139,14 +122,12 @@ export default function DefectDetailPage() {
       {/* Header */}
       <div className="sticky top-0 z-40 border-b border-(--border-color) bg-(--surface) shadow-sm">
         <div className="w-full px-4 py-6 sm:px-6 lg:px-10 xl:px-12">
-          <AppButton
-            onClick={() => router.back()}
-            variant="secondary"
-            className="group mb-4"
-          >
-            <HiArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-            Back to Defects
-          </AppButton>
+          <Link href="/all-defects" className="inline-block">
+            <AppButton variant="secondary" className="group mb-4">
+              <HiArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+              Back to Defects
+            </AppButton>
+          </Link>
           <h1 className="text-2xl font-bold text-(--heading-color) sm:text-3xl lg:text-4xl">
             Defect Details
           </h1>

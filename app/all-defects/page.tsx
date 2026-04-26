@@ -122,6 +122,7 @@ export default function AllDefectsPage() {
     const params = new URLSearchParams(window.location.search);
     const moduleParam = params.get("module");
     const priorityParam = params.get("priority");
+    const severityParam = params.get("severity");
 
     if (moduleParam?.trim()) {
       setSelectedModule(moduleParam.trim());
@@ -129,6 +130,10 @@ export default function AllDefectsPage() {
 
     if (priorityParam?.trim()) {
       setSelectedPriority(normalizePriority(priorityParam.trim()));
+    }
+
+    if (severityParam?.trim()) {
+      setSelectedSeverity(normalizePriority(severityParam.trim()));
     }
   }, []);
 

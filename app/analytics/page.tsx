@@ -2,6 +2,7 @@
 
 import { Fragment, useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Dialog,
   DialogPanel,
@@ -33,6 +34,7 @@ import {
 } from "react-icons/hi";
 import AppButton from "@/app/components/common/AppButton";
 import { PageSkeleton } from "@/app/components/common/SkeletonLoader";
+import DefectsByModuleChart from "@/app/components/dashboard/DefectsByModuleChart";
 import DefectsTrendChart from "@/app/components/dashboard/DefectsTrendChart";
 import {
   getDefectsByStatus,
@@ -153,6 +155,18 @@ const normalizeStatusKey = (status: unknown): StatusData["key"] | null => {
   return null;
 };
 
+const normalizeModuleGroup = (module: string) => {
+  const value = module.trim().toUpperCase();
+  if (!value) return "Other";
+  if (value.startsWith("HSA")) return "HSA";
+  if (value.startsWith("KFQ")) return "KFQ";
+  if (value.startsWith("GMST") || value.startsWith("GGMST")) return "GMST";
+  if (value.startsWith("NMST")) return "NMST";
+  if (value.startsWith("INNOVATETECH")) return "Innovatetech";
+  if (value.startsWith("ALSTON")) return "Alston";
+  return "Other";
+};
+
 const getStatusLabel = (status: string) => {
   switch (status) {
     case "PENDING":
@@ -190,6 +204,7 @@ const renderPieLabel = ({
 };
 
 export default function AnalyticsPage() {
+  const router = useRouter();
   const [statusData, setStatusData] = useState<StatusData[]>([]);
   const [moduleFixTime, setModuleFixTime] = useState<ModuleFixTime[]>([]);
   const [monthlyTrends, setMonthlyTrends] = useState<MonthlyTrend[]>([]);
@@ -298,6 +313,26 @@ export default function AnalyticsPage() {
 
   const pieChartData = statusData.filter((item) => item.value > 0);
   const isStatusDataEmpty = pieChartData.length === 0;
+  const groupedModuleTrends = Object.values(
+    moduleTrends.reduce<Record<string, ModuleTrend>>((acc, item) => {
+      const group = normalizeModuleGroup(item.module);
+      const existing = acc[group];
+
+      acc[group] = existing
+        ? { module: group, count: existing.count + item.count }
+        : { module: group, count: item.count };
+
+      return acc;
+    }, {}),
+  ).sort((a, b) => b.count - a.count);
+
+  const handleSeverityClick = (severity: string) => {
+    router.push(`/all-defects?severity=${encodeURIComponent(severity)}`);
+  };
+
+  const handleModuleClick = (moduleName: string) => {
+    router.push(`/all-defects?module=${encodeURIComponent(moduleName)}`);
+  };
 
   return (
     <div className="min-h-screen">
@@ -552,9 +587,16 @@ export default function AnalyticsPage() {
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           {/* Severity Distribution */}
           <div className="rounded-2xl border border-emerald-100 bg-white p-6 shadow-sm transition-all duration-300 animate-in fade-in-up">
-            <h2 className="mb-4 text-lg font-semibold text-(--heading-color)">
-              Severity Distribution
-            </h2>
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-semibold text-(--heading-color)">
+                  Severity Distribution
+                </h2>
+                <p className="mt-1 text-xs text-(--muted-color)">
+                  Click severity bar to open matching issues.
+                </p>
+              </div>
+            </div>
             <div className="h-75">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={severityTrends} layout="vertical">
@@ -609,6 +651,8 @@ export default function AnalyticsPage() {
                     {severityTrends.map((entry, index) => (
                       <Cell
                         key={`cell-${index}`}
+                        onClick={() => handleSeverityClick(entry.severity)}
+                        cursor="pointer"
                         fill={
                           index === 0
                             ? "url(#analyticsSeverityGlow)"
@@ -623,77 +667,10 @@ export default function AnalyticsPage() {
           </div>
 
           {/* Module Distribution */}
-          <div className="rounded-2xl border border-emerald-100 bg-white p-6 shadow-sm transition-all duration-300 animate-in fade-in-up">
-            <h2 className="mb-4 text-lg font-semibold text-(--heading-color)">
-              Module Distribution
-            </h2>
-            <div className="h-75">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={moduleTrends} layout="vertical">
-                  <defs>
-                    <linearGradient
-                      id="analyticsModuleGlow"
-                      x1="0"
-                      y1="0"
-                      x2="1"
-                      y2="0"
-                    >
-                      <stop
-                        offset="0%"
-                        stopColor="#22d3ee"
-                        stopOpacity={0.95}
-                      />
-                      <stop
-                        offset="100%"
-                        stopColor="#3b82f6"
-                        stopOpacity={0.95}
-                      />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    stroke="#d1d5db"
-                    vertical={false}
-                  />
-                  <XAxis
-                    type="number"
-                    tick={{ fill: "#64748b", fontSize: 12 }}
-                  />
-                  <YAxis
-                    type="category"
-                    dataKey="module"
-                    tick={{ fill: "#334155", fontSize: 13, fontWeight: 600 }}
-                    width={100}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "#ffffff",
-                      border: "1px solid #d1d5db",
-                      borderRadius: "12px",
-                      color: "#334155",
-                    }}
-                  />
-                  <Bar
-                    dataKey="count"
-                    radius={[0, 8, 8, 0]}
-                    barSize={20}
-                    background={{ fill: "#ecfeff", radius: 8 }}
-                  >
-                    {moduleTrends.map((entry, index) => (
-                      <Cell
-                        key={`cell-${index}`}
-                        fill={
-                          index === 0
-                            ? "url(#analyticsModuleGlow)"
-                            : MODULE_COLORS[entry.module] || "#64748b"
-                        }
-                      />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
+          <DefectsByModuleChart
+            data={groupedModuleTrends}
+            onModuleClick={handleModuleClick}
+          />
         </div>
 
         {/* Summary Stats */}
