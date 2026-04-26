@@ -96,11 +96,12 @@ const QC_STATUS_COLORS: Record<QCStatusBBT, string> = {
   FAILED: "bg-red-100 text-red-700 border-red-200",
 };
 
-const ROW_BACKGROUND_COLORS: Record<QCStatusBBT, string> = {
-  PASSED: "bg-emerald-50/80",
+const DEV_STATUS_ROW_BACKGROUND_COLORS: Record<Status, string> = {
   PENDING: "bg-amber-50/80",
-  REJECTED: "bg-orange-50/80",
-  FAILED: "bg-red-50/80",
+  FIXED: "bg-emerald-50/80",
+  HOLD: "bg-rose-50/80",
+  AS_IT_IS: "bg-slate-50/80",
+  RE_OPENED: "bg-orange-50/80",
 };
 
 const PRIORITY_COLORS_LOW_BG: Record<string, string> = {
@@ -177,8 +178,8 @@ function toQcStatusLabel(qcStatus: QCStatusBBT): string {
   return qcStatus;
 }
 
-function getRowBackgroundColor(qcStatus: QCStatusBBT): string {
-  return ROW_BACKGROUND_COLORS[qcStatus] || "bg-slate-50/30";
+function getRowBackgroundColor(status: Status): string {
+  return DEV_STATUS_ROW_BACKGROUND_COLORS[status] || "bg-slate-50/30";
 }
 
 type DropdownOption<T extends string | number> = {
@@ -318,6 +319,13 @@ function migrateStatus(oldStatus: string): Status {
   return (statusMap[oldStatus] || "PENDING") as Status;
 }
 
+function formatSheetType(sourceFile: string | null | undefined): string {
+  const raw = (sourceFile || "").trim();
+  if (!raw) return "Smoke Testing Sheet";
+
+  return raw.replace(/\s*-\s*issue\s*log(?:\s*\(\d+\))?\.csv$/i, "").trim();
+}
+
 function mapDefectToRow(defect: Defect): EditableRow {
   return {
     id: defect.id,
@@ -329,7 +337,7 @@ function mapDefectToRow(defect: Defect): EditableRow {
     qcStatusBbt: defect.qcStatusBbt,
     issueTestDate: toInputDate(defect.dateReported),
     fixedDate: toInputDate(defect.dateFixed),
-    sheetType: defect.sourceFile || "Smoke Testing Sheet",
+    sheetType: formatSheetType(defect.sourceFile),
     updatedAt: defect.updatedAt ? new Date(defect.updatedAt).toISOString() : "",
   };
 }
@@ -1353,7 +1361,7 @@ export default function IssueSheetPage() {
                         Issue Sheet
                       </h2>
                       <p className="text-xs text-(--muted-color) sm:text-sm">
-                        Background color of rows indicate QC status.
+                        Background color of rows indicates dev status.
                       </p>
                     </div>
 
@@ -1440,7 +1448,7 @@ export default function IssueSheetPage() {
                         <th className="w-34 px-4 py-3 text-xs font-semibold uppercase tracking-wider">
                           QC Status
                         </th>
-                        <th className="w-55 min-w-55 px-4 py-3 text-xs font-semibold uppercase tracking-wider">
+                        <th className="w-48 min-w-48 px-4 py-3 text-xs font-semibold uppercase tracking-wider">
                           Actions
                         </th>
                       </tr>
@@ -1479,7 +1487,7 @@ export default function IssueSheetPage() {
                           return (
                             <tr
                               key={row.id}
-                              className={`group animate-in fade-in border-t border-(--border-color) transition-all duration-500 ${getRowBackgroundColor(row.qcStatusBbt)} ${
+                              className={`group animate-in fade-in border-t border-(--border-color) transition-all duration-500 ${getRowBackgroundColor(row.status)} ${
                                 rowDirty
                                   ? "ring-1 ring-inset ring-amber-200/35"
                                   : ""
@@ -1487,7 +1495,7 @@ export default function IssueSheetPage() {
                               style={{ animationDelay: `${idx * 50}ms` }}
                             >
                               <td className="px-4 py-3 align-top text-xs font-semibold text-(--text-color)">
-                                <span className="inline-flex max-w-42.5 truncate whitespace-nowrap rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-emerald-700">
+                                <span className="inline-flex max-w-42.5 truncate whitespace-nowrap">
                                   {row.sheetType || "-"}
                                 </span>
                               </td>
@@ -1761,84 +1769,121 @@ export default function IssueSheetPage() {
         </div>
       </div>
 
-      {selectedDefect && (
-        <div className="fixed inset-0 z-50 overlay-backdrop-strong backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="w-full max-w-3xl overflow-hidden rounded-2xl border border-(--border-color) bg-(--surface) shadow-2xl">
-            <div className="flex items-center justify-between border-b border-(--border-color) bg-(--surface-soft) px-6 py-4">
-              <div>
-                <h3 className="text-lg font-bold text-(--heading-color)">
-                  Issue Details
-                </h3>
-                <p className="mt-1 text-xs text-(--muted-color)">
-                  {selectedDefect.testCaseId || selectedDefect.id}
-                </p>
-              </div>
-              <button
-                onClick={() => setSelectedDefect(null)}
-                className="rounded-lg p-2 text-(--muted-color) transition-colors hover:bg-emerald-50 hover:text-(--heading-color)"
+      <Transition show={!!selectedDefect} as={Fragment}>
+        <Dialog
+          as="div"
+          className="relative z-60"
+          onClose={() => setSelectedDefect(null)}
+        >
+          <TransitionChild
+            as={Fragment}
+            enter="ease-out duration-200"
+            enterFrom="opacity-0"
+            enterTo="opacity-100"
+            leave="ease-in duration-150"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
+          >
+            <div className="fixed inset-0 bg-slate-950/35 backdrop-blur-sm" />
+          </TransitionChild>
+
+          <div className="fixed inset-0 overflow-y-auto p-4">
+            <div className="flex min-h-full items-center justify-center">
+              <TransitionChild
+                as={Fragment}
+                enter="ease-out duration-200"
+                enterFrom="opacity-0 scale-95"
+                enterTo="opacity-100 scale-100"
+                leave="ease-in duration-150"
+                leaveFrom="opacity-100 scale-100"
+                leaveTo="opacity-0 scale-95"
               >
-                <HiX className="w-5 h-5" />
-              </button>
-            </div>
+                <DialogPanel className="w-full max-w-3xl overflow-hidden rounded-2xl border border-(--border-color) bg-(--surface) shadow-2xl">
+                  {selectedDefect && (
+                    <>
+                      <div className="flex items-center justify-between border-b border-(--border-color) bg-(--surface-soft) px-6 py-4">
+                        <div>
+                          <DialogTitle className="text-lg font-bold text-(--heading-color)">
+                            Issue Details
+                          </DialogTitle>
+                          <p className="mt-1 text-xs text-(--muted-color)">
+                            {selectedDefect.testCaseId || selectedDefect.id}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => setSelectedDefect(null)}
+                          className="rounded-lg p-2 text-(--muted-color) transition-colors hover:bg-emerald-50 hover:text-(--heading-color)"
+                          aria-label="Close issue details"
+                        >
+                          <HiX className="w-5 h-5" />
+                        </button>
+                      </div>
 
-            <div className="p-6 space-y-5 max-h-[75vh] overflow-y-auto">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="rounded-lg border border-(--border-color) bg-(--surface-soft) p-4">
-                  <p className="mb-2 text-xs uppercase tracking-wide text-(--muted-color)">
-                    Severity
-                  </p>
-                  <p className="text-sm font-semibold text-(--text-color)">
-                    {selectedDefect.severity}
-                  </p>
-                </div>
-                <div className="rounded-lg border border-(--border-color) bg-(--surface-soft) p-4">
-                  <p className="mb-2 text-xs uppercase tracking-wide text-(--muted-color)">
-                    Priority
-                  </p>
-                  <p className="text-sm font-semibold text-(--text-color)">
-                    {toPriorityLabel(
-                      normalizePriorityValue(selectedDefect.priority),
-                    ) || "-"}
-                  </p>
-                </div>
-              </div>
+                      <div className="max-h-[75vh] space-y-5 overflow-y-auto p-6">
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                          <div className="rounded-lg border border-(--border-color) bg-(--surface-soft) p-4">
+                            <p className="mb-2 text-xs uppercase tracking-wide text-(--muted-color)">
+                              Severity
+                            </p>
+                            <p className="text-sm font-semibold text-(--text-color)">
+                              {selectedDefect.severity}
+                            </p>
+                          </div>
+                          <div className="rounded-lg border border-(--border-color) bg-(--surface-soft) p-4">
+                            <p className="mb-2 text-xs uppercase tracking-wide text-(--muted-color)">
+                              Priority
+                            </p>
+                            <p className="text-sm font-semibold text-(--text-color)">
+                              {toPriorityLabel(
+                                normalizePriorityValue(selectedDefect.priority),
+                              ) || "-"}
+                            </p>
+                          </div>
+                        </div>
 
-              <div className="rounded-lg border border-(--border-color) bg-(--surface-soft) p-4">
-                <p className="mb-2 text-xs uppercase tracking-wide text-(--muted-color)">
-                  Summary / Title
-                </p>
-                <p className="whitespace-pre-wrap text-sm leading-relaxed text-(--text-color)">
-                  {selectedDefect.summary || selectedDefect.testScenario || "-"}
-                </p>
-              </div>
+                        <div className="rounded-lg border border-(--border-color) bg-(--surface-soft) p-4">
+                          <p className="mb-2 text-xs uppercase tracking-wide text-(--muted-color)">
+                            Summary / Title
+                          </p>
+                          <p className="whitespace-pre-wrap text-sm leading-relaxed text-(--text-color)">
+                            {selectedDefect.summary ||
+                              selectedDefect.testScenario ||
+                              "-"}
+                          </p>
+                        </div>
 
-              {(selectedDefect.descriptionSteps ||
-                selectedDefect.testSteps) && (
-                <div className="rounded-lg border border-(--border-color) bg-(--surface-soft) p-4">
-                  <p className="mb-2 text-xs uppercase tracking-wide text-(--muted-color)">
-                    Description / Steps
-                  </p>
-                  <p className="whitespace-pre-wrap text-sm leading-relaxed text-(--text-color)">
-                    {selectedDefect.descriptionSteps ||
-                      selectedDefect.testSteps}
-                  </p>
-                </div>
-              )}
+                        {(selectedDefect.descriptionSteps ||
+                          selectedDefect.testSteps) && (
+                          <div className="rounded-lg border border-(--border-color) bg-(--surface-soft) p-4">
+                            <p className="mb-2 text-xs uppercase tracking-wide text-(--muted-color)">
+                              Description / Steps
+                            </p>
+                            <p className="whitespace-pre-wrap text-sm leading-relaxed text-(--text-color)">
+                              {selectedDefect.descriptionSteps ||
+                                selectedDefect.testSteps}
+                            </p>
+                          </div>
+                        )}
 
-              {selectedDefect.expectedResult && (
-                <div className="rounded-lg border border-(--border-color) bg-(--surface-soft) p-4">
-                  <p className="mb-2 text-xs uppercase tracking-wide text-(--muted-color)">
-                    Expected Result
-                  </p>
-                  <p className="whitespace-pre-wrap text-sm leading-relaxed text-(--text-color)">
-                    {selectedDefect.expectedResult}
-                  </p>
-                </div>
-              )}
+                        {selectedDefect.expectedResult && (
+                          <div className="rounded-lg border border-(--border-color) bg-(--surface-soft) p-4">
+                            <p className="mb-2 text-xs uppercase tracking-wide text-(--muted-color)">
+                              Expected Result
+                            </p>
+                            <p className="whitespace-pre-wrap text-sm leading-relaxed text-(--text-color)">
+                              {selectedDefect.expectedResult}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </DialogPanel>
+              </TransitionChild>
             </div>
           </div>
-        </div>
-      )}
+        </Dialog>
+      </Transition>
     </div>
   );
 }
