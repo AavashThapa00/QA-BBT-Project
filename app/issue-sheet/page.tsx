@@ -804,9 +804,13 @@ export default function IssueSheetPage() {
   const dirtyCount = rows.filter((row) => isRowDirty(row)).length;
   const sidebarItems = [
     { href: "/", label: "Dashboard", badge: "DB" },
-    { href: "/issue-sheet", label: "Smoke Sheet", badge: "SS" },
-    { href: "/analytics", label: "Analytics & Performance", badge: "AP" },
-    { href: "/test-execution", label: "Test Cycle", badge: "TC" },
+    { href: "/smoke-sheet", label: "Smoke Sheet", badge: "SS" },
+    {
+      href: "/analytics-performance",
+      label: "Analytics & Performance",
+      badge: "AP",
+    },
+    { href: "/test-cycle", label: "Test Cycle", badge: "TC" },
   ];
 
   return (
@@ -841,7 +845,7 @@ export default function IssueSheetPage() {
 
             <nav className="space-y-1 p-2">
               {sidebarItems.map((item) => {
-                const isActive = item.href === "/issue-sheet";
+                const isActive = item.href === "/smoke-sheet";
 
                 return (
                   <Link

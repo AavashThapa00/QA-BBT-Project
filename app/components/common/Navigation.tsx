@@ -27,9 +27,13 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { name: "Dashboard", href: "/", icon: HiHome },
-  { name: "Smoke Sheet", href: "/issue-sheet", icon: HiViewList },
-  { name: "Test Cycle", href: "/test-execution", icon: HiArrowRight },
-  { name: "Analytics & Performance", href: "/analytics", icon: HiChartBar },
+  { name: "Smoke Sheet", href: "/smoke-sheet", icon: HiViewList },
+  { name: "Test Cycle", href: "/test-cycle", icon: HiArrowRight },
+  {
+    name: "Analytics & Performance",
+    href: "/analytics-performance",
+    icon: HiChartBar,
+  },
   { name: "All Issues", href: "/all-defects", icon: HiViewList },
   { name: "QA Status", href: "/qc-dashboard", icon: HiClipboardCheck },
 ];

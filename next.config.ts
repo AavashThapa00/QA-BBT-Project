@@ -3,6 +3,25 @@ import type { NextConfig } from "next";
 const backendUrl = process.env.BACKEND_URL || "http://localhost:5000";
 
 const nextConfig: NextConfig = {
+  async redirects() {
+    return [
+      {
+        source: "/issue-sheet",
+        destination: "/smoke-sheet",
+        permanent: true,
+      },
+      {
+        source: "/test-execution",
+        destination: "/test-cycle",
+        permanent: true,
+      },
+      {
+        source: "/analytics",
+        destination: "/analytics-performance",
+        permanent: true,
+      },
+    ];
+  },
   async rewrites() {
     return [
       {
