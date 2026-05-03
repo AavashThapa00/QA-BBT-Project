@@ -54,7 +54,7 @@ export default function ForgotPasswordPage() {
       _prevState: {
         message?: string;
         success?: boolean;
-        resetLink?: string;
+        devResetLink?: string;
       } | null,
       formData: FormData,
     ) => {
@@ -115,14 +115,14 @@ export default function ForgotPasswordPage() {
                     />
                   </div>
 
-                  {state?.resetLink && (
+                  {state?.devResetLink && (
                     <div className="rounded-xl border border-[rgba(30,136,229,0.22)] bg-[rgba(30,136,229,0.08)] p-3 text-sm text-(--info-color)">
                       SMTP not configured. Use this reset link directly:{" "}
                       <a
-                        href={state.resetLink}
+                        href={state.devResetLink}
                         className="break-all text-xs font-medium text-(--info-color) underline hover:opacity-80"
                       >
-                        {state.resetLink}
+                        {state.devResetLink}
                       </a>
                     </div>
                   )}
@@ -156,14 +156,14 @@ export default function ForgotPasswordPage() {
                   folder.
                 </p>
 
-                {state?.resetLink && (
+                {state?.devResetLink && (
                   <div className="mt-7 rounded-xl border border-[rgba(30,136,229,0.22)] bg-[rgba(30,136,229,0.08)] p-3 text-sm text-(--info-color)">
                     SMTP not configured. Use this reset link directly:
                     <a
-                      href={state.resetLink}
+                      href={state.devResetLink}
                       className="mt-2 break-all text-xs font-medium text-(--info-color) underline hover:opacity-80"
                     >
-                      {state.resetLink}
+                      {state.devResetLink}
                     </a>
                   </div>
                 )}
