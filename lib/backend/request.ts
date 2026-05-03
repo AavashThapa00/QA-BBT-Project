@@ -3,7 +3,7 @@ import "server-only";
 import { cookies } from "next/headers";
 
 const backendBaseUrl =
-  process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
+  process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
 
 export type BackendErrorPayload = {
   message: string;
@@ -12,13 +12,13 @@ export type BackendErrorPayload = {
 
 export type BackendEnvelope<T> =
   | {
-      success: true;
-      data: T;
-    }
+    success: true;
+    data: T;
+  }
   | {
-      success: false;
-      error: BackendErrorPayload;
-    };
+    success: false;
+    error: BackendErrorPayload;
+  };
 
 function joinCookieHeader(cookiePairs: Array<{ name: string; value: string }>) {
   return cookiePairs.map((cookie) => `${cookie.name}=${cookie.value}`).join("; ");
