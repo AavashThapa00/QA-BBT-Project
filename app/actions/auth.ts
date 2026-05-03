@@ -1,11 +1,54 @@
 "use server";
 
 import { cookies } from "next/headers";
+import { createCipheriv, randomBytes } from "crypto";
 import { redirect } from "next/navigation";
 import { backendJson, backendRequest } from "@/lib/backend/request";
 
 const SESSION_COOKIE = "bbt_session";
 const SESSION_EXPIRES_COOKIE = "bbt_session_expires_at";
+const SESSION_ENCRYPTION_KEY = process.env.SESSION_ENCRYPTION_KEY || "";
+
+const ALGORITHM = "aes-256-gcm";
+const IV_LENGTH = 12;
+
+function getEncryptionKey(): Buffer | null {
+  if (!SESSION_ENCRYPTION_KEY) {
+    return null;
+  }
+
+  if (SESSION_ENCRYPTION_KEY.length === 64) {
+    return Buffer.from(SESSION_ENCRYPTION_KEY, "hex");
+  }
+
+  try {
+    const base64Key = Buffer.from(SESSION_ENCRYPTION_KEY, "base64");
+    if (base64Key.length === 32) {
+      return base64Key;
+    }
+  } catch {
+    // ignore
+  }
+
+  return null;
+}
+
+function encryptSessionId(sessionId: string): string {
+  const key = getEncryptionKey();
+  if (!key) {
+    return sessionId;
+  }
+
+  const iv = randomBytes(IV_LENGTH);
+  const cipher = createCipheriv(ALGORITHM, key, iv);
+  const encrypted = Buffer.concat([
+    cipher.update(sessionId, "utf8"),
+    cipher.final(),
+  ]);
+  const tag = cipher.getAuthTag();
+
+  return `enc.${iv.toString("base64url")}.${tag.toString("base64url")}.${encrypted.toString("base64url")}`;
+}
 
 export interface AuthUser {
   id: string;
@@ -17,14 +60,23 @@ export interface AuthUser {
 
 type BackendSessionUser = Omit<AuthUser, "phone"> & { phone?: string | null };
 
-async function setSessionCookies(sessionId: string, sessionExpiresAt: string | Date) {
+async function setSessionCookies(
+  sessionId: string,
+  sessionExpiresAt: string | Date,
+) {
   return cookies().then((cookieStore) => {
     const expiresAt = new Date(sessionExpiresAt);
-    cookieStore.set(SESSION_COOKIE, sessionId, {
+    const maxAgeSeconds = Math.max(
+      0,
+      Math.floor((expiresAt.getTime() - Date.now()) / 1000),
+    );
+    const encryptedSessionId = encryptSessionId(sessionId);
+    cookieStore.set(SESSION_COOKIE, encryptedSessionId, {
       httpOnly: true,
       sameSite: "lax",
       secure: process.env.NODE_ENV === "production",
       expires: expiresAt,
+      maxAge: maxAgeSeconds,
       path: "/",
     });
     cookieStore.set(SESSION_EXPIRES_COOKIE, String(expiresAt.getTime()), {
@@ -32,6 +84,7 @@ async function setSessionCookies(sessionId: string, sessionExpiresAt: string | D
       sameSite: "lax",
       secure: process.env.NODE_ENV === "production",
       expires: expiresAt,
+      maxAge: maxAgeSeconds,
       path: "/",
     });
   });
@@ -82,7 +135,9 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
 }
 
 export async function loginAction(formData: FormData) {
-  const email = String(formData.get("email") || "").trim().toLowerCase();
+  const email = String(formData.get("email") || "")
+    .trim()
+    .toLowerCase();
   const password = String(formData.get("password") || "");
 
   if (!email || !password) {
@@ -90,10 +145,12 @@ export async function loginAction(formData: FormData) {
   }
 
   try {
-    const data = await backendJson<BackendSessionUser & {
-      sessionId: string;
-      sessionExpiresAt: string;
-    }>("/api/auth/login", {
+    const data = await backendJson<
+      BackendSessionUser & {
+        sessionId: string;
+        sessionExpiresAt: string;
+      }
+    >("/api/auth/login", {
       method: "POST",
       body: JSON.stringify({ email, password }),
       headers: { "Content-Type": "application/json" },
@@ -110,7 +167,9 @@ export async function loginAction(formData: FormData) {
 }
 
 export async function requestLoginCodeAction(formData: FormData) {
-  const email = String(formData.get("email") || "").trim().toLowerCase();
+  const email = String(formData.get("email") || "")
+    .trim()
+    .toLowerCase();
   const password = String(formData.get("password") || "");
 
   if (!email || !password) {
@@ -133,7 +192,8 @@ export async function requestLoginCodeAction(formData: FormData) {
   } catch (error) {
     return {
       success: false,
-      message: error instanceof Error ? error.message : "Failed to request login code",
+      message:
+        error instanceof Error ? error.message : "Failed to request login code",
     };
   }
 }
@@ -147,10 +207,12 @@ export async function verifyLoginCodeAction(formData: FormData) {
   }
 
   try {
-    const data = await backendJson<BackendSessionUser & {
-      sessionId: string;
-      sessionExpiresAt: string;
-    }>("/api/auth/verify-login-code", {
+    const data = await backendJson<
+      BackendSessionUser & {
+        sessionId: string;
+        sessionExpiresAt: string;
+      }
+    >("/api/auth/verify-login-code", {
       method: "POST",
       body: JSON.stringify({ challengeId, code }),
       headers: { "Content-Type": "application/json" },
@@ -167,7 +229,9 @@ export async function verifyLoginCodeAction(formData: FormData) {
 }
 
 export async function requestPasswordResetAction(formData: FormData) {
-  const email = String(formData.get("email") || "").trim().toLowerCase();
+  const email = String(formData.get("email") || "")
+    .trim()
+    .toLowerCase();
 
   if (!email) {
     return { success: false, message: "Email is required" };
@@ -188,7 +252,9 @@ export async function requestPasswordResetAction(formData: FormData) {
     return {
       success: false,
       message:
-        error instanceof Error ? error.message : "Unable to generate reset link",
+        error instanceof Error
+          ? error.message
+          : "Unable to generate reset link",
     };
   }
 }
@@ -228,7 +294,8 @@ export async function resetPasswordWithTokenAction(formData: FormData) {
   } catch (error) {
     return {
       success: false,
-      message: error instanceof Error ? error.message : "Failed to reset password",
+      message:
+        error instanceof Error ? error.message : "Failed to reset password",
     };
   }
 }
@@ -276,7 +343,8 @@ export async function updateProfileAction(formData: FormData) {
   } catch (error) {
     return {
       success: false,
-      message: error instanceof Error ? error.message : "Failed to update profile",
+      message:
+        error instanceof Error ? error.message : "Failed to update profile",
     };
   }
 }
@@ -293,17 +361,21 @@ export async function changePasswordAction(formData: FormData) {
   }
 
   try {
-    const data = await backendJson<{ message: string }>("/api/auth/change-password", {
-      method: "POST",
-      body: JSON.stringify({ currentPassword, newPassword }),
-      headers: { "Content-Type": "application/json" },
-    });
+    const data = await backendJson<{ message: string }>(
+      "/api/auth/change-password",
+      {
+        method: "POST",
+        body: JSON.stringify({ currentPassword, newPassword }),
+        headers: { "Content-Type": "application/json" },
+      },
+    );
 
     return { success: true, message: data.message || "Password updated" };
   } catch (error) {
     return {
       success: false,
-      message: error instanceof Error ? error.message : "Failed to change password",
+      message:
+        error instanceof Error ? error.message : "Failed to change password",
     };
   }
 }
