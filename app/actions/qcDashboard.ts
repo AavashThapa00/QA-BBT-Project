@@ -18,10 +18,10 @@ interface QCSummary {
 
 interface QCRecentDefect {
   id: string;
+  testCaseId: string | null;
   module: string;
-  summary: string | null;
-  severity: string;
   status: string;
+  qcStatusBbt: string;
   dateReported: string | null;
 }
 

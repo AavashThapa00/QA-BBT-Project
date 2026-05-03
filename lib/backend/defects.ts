@@ -172,6 +172,7 @@ export async function createDefectForApi(payload: CreateDefectPayload) {
     qcStatusBbt: payload.qcStatusBbt ?? "PENDING",
     sourceFile: payload.sourceFile ?? null,
     createdAt: new Date(),
+    updatedAt: new Date(),
   };
 
   await defects.insertOne(doc);

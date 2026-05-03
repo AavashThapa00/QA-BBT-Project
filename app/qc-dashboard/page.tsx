@@ -85,7 +85,12 @@ export default function QCDashboardPage() {
         ]);
 
         setQcStatusCounts(statusCounts);
-        setQcSummary(summary);
+        const dashboardSummary: QCSummary = {
+          totalQC: summary.totalDefects,
+          pendingQC: summary.pendingQC,
+          doneQC: summary.passedQC,
+        };
+        setQcSummary(dashboardSummary);
         setRecentDefects(recent);
       } catch (error) {
         console.error("Error fetching QC dashboard:", error);

@@ -127,5 +127,6 @@ export function toDefect(doc: DefectDoc): Defect {
     qcStatusBbt: doc.qcStatusBbt,
     sourceFile: doc.sourceFile ?? undefined,
     createdAt: new Date(doc.createdAt),
+    updatedAt: new Date(doc.updatedAt),
   };
 }

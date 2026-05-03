@@ -10,16 +10,16 @@ async function run() {
   try {
     console.log(`📁 Reading file: ${fileName}`);
     const csvData = readFileSync(filePath, "utf-8");
-    
+
     console.log("⬆️  Uploading CSV data...");
     const result = await uploadCSV(csvData, fileName);
 
     if (result.success) {
       console.log("✅ Upload successful!");
-      console.log(`   Inserted: ${result.inserted} records`);
+      console.log(`   Imported: ${result.imported} records`);
       console.log(`   Skipped: ${result.skipped} records`);
-      if (result.modules && result.modules.length > 0) {
-        console.log(`   Modules: ${result.modules.join(", ")}`);
+      if (result.cycleName) {
+        console.log(`   Cycle: ${result.cycleName}`);
       }
     } else {
       console.log("❌ Upload failed:", result.message);
